@@ -14,7 +14,7 @@ export function Start({ onPlay }: { onPlay: () => void }) {
       <Button onClick={onPlay} className="min-h-16 bg-primary px-14 font-display text-3xl text-paper shadow-[5px_5px_0_var(--color-ink)] hover:bg-primary hover:brightness-110">
         Play
       </Button>
-      <a href="/data" className="font-semibold text-primary underline underline-offset-2">
+      <a href="/data" className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
         Data & Limitations
       </a>
     </div>

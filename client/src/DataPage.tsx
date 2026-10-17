@@ -30,7 +30,7 @@ export function DataPage({ level }: { level: Level }) {
   const { corridor } = level
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-5">
-      <a href="/" className={link}>
+      <a href="/" className={`${link} inline-flex min-h-11 items-center`}>
         ← Back to the game
       </a>
       <div>

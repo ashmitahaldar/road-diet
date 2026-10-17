@@ -51,7 +51,7 @@ export default function App() {
           <span>A learning tool, not a forecast. Residents are fictional.</span>
           <span className="flex flex-wrap items-center gap-x-4">
             <span>Hosted on Vultr</span>
-            <a href="/data" target={dataPage ? undefined : '_blank'} className="font-semibold text-primary underline underline-offset-2">
+            <a href="/data" target={dataPage ? undefined : '_blank'} className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
               Data & Limitations
             </a>
           </span>

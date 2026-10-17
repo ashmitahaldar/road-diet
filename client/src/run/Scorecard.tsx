@@ -170,7 +170,7 @@ export function Scorecard({ open, onClose, level, metrics, base, react, stats, f
           <div className="mt-2">
             <LimitationsList level={level} />
           </div>
-          <a href="/data" target="_blank" className="mt-3 inline-block font-semibold text-primary underline underline-offset-2">
+          <a href="/data" target="_blank" className="mt-3 inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
             Data & Limitations
           </a>
         </section>

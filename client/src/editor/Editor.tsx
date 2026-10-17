@@ -142,7 +142,7 @@ export function Editor({ level, layout, onChange }: Props) {
   return (
     <section aria-labelledby="editor-title" className={`flex flex-col gap-4 ${drag ? 'select-none' : ''}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="editor-title" className="font-display text-2xl font-semibold">
+        <h2 id="editor-title" tabIndex={-1} className="font-display text-2xl font-semibold outline-none">
           Street cross-section
         </h2>
         <p className="text-sm">Drag cards onto the street. Drag a block to move it, or its handles to resize it.</p>

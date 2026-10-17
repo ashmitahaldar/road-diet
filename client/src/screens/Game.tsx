@@ -1,6 +1,7 @@
 import { computeMetrics, fallbackResult, type Layout, type Level, type Metrics, type ReactResult } from '@road-diet/shared'
 import { useReducedMotion } from 'motion/react'
 import { Component, Suspense, lazy, useMemo, useRef, useState, type ReactNode } from 'react'
+import { flushSync } from 'react-dom'
 import { Editor } from '../editor/Editor'
 import { RUN_MS, RunPanel, type Shown } from '../run/RunPanel'
 import { Scorecard } from '../run/Scorecard'
@@ -102,7 +103,14 @@ export function Game({ level }: { level: Level }) {
               <h2 id="stage-title" className="font-display text-2xl font-semibold">
                 Your street in 3D
               </h2>
-              <Button onClick={() => setStage(false)}>Edit street</Button>
+              <Button
+                onClick={() => {
+                  flushSync(() => setStage(false))
+                  document.getElementById('editor-title')?.focus()
+                }}
+              >
+                Edit street
+              </Button>
             </div>
             <Fallback
               onError={() => {

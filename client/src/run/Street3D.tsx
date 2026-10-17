@@ -37,7 +37,7 @@ const ROAD: ElementId[] = ['car_lane', 'bus_lane']
 type Lane = { id: ElementId; widthM: number; x: number; top: number }
 
 /** Moving objects per mode, in proportion to people per object; a mode with no lane to use gets none. */
-export function objectCounts(demand: Record<Mode, number>, usable: Record<Mode, boolean>) {
+function objectCounts(demand: Record<Mode, number>, usable: Record<Mode, boolean>) {
   const units = MODES.map((m) => (usable[m] ? demand[m] / PEOPLE_PER_OBJECT[m] : 0))
   const total = units.reduce((a, b) => a + b, 0) || 1
   return Object.fromEntries(MODES.map((m, i) => [m, units[i] > 0 ? Math.max(1, Math.round((MAX_OBJECTS * units[i]) / total)) : 0])) as Record<Mode, number>
@@ -152,6 +152,8 @@ export default function Street3D({ level, layout }: { level: Level; layout: Layo
     const s = Math.max(1, level.corridor.widthM / 20)
     camera.position.set(20 * s, 34 * s, 42 * s)
     const controls = new OrbitControls(camera, renderer.domElement)
+    // Vertical swipes still scroll the page on phones; horizontal drags orbit.
+    renderer.domElement.style.touchAction = 'pan-y'
     Object.assign(controls, { enablePan: false, enableDamping: true, autoRotate: true, autoRotateSpeed: 0.6, minDistance: 15, maxDistance: 110, minPolarAngle: 0.3, maxPolarAngle: 1.35 })
 
     const resize = () => {

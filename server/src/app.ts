@@ -1,11 +1,15 @@
 import { ELEMENTS, LEVELS, computeMetrics, fallbackResult, scoreRun, validateLayout, type ElementId } from '@road-diet/shared'
 import express from 'express'
 import { existsSync } from 'node:fs'
+import { extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
 import { react, type GeminiConfig } from './gemini'
 
 const CLIENT_DIST = fileURLToPath(new URL('../../client/dist', import.meta.url))
+
+/** Own keys only, so ids like "constructor" or "__proto__" are not levels. */
+export const findLevel = (id: string) => (Object.hasOwn(LEVELS, id) ? LEVELS[id] : undefined)
 
 const ReactInput = z.object({
   levelId: z.string().max(64),
@@ -36,7 +40,7 @@ export function createApp({
     res.json(Object.values(LEVELS).map(({ id, name, corridor }) => ({ id, name, widthM: corridor.widthM })))
   })
   app.get('/api/levels/:id', (req, res) => {
-    const level = LEVELS[req.params.id]
+    const level = findLevel(req.params.id)
     if (level) res.json(level)
     else res.status(404).json({ error: 'not-found' })
   })
@@ -44,7 +48,7 @@ export function createApp({
   app.post('/api/react', async (req, res) => {
     const input = ReactInput.safeParse(req.body)
     if (!input.success) return void res.status(400).json({ error: 'invalid-request' })
-    const level = LEVELS[input.data.levelId]
+    const level = findLevel(input.data.levelId)
     if (!level) return void res.status(404).json({ error: 'not-found' })
     const { layout } = input.data
     const check = validateLayout(layout, level)
@@ -55,6 +59,7 @@ export function createApp({
     const hits = (reactHits.get(req.ip ?? '') ?? []).filter((t) => now - t < 60_000)
     hits.push(now)
     reactHits.set(req.ip ?? '', hits)
+    if (reactHits.size > 1000) for (const [ip, times] of reactHits) if (now - times[times.length - 1] >= 60_000) reactHits.delete(ip)
     if (hits.length > reactPerMinute) return void res.status(429).json(fallbackResult(metrics))
 
     const base = computeMetrics(level.corridor.baselineLayout, level)
@@ -73,7 +78,8 @@ export function createApp({
   // The built game, with an SPA fallback so client-side paths such as /data load the app.
   if (existsSync(clientDist)) {
     app.use(express.static(clientDist))
-    app.get('/{*splat}', (_req, res) => res.sendFile('index.html', { root: clientDist }))
+    // Paths with an extension are files: a missing one (e.g. an old hashed bundle after a redeploy) must 404, not get HTML.
+    app.get('/{*splat}', (req, res, next) => (extname(req.path) ? next() : res.sendFile('index.html', { root: clientDist })))
   }
   return app
 }

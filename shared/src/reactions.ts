@@ -3,9 +3,11 @@ import type { Metrics, PersonaId } from './model/types'
 import { PERSONAS } from './personas'
 
 export type Mood = 'up' | 'flat' | 'down'
-export type Reaction = { personaId: PersonaId; mood: Mood; line: string }
-/** Response of POST /api/react (spec 5.2). `source` drives the "Powered by Gemini" label. */
-export type ReactResult = { reactions: Reaction[]; debrief: string; source: 'gemini' | 'fallback' }
+/** Where a piece of text came from; drives the "Powered by Gemini" label. */
+export type TextSource = 'gemini' | 'fallback'
+export type Reaction = { personaId: PersonaId; mood: Mood; line: string; source: TextSource }
+/** Response of POST /api/react (spec 5.2). Each line and the debrief carry their own source. */
+export type ReactResult = { reactions: Reaction[]; debrief: string; debriefSource: TextSource }
 
 /** Mood comes from the model's numbers, never from Gemini. */
 export const moodFor = (happiness: number, baseline: number): Mood =>
@@ -42,7 +44,7 @@ export const MODE_SHIFT_LIMITATION = `This is a simplified estimate: the model l
 
 export function fallbackReaction(personaId: PersonaId, happiness: number): Reaction {
   const mood = moodFor(happiness, PERSONAS[personaId].baselineHappiness)
-  return { personaId, mood, line: FALLBACK_LINES[personaId][mood] }
+  return { personaId, mood, line: FALLBACK_LINES[personaId][mood], source: 'fallback' }
 }
 
 export function fallbackResult(m: Metrics): ReactResult {
@@ -51,6 +53,6 @@ export function fallbackResult(m: Metrics): ReactResult {
   return {
     reactions: Object.values(PERSONAS).map((p) => fallbackReaction(p.id, m.happiness[p.id])),
     debrief: `With this design, estimated emissions ${emissions} and the least happy resident sits at ${m.fairness.toFixed(0)} out of 100. ${MODE_SHIFT_LIMITATION}`,
-    source: 'fallback',
+    debriefSource: 'fallback',
   }
 }

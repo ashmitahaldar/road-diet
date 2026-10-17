@@ -15,7 +15,7 @@ export default function App() {
       <main className="flex-1">
         <Editor level={level} />
       </main>
-      <footer className="text-sm">Not an election prediction. No candidates or parties.</footer>
+      <footer className="text-sm">A learning tool, not a forecast. Residents are fictional.</footer>
     </div>
   )
 }

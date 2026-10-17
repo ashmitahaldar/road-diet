@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from 'vitest'
 import { ELEMENTS, FALLBACK_LINES, PERSONAS } from '@road-diet/shared'
+import { OFF_LIMITS } from '../src/gemini'
 
 const repo = fileURLToPath(new URL('../..', import.meta.url))
 const sources = (dir: string) =>
@@ -10,9 +11,9 @@ const sources = (dir: string) =>
     .filter((f) => /\.tsx?$/.test(f))
     .map((f) => ({ file: `${dir}/${f}`, text: readFileSync(join(repo, dir, f), 'utf8') }))
 
-test('spec 2.7: no election words anywhere in client or shared source', () => {
+test('spec 2.7: the Gemini off-limits words appear nowhere in client or shared source', () => {
   const hits = [...sources('client/src'), ...sources('shared/src')].flatMap(({ file, text }) =>
-    text.split('\n').flatMap((line, i) => (/\b(vot(e|es|ers?|ing)|elect(ion|ions|oral)|part(y|ies)|candidates?)\b/i.test(line) ? [`${file}:${i + 1}: ${line.trim()}`] : [])),
+    text.split('\n').flatMap((line, i) => (OFF_LIMITS.test(line) ? [`${file}:${i + 1}: ${line.trim()}`] : [])),
   )
   expect(hits).toEqual([])
 })

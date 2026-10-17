@@ -8,7 +8,9 @@
     "start": "tsx src/index.ts",
     "build": "tsc",
     "test": "vitest run",
-    "migrate": "tsx --env-file-if-exists=../.env src/scripts/migrate.ts"
+    "migrate": "tsx --env-file-if-exists=../.env src/scripts/migrate.ts",
+    "seed": "tsx --env-file-if-exists=../.env src/scripts/seed.ts",
+    "refresh": "tsx --env-file-if-exists=../.env src/scripts/refresh.ts"
   },
   "dependencies": {
     "@road-diet/shared": "*",

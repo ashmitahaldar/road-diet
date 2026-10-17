@@ -32,7 +32,7 @@ export function Game({ level }: { level: Level }) {
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-20 xl:pb-0">
+    <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 rounded-2xl border-2 border-ink bg-paper px-4 py-3 shadow-[4px_4px_0_var(--color-ink)]">
         <div>
           <p className="font-display text-lg font-semibold text-primary">Road Diet</p>

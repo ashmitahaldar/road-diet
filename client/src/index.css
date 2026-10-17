@@ -37,22 +37,19 @@ body {
 
 /* Background scene (Background.tsx). Transforms only, so it stays cheap on phones. */
 .bg-move {
+  animation-name: bg-drive;
   animation-duration: var(--dur);
   animation-delay: var(--delay);
   animation-timing-function: linear;
   animation-iteration-count: infinite;
 }
 @keyframes bg-drive {
-  from { transform: translateX(-10vw); }
-  to { transform: translateX(110vw); }
-}
-@keyframes bg-drive-back {
-  from { transform: translateX(110vw) scaleX(-1); }
-  to { transform: translateX(-10vw) scaleX(-1); }
+  from { transform: translateX(-10vw) scaleX(var(--flip, 1)); }
+  to { transform: translateX(110vw) scaleX(var(--flip, 1)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .bg-move {
     animation: none !important;
-    transform: translateX(calc(var(--at) * 100vw));
+    transform: translateX(calc(var(--at) * 100vw)) scaleX(var(--flip, 1));
   }
 }

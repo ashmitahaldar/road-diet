@@ -19,7 +19,7 @@ const CLOUDS = [
 const BUILDINGS = [60, 110, 80, 140, 70, 100, 150, 90, 120, 65, 130, 85, 105, 75, 145, 95]
 
 const moving = (dur: number, at: number, reverse = false): CSSProperties =>
-  ({ '--dur': `${dur}s`, '--delay': `${-dur * at}s`, '--at': at, animationName: reverse ? 'bg-drive-back' : 'bg-drive' }) as CSSProperties
+  ({ '--dur': `${dur}s`, '--delay': `${-dur * at}s`, '--at': at, '--flip': reverse ? -1 : 1, animationDirection: reverse ? 'reverse' : 'normal' }) as CSSProperties
 
 /** Decorative city scene behind every screen. Pure CSS animation; static under prefers-reduced-motion. */
 export function Background({ subtle }: { subtle: boolean }) {

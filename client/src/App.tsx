@@ -20,7 +20,7 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <Background subtle={screen === 'play'} />
-      <div className="mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 py-6">
+      <div className={`mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 pt-6 ${screen === 'play' ? 'pb-24 xl:pb-6' : 'pb-6'}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={screen}

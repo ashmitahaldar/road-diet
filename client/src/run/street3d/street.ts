@@ -34,7 +34,6 @@ const CROSSWALKS = [-45, 45]
 /** Everything that stands still: lanes, curbs, markings, street furniture and the buildings either side. */
 export function buildStreet(lanes: Lane[], widthM: number): Group {
   const g = new Group()
-  const rand = rng(widthM * 1000 + lanes.length)
   const add = (model: ReturnType<typeof props.block>, at: Matrix4[], colors?: Color[]) => at.length && instances(g, model, at, colors)
   const paint = (at: Matrix4[]) => add(props.block('--color-paper', 0), at)
   const crossing = (z: number) => CROSSWALKS.some((c) => Math.abs(z - c) < 3)
@@ -45,6 +44,10 @@ export function buildStreet(lanes: Lane[], widthM: number): Group {
   }
 
   lanes.forEach((lane, i) => {
+    // Seeded by the element's kind and how many of that kind come before it, so its trees and parked cars stay put
+    // when other elements are added, moved or resized.
+    const nth = lanes.slice(0, i).filter((l) => l.id === lane.id).length
+    const rand = rng([...lane.id].reduce((h, c) => h * 31 + c.charCodeAt(0), 7) + nth * 101)
     const next = lanes[i + 1]
     const left = lane.x - lane.widthM / 2
     const right = lane.x + lane.widthM / 2
@@ -96,6 +99,7 @@ export function buildStreet(lanes: Lane[], widthM: number): Group {
 
   // Low-rise main-street fronts: shop windows, awnings, upper windows and a cornice. Generic, no names or logos.
   const half = widthM / 2
+  const rand = rng(widthM * 1000)
   const bodies: Matrix4[] = []
   const shopfronts: Matrix4[] = []
   const awnings: Matrix4[] = []

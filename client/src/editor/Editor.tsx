@@ -15,12 +15,16 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { Button } from '../ui'
 import { ElementIcon, SvgPatterns, VISUALS } from './elementVisuals'
+import { TrafficStrip } from './TrafficStrip'
 
 const PX_PER_M = 48
 const TOP = 20
 const CURB = 12
 const BASE = TOP + 150
 const VIEW_H = BASE + 84
+/** Traffic preview strip drawn above the cross-section, in the same SVG so its lanes line up and scroll together. */
+const PLAN_H = 96
+const PLAN_GAP = 14
 const STEP_M = 0.1
 const DRAG_START_PX = 6
 
@@ -150,81 +154,85 @@ export function Editor({ level, layout, onChange }: Props) {
 
       <BudgetBar layout={layout} W={W} used={used} free={free} announce={drag?.kind !== 'resize'} />
 
+      <p className="-mt-2 text-sm">The strip on top is a live traffic preview: illustrative, not to scale.</p>
       <p className="-mt-2 text-sm sm:hidden">Scroll sideways to see the whole street. Tap a block before dragging it.</p>
       <div className="overflow-x-auto rounded-2xl border-2 border-ink bg-paper px-3 pt-2 shadow-[4px_4px_0_var(--color-ink)]">
         <svg
           ref={svgRef}
-          viewBox={`0 0 ${x(W)} ${VIEW_H}`}
+          viewBox={`0 0 ${x(W)} ${PLAN_H + PLAN_GAP + VIEW_H}`}
           style={{ width: '100%', minWidth: W * 36 }}
           className="overflow-visible"
           role="group"
           aria-label={`Street cross-section, ${W} metres wide, ${layout.elements.length} elements`}
         >
           <SvgPatterns />
-          <AnimatePresence initial={false}>
-            {layout.elements.map((el, i) => {
-              const key = `${el.id}-${layout.elements.slice(0, i).filter((e) => e.id === el.id).length}`
-              const dragged = drag?.kind === 'move' && drag.active && drag.index === i
-              return (
-                <motion.g
-                  key={key}
-                  ref={(node: SVGGElement | null) => {
-                    blockRefs.current[i] = node
-                  }}
-                  initial={{ opacity: 0, x: x(starts[i]), y: -24 }}
-                  animate={{ opacity: dragged ? 0.35 : 1, x: x(starts[i]), y: i === selected ? -6 : 0 }}
-                  exit={{ opacity: 0, y: 40, transition: { duration: reduceMotion ? 0 : 0.18 } }}
-                  transition={transition}
-                  tabIndex={0}
-                  role="button"
-                  aria-pressed={i === selected}
-                  aria-label={`${ELEMENTS[el.id].label}, ${el.widthM.toFixed(1)} metres`}
-                  aria-describedby="editor-keys"
-                  onClick={() => setSelected(i)}
-                  onFocus={() => setSelected(i)}
-                  onKeyDown={onKeyDown(i)}
-                  onPointerDown={startMove(i)}
-                  style={{ touchAction: i === selected ? 'none' : 'auto' }}
-                  className="cursor-grab outline-none"
-                >
-                  <Block id={el.id} w={x(el.widthM)} widthM={el.widthM} prev={layout.elements[i - 1]?.id} next={layout.elements[i + 1]?.id} lifted={i === selected} />
-                </motion.g>
-              )
-            })}
-          </AnimatePresence>
+          <TrafficStrip layout={layout} corridor={level.corridor} height={PLAN_H} pxPerM={PX_PER_M} />
+          <g transform={`translate(0 ${PLAN_H + PLAN_GAP})`}>
+            <AnimatePresence initial={false}>
+              {layout.elements.map((el, i) => {
+                const key = `${el.id}-${layout.elements.slice(0, i).filter((e) => e.id === el.id).length}`
+                const dragged = drag?.kind === 'move' && drag.active && drag.index === i
+                return (
+                  <motion.g
+                    key={key}
+                    ref={(node: SVGGElement | null) => {
+                      blockRefs.current[i] = node
+                    }}
+                    initial={{ opacity: 0, x: x(starts[i]), y: -24 }}
+                    animate={{ opacity: dragged ? 0.35 : 1, x: x(starts[i]), y: i === selected ? -6 : 0 }}
+                    exit={{ opacity: 0, y: 40, transition: { duration: reduceMotion ? 0 : 0.18 } }}
+                    transition={transition}
+                    tabIndex={0}
+                    role="button"
+                    aria-pressed={i === selected}
+                    aria-label={`${ELEMENTS[el.id].label}, ${el.widthM.toFixed(1)} metres`}
+                    aria-describedby="editor-keys"
+                    onClick={() => setSelected(i)}
+                    onFocus={() => setSelected(i)}
+                    onKeyDown={onKeyDown(i)}
+                    onPointerDown={startMove(i)}
+                    style={{ touchAction: i === selected ? 'none' : 'auto' }}
+                    className="cursor-grab outline-none"
+                  >
+                    <Block id={el.id} w={x(el.widthM)} widthM={el.widthM} prev={layout.elements[i - 1]?.id} next={layout.elements[i + 1]?.id} lifted={i === selected} />
+                  </motion.g>
+                )
+              })}
+            </AnimatePresence>
 
-          {free > 0 && (
-            <motion.g aria-hidden initial={false} animate={{ x: x(used) }} transition={transition}>
-              <rect x={4} y={TOP + CURB} width={Math.max(0, x(free) - 8)} height={BASE - TOP - CURB} rx={10} fill="none" stroke="var(--color-ink)" strokeOpacity={0.55} strokeWidth={2} strokeDasharray="6 6" />
-              {x(free) > 40 && (
-                <>
-                  <text x={x(free) / 2} y={BASE + 22} textAnchor="middle" fontSize={13} fill="var(--color-ink)">
-                    Unused
-                  </text>
-                  <text x={x(free) / 2} y={BASE + 40} textAnchor="middle" fontSize={13} fill="var(--color-ink)" className="tabular-nums">
-                    {free.toFixed(1)} m
-                  </text>
-                </>
-              )}
-            </motion.g>
-          )}
+            {free > 0 && (
+              <motion.g aria-hidden initial={false} animate={{ x: x(used) }} transition={transition}>
+                <rect x={4} y={TOP + CURB} width={Math.max(0, x(free) - 8)} height={BASE - TOP - CURB} rx={10} fill="none" stroke="var(--color-ink)" strokeOpacity={0.55} strokeWidth={2} strokeDasharray="6 6" />
+                {x(free) > 40 && (
+                  <>
+                    <text x={x(free) / 2} y={BASE + 22} textAnchor="middle" fontSize={13} fill="var(--color-ink)">
+                      Unused
+                    </text>
+                    <text x={x(free) / 2} y={BASE + 40} textAnchor="middle" fontSize={13} fill="var(--color-ink)" className="tabular-nums">
+                      {free.toFixed(1)} m
+                    </text>
+                  </>
+                )}
+              </motion.g>
+            )}
 
-          {sel && selected !== null && !carrying && (
-            <motion.g aria-hidden initial={false} animate={{ x: x(starts[selected]), y: -6 }} transition={transition}>
-              <rect x={-2} y={TOP - 4} width={x(sel.widthM) + 4} height={BASE - TOP + 8} rx={8} fill="none" stroke="var(--color-primary)" strokeWidth={4} pointerEvents="none" />
-              <Handle cx={0} onPointerDown={startResize(selected, -1)} />
-              <Handle cx={x(sel.widthM)} onPointerDown={startResize(selected, 1)} />
-            </motion.g>
-          )}
+            {sel && selected !== null && !carrying && (
+              <motion.g aria-hidden initial={false} animate={{ x: x(starts[selected]), y: -6 }} transition={transition}>
+                <rect x={-2} y={TOP - 4} width={x(sel.widthM) + 4} height={BASE - TOP + 8} rx={8} fill="none" stroke="var(--color-primary)" strokeWidth={4} pointerEvents="none" />
+                <Handle cx={0} onPointerDown={startResize(selected, -1)} />
+                <Handle cx={x(sel.widthM)} onPointerDown={startResize(selected, 1)} />
+              </motion.g>
+            )}
 
-          {dropSlot !== null && dropSlot !== undefined && (
-            <g aria-hidden pointerEvents="none">
-              <rect x={x(starts[dropSlot] ?? used) - 3} y={TOP - 12} width={6} height={BASE - TOP + 20} rx={3} fill="var(--color-primary)" />
-              <path d={`M${x(starts[dropSlot] ?? used) - 9} ${TOP - 18} h18 l-9 10 z`} fill="var(--color-primary)" />
-            </g>
-          )}
+            {dropSlot !== null && dropSlot !== undefined && (
+              <g aria-hidden pointerEvents="none">
+                <rect x={x(starts[dropSlot] ?? used) - 3} y={TOP - 12} width={6} height={BASE - TOP + 20} rx={3} fill="var(--color-primary)" />
+                <path d={`M${x(starts[dropSlot] ?? used) - 9} ${TOP - 18} h18 l-9 10 z`} fill="var(--color-primary)" />
+              </g>
+            )}
 
-          <Ruler W={W} />
+            <Ruler W={W} />
+          </g>
         </svg>
       </div>
 

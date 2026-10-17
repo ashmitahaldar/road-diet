@@ -13,9 +13,10 @@ import {
 } from '@road-diet/shared'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
-import { Button } from '../ui'
 import { ElementIcon, SvgPatterns, VISUALS } from './elementVisuals'
 import { TrafficStrip } from './TrafficStrip'
+import { Button } from '../ui'
+import { BudgetBar, Palette, SelectionBar, STEP_M } from './controls'
 
 const PX_PER_M = 48
 const TOP = 20
@@ -25,7 +26,6 @@ const VIEW_H = BASE + 84
 /** Traffic preview strip drawn above the cross-section, in the same SVG so its lanes line up and scroll together. */
 const PLAN_H = 96
 const PLAN_GAP = 14
-const STEP_M = 0.1
 const DRAG_START_PX = 6
 
 /** `slot` is the gap (0..n) the dragged item would drop into, or null when off the street. */
@@ -34,9 +34,9 @@ type Drag =
   | { kind: 'move'; index: number; startX: number; startY: number; x: number; y: number; active: boolean; slot: number | null }
   | { kind: 'add'; id: ElementId; startX: number; startY: number; x: number; y: number; active: boolean; slot: number | null }
 
-type Props = { level: Level; layout: Layout; onChange: (layout: Layout) => void }
+type Props = { level: Level; layout: Layout; onChange: (layout: Layout) => void; onOpen3d?: () => void }
 
-export function Editor({ level, layout, onChange }: Props) {
+export function Editor({ level, layout, onChange, onOpen3d }: Props) {
   const [selected, setSelected] = useState<number | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -150,9 +150,10 @@ export function Editor({ level, layout, onChange }: Props) {
           Street cross-section
         </h2>
         <p className="text-sm">Drag cards onto the street. Drag a block to move it, or its handles to resize it.</p>
+        {onOpen3d && <Button onClick={onOpen3d}>Edit in 3D</Button>}
       </div>
 
-      <BudgetBar layout={layout} W={W} used={used} free={free} announce={drag?.kind !== 'resize'} />
+      <BudgetBar layout={layout} level={level} announce={drag?.kind !== 'resize'} />
 
       <p className="-mt-2 text-sm">The strip on top is a live traffic preview: illustrative, not to scale.</p>
       <p className="-mt-2 text-sm sm:hidden">Scroll sideways to see the whole street. Tap a block before dragging it.</p>
@@ -236,72 +237,9 @@ export function Editor({ level, layout, onChange }: Props) {
         </svg>
       </div>
 
-      <div className="sm:order-1">
-        <h3 className="font-display text-lg font-semibold">Add to the street</h3>
-        <p className="mb-3 text-sm">
-          {free === 0
-            ? 'The street is full. Make a block narrower or remove one to make room.'
-            : `${free.toFixed(1)} m free. Drag a card by its icon to a spot on the street, or press it to add ${selected === null ? 'at the end' : 'after the selected block'}.`}
-        </p>
-        <div role="group" aria-label="Street elements" className="-mx-4 flex gap-3 overflow-x-auto px-4 pt-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-0">
-          {level.allowedElements.map((id) => {
-            const def = ELEMENTS[id]
-            const fits = addElement(layout, level, id) !== layout
-            return (
-              <button
-                key={id}
-                type="button"
-                aria-disabled={!fits}
-                onPointerDown={fits ? startAdd(id) : undefined}
-                onClick={() => fits && add(id)}
-                className={`relative flex min-h-11 w-32 min-w-0 shrink-0 flex-col items-start gap-1 rounded-2xl border-2 border-ink p-2 text-left sm:w-auto sm:p-3 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                  fits ? 'cursor-grab bg-paper shadow-[3px_3px_0_var(--color-ink)] hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none' : 'cursor-not-allowed border-dashed bg-grid'
-                }`}
-              >
-                <span className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center">
-                  <span aria-hidden data-drag-handle className="grid size-10 shrink-0 touch-none place-items-center rounded-xl border-2 border-ink" style={{ background: VISUALS[id].color }}>
-                    <span className="grid size-8 place-items-center rounded-full bg-paper">
-                      <ElementIcon id={id} size={24} />
-                    </span>
-                  </span>
-                  <span className="min-w-0 font-semibold leading-tight break-words"><span className="sr-only">Add </span>{def.label}</span>
-                </span>
-                <span className="hidden text-sm tabular-nums sm:inline">
-                  {def.defaultW} m · {def.minW}–{def.maxW} m
-                </span>
-                {!fits && (
-                  <span className="text-sm font-medium tabular-nums">Needs {def.minW} m</span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      <Palette level={level} layout={layout} selected={selected} onAdd={add} startAdd={startAdd} />
 
-      <div className="flex min-h-11 flex-wrap items-center gap-2">
-        {sel && selected !== null ? (
-          <>
-            <span className="mr-2 font-semibold">
-              {ELEMENTS[sel.id].label} · <span className="tabular-nums">{sel.widthM.toFixed(1)} m</span>
-            </span>
-            <Button aria-label="Narrower by 0.1 metres" disabled={resizeElement(layout, level, selected, -STEP_M) === layout} onClick={() => resize(selected, -STEP_M)}>
-              −
-            </Button>
-            <Button aria-label="Wider by 0.1 metres" disabled={resizeElement(layout, level, selected, STEP_M) === layout} onClick={() => resize(selected, STEP_M)}>
-              +
-            </Button>
-            <Button aria-label="Move left" disabled={moveElement(layout, selected, -1) === layout} onClick={() => move(selected, -1)}>
-              ◀
-            </Button>
-            <Button aria-label="Move right" disabled={moveElement(layout, selected, 1) === layout} onClick={() => move(selected, 1)}>
-              ▶
-            </Button>
-            <Button onClick={() => remove(selected)}>Remove</Button>
-          </>
-        ) : (
-          <span>Select a block to resize, move or remove it.</span>
-        )}
-      </div>
+      <SelectionBar level={level} layout={layout} selected={selected} resize={resize} move={move} remove={remove} />
       <p id="editor-keys" className="-mt-2 text-sm">
         Keyboard: Tab to a block, ← / → resize by 0.1 m, Alt + ← / → move it, Delete removes it.
       </p>
@@ -321,33 +259,6 @@ export function Editor({ level, layout, onChange }: Props) {
         </div>
       )}
     </section>
-  )
-}
-
-function BudgetBar({ layout, W, used, free, announce }: { layout: Layout; W: number; used: number; free: number; announce: boolean }) {
-  return (
-    <div className="relative">
-      <div className="mb-1 flex flex-wrap justify-between gap-2">
-        <span className="font-display text-lg font-semibold">{W} m budget</span>
-        <span className="tabular-nums">
-          <strong>{used.toFixed(1)} m</strong> used · <strong>{free.toFixed(1)} m</strong> unused
-        </span>
-      </div>
-      {/* Silent while a resize drag is in progress, so screen readers hear the final width, not every 0.1 m step. */}
-      <p aria-live="polite" className="sr-only">
-        {announce ? `${used.toFixed(1)} metres used, ${free.toFixed(1)} unused` : ''}
-      </p>
-      <div aria-hidden className="flex h-7 overflow-hidden rounded-full border-2 border-ink bg-paper">
-        {layout.elements.map((el, i) => (
-          <div
-            key={i}
-            className="border-r-2 border-ink transition-[flex-basis] duration-150 last:border-r-0 motion-reduce:transition-none"
-            style={{ flexBasis: `${(el.widthM / W) * 100}%`, background: VISUALS[el.id].color }}
-          />
-        ))}
-        {free > 0 && <div className="flex-1 bg-[repeating-linear-gradient(45deg,transparent_0_6px,var(--color-grid)_6px_12px)]" />}
-      </div>
-    </div>
   )
 }
 

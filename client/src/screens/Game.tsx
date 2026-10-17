@@ -120,10 +120,10 @@ export function Game({ level }: { level: Level }) {
         </p>
       </header>
       <main className="grid flex-1 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        {stage && run ? (
+        {stage && webgl && !reduce ? (
           <section aria-labelledby="stage-title" className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 id="stage-title" className="font-display text-2xl font-semibold">
+              <h2 id="stage-title" tabIndex={-1} className="font-display text-2xl font-semibold outline-none">
                 Your street in 3D
               </h2>
               <Button
@@ -132,7 +132,7 @@ export function Game({ level }: { level: Level }) {
                   document.getElementById('editor-title')?.focus()
                 }}
               >
-                Edit street
+                Edit in 2D
               </Button>
             </div>
             <Fallback
@@ -142,12 +142,24 @@ export function Game({ level }: { level: Level }) {
               }}
             >
               <Suspense fallback={<div className="h-[min(60dvh,34rem)] min-h-72 animate-pulse rounded-2xl border-2 border-ink bg-grid motion-reduce:animate-none" />}>
-                <Street3D level={level} layout={run.layout} />
+                <Street3D level={level} layout={layout} onChange={setLayout} />
               </Suspense>
             </Fallback>
           </section>
         ) : (
-          <Editor level={level} layout={layout} onChange={setLayout} />
+          <Editor
+            level={level}
+            layout={layout}
+            onChange={setLayout}
+            onOpen3d={
+              webgl && !reduce
+                ? () => {
+                    flushSync(() => setStage(true))
+                    document.getElementById('stage-title')?.focus()
+                  }
+                : undefined
+            }
+          />
         )}
         <RunPanel level={level} base={base} shown={shown} running={running} runId={runId} onRun={runDay} onShowScore={() => setScoreOpen(true)} />
       </main>

@@ -32,5 +32,3 @@ export const PLACEHOLDER_LEVEL: Level = {
   goal: { minEmissionsReductionPct: 20, minHappiness: 40 },
   stars: { safety: 55, fairness: 55 },
 }
-
-export const LEVELS: Record<string, Level> = { placeholder: PLACEHOLDER_LEVEL }

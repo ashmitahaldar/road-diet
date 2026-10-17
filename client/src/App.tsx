@@ -1,4 +1,4 @@
-import { PLACEHOLDER_LEVEL } from '@road-diet/shared'
+import { BLOOR_LEVEL } from '@road-diet/shared'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useRef, useState } from 'react'
 import { Background } from './Background'
@@ -9,7 +9,7 @@ import { Start } from './screens/Start'
 type Screen = 'start' | 'briefing' | 'play'
 
 export default function App() {
-  const level = PLACEHOLDER_LEVEL
+  const level = BLOOR_LEVEL
   const [screen, setScreen] = useState<Screen>('start')
   const view = useRef<HTMLDivElement>(null)
   const go = (next: Screen) => {

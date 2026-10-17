@@ -1,4 +1,4 @@
-import { LEVELS } from './levels/placeholder'
+import { LEVELS } from './levels'
 import { ELEMENTS, MODEL, TODO_SOURCE } from './model/constants'
 
 /** Paths of every object tagged `source: TODO-SOURCE`, e.g. `elements.car_lane`. Feeds the limitations panel. */

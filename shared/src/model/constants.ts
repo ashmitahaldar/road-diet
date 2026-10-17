@@ -1,4 +1,4 @@
-import type { BikeFacility, ElementDef, ElementId, Sourced } from './types'
+import type { BikeFacility, ElementDef, ElementId, Mode, Sourced } from './types'
 
 /** Marks a number with no verified source yet; listed in the in-app limitations. */
 export const TODO_SOURCE = 'TODO-SOURCE'
@@ -40,4 +40,20 @@ export const MODEL = {
   shiftSensitivity: { value: 2, source: TODO_SOURCE },
   maxShiftPerMode: { value: 0.15, source: TODO_SOURCE },
   maxTotalShift: { value: 0.25, source: TODO_SOURCE },
+
+  // Spec 3.5-3.7
+  emissionFactorKgPerPkm: { value: { car: 0.17, bus: 0.08, bike: 0, walk: 0 }, source: TODO_SOURCE } as Sourced<Record<Mode, number>>,
+  bikeFacilityRisk: { value: { none: 1, painted: 0.7, protected: 0.4 }, source: TODO_SOURCE } as Sourced<Record<BikeFacility, number>>,
+  /** Added risk per car lane (more lanes, higher speeds). */
+  carLaneRisk: { value: 0.15, source: TODO_SOURCE },
+  /** Painted bike lane next to parking with no buffer. */
+  doorZoneRisk: { value: 1.3, source: TODO_SOURCE },
+  /** Planter or parking between a sidewalk and traffic. */
+  bufferRisk: { value: 0.85, source: TODO_SOURCE },
+  /** Sidewalk + planter + patio width at which comfort maxes out. */
+  comfortRefWidthM: { value: 8, source: TODO_SOURCE },
+  /** Parking + 2 x loading width at which curb access maxes out. */
+  curbRefWidthM: { value: 4.8, source: TODO_SOURCE },
+  /** Happiness points lost per metre of unused width. */
+  unusedPenaltyPerM: { value: 2, source: TODO_SOURCE },
 } satisfies Record<string, Sourced<unknown>>

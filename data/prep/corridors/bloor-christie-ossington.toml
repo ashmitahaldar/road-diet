@@ -7,6 +7,7 @@ name = "Bloor St W (Christie St to Ossington Ave)"
 retrieved = "2026-10-17"
 
 [segment]
+street = "Bloor St W"
 # Toronto Centreline v2 segments named "Bloor St W" on the path from the Christie St intersection
 # (13464635) to the Ossington Ave intersection (13464908).
 centreline_ids = [1143319, 1143498, 1143545, 1143576, 10877626, 30039478, 30039479, 30039482, 60088092]
@@ -25,6 +26,7 @@ peak = "pm"
 car_occupancy = 1.0
 # Subway Line 2 runs under Bloor St W; no daytime surface bus route on this segment, so no bus demand on the street.
 bus_persons_per_hour = 0
+bus_note = "Subway Line 2 runs below; no daytime surface bus on this segment."
 
 [safety]
 buffer_m = 30

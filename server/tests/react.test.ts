@@ -1,10 +1,10 @@
-import { PLACEHOLDER_LEVEL, type ReactResult } from '@road-diet/shared'
+import { BLOOR_LEVEL, type ReactResult } from '@road-diet/shared'
 import type { AddressInfo } from 'node:net'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { createApp } from '../src/app'
 import type { GeminiConfig } from '../src/gemini'
 
-const baseline = PLACEHOLDER_LEVEL.corridor.baselineLayout
+const baseline = BLOOR_LEVEL.corridor.baselineLayout
 const KEY = 'test-key-not-real'
 const servers: { close: () => void }[] = []
 afterEach(() => servers.splice(0).forEach((s) => s.close()))
@@ -15,7 +15,7 @@ async function start(gemini: GeminiConfig, reactPerMinute = 20) {
   servers.push(server)
   await new Promise((r) => server.once('listening', r))
   const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/react`
-  return async (body: unknown = { levelId: 'placeholder', layout: baseline }) => {
+  return async (body: unknown = { levelId: BLOOR_LEVEL.id, layout: baseline }) => {
     const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
     const text = await res.text()
     return { status: res.status, text, json: JSON.parse(text) as ReactResult }
@@ -111,12 +111,12 @@ test('a debrief mentioning a party is replaced by the fallback debrief', async (
 test('bad input is rejected before any model call', async () => {
   const fake = geminiReply(good)
   const post = await start({ apiKey: KEY, model: 'gemini-test', fetch: fake })
-  expect((await post({ levelId: 'placeholder', layout: { elements: [{ id: 'monorail', widthM: 3 }] } })).status).toBe(400)
-  expect((await post({ levelId: 'placeholder', layout: { elements: [...baseline.elements, { id: 'planter', widthM: 2 }] } })).status).toBe(400)
+  expect((await post({ levelId: BLOOR_LEVEL.id, layout: { elements: [{ id: 'monorail', widthM: 3 }] } })).status).toBe(400)
+  expect((await post({ levelId: BLOOR_LEVEL.id, layout: { elements: [...baseline.elements, { id: 'planter', widthM: 2 }] } })).status).toBe(400)
   expect((await post({ levelId: 'nowhere', layout: baseline })).status).toBe(404)
   expect((await post({ levelId: 'constructor', layout: baseline })).status).toBe(404)
   expect((await post('just a string')).status).toBe(400)
-  expect((await post({ levelId: 'placeholder', layout: baseline, pad: 'x'.repeat(20_000) })).status).toBe(413)
+  expect((await post({ levelId: BLOOR_LEVEL.id, layout: baseline, pad: 'x'.repeat(20_000) })).status).toBe(413)
   expect(fake).not.toHaveBeenCalled()
 })
 

@@ -151,30 +151,39 @@ Keep a recorded backup of this exact flow.
 
 ### 1.9 Feature priority
 
+**Lean scope.** Items cut from Must/Should are kept under Stretch and marked with their old ID.
+
 **Must (ship or don't submit)**
-- M1. One level on a real corridor with real baseline data.
-- M2. 2D cross-section editor with fixed total width and 6+ element types.
-- M3. Model: emissions, travel time per persona, safety, happiness, fairness.
-- M4. Five personas, each with a daily trip and mood.
-- M5. Scorecard with target check and 1–3 stars.
+- M1. One level on one real corridor with real baseline data.
+- M2. 2D cross-section editor with fixed total width and 7 elements: sidewalk, car lane, bus lane, painted bike lane, protected bike lane, parking, planter.
+- M3. Model: capacity, capped mode shift, congestion, emissions, safety index, happiness, fairness.
+- M4. Four personas: delivery driver, student cyclist, senior pedestrian, shop owner.
+- M5. Scorecard with goal check and 1–3 stars.
 - M6. Deployed on Vultr with HTTPS and a custom domain.
 - M7. Data & Limitations page with all sources linked.
 - M8. Gemini persona reactions with canned fallback.
 
 **Should**
-- S1. Planner debrief (Gemini) at end of level.
-- S2. Tiger Data run logging + "how others solved it".
-- S3. Second level/corridor.
-- S4. Random events (snowstorm, festival, delivery surge, collision).
-- S5. Sound effects and juicy feedback (meter animations, persona bounce).
-- S6. Shareable result card (image or link).
-- S7. Corridor map panel: a read-only map of the real corridor on the level briefing, showing context data.
+- S1. One Gemini call that returns persona reactions plus a 2–3 sentence debrief.
+- S2. Tiger Data run logging, one continuous aggregate, one stats endpoint and one chart ("how others solved this street").
+- S3. The three badges, the percentile line and the "Copy my result" text button (section 2.7).
 
-**Could / Stretch**
-- C1. Read-only 3D street view (Three.js) rendering the same layout data. Time-box 3 hours. Cut if unstable.
-- C2. "Political capital" resource that limits big changes.
-- C3. Animated traffic strip above the editor.
-- C4. Unlockable tools across levels.
+**Stretch (do not build unless everything above is done and deployed)**
+- Random events: snowstorm, festival, delivery surge, collision. *(was S4)*
+- Sound effects and juicy feedback: meter animations, persona bounce. *(was S5)*
+- Level 2: a second level/corridor. *(was S3)*
+- Shareable result image card. *(was S6)*
+- Corridor map panel: a read-only map of the real corridor on the level briefing, showing context data (section 8c). *(was S7)*
+- "Political capital" resource that limits big changes. *(was C2)*
+- Town-hall round.
+- Daily challenge.
+- Read-only 3D street view (Three.js) rendering the same layout data. Time-box 3 hours. Cut if unstable. *(was C1)*
+- Animated traffic strip above the editor. *(was C3)*
+- Unlockable tools across levels. *(was C4)*
+- Loading zone and patio elements (section 2.2). *(cut from M2)*
+- The parent-with-stroller persona (section 2.3). *(cut from M4)*
+- Extra datasets: TTC delay, Bike Share, parks, child care (section 4.2).
+- Separate end-of-level planner debrief. *(was S1; folded into the single Gemini call)*
 
 ---
 
@@ -195,9 +204,11 @@ Each has a default width, min/max width, and properties used by the model. Value
 | `bus_lane` | Bus lane | 3.3 | 3–3.7 | High person throughput, transit speed |
 | `car_lane` | Car lane | 3.3 | 3–3.7 | Vehicle throughput, emissions |
 | `parking` | On-street parking | 2.4 | 2–2.7 | Shop access, blocks space, door-zone risk |
-| `loading` | Loading zone | 3.0 | 2.5–3.5 | Deliveries, shop access |
+| `loading` | Loading zone **(Stretch)** | 3.0 | 2.5–3.5 | Deliveries, shop access |
 | `planter` | Trees/planting strip | 1.5 | 1–3 | Comfort, buffer, small safety gain |
-| `patio` | Patio/public space | 2.0 | 1.5–4 | Shop revenue, comfort |
+| `patio` | Patio/public space **(Stretch)** | 2.0 | 1.5–4 | Shop revenue, comfort |
+
+Lean scope: the 7 elements without **(Stretch)** are Must. Loading zone and patio keep their definitions for later.
 
 ### 2.3 Personas (fictional composites, never real people)
 | id | Name (example) | Trip | Cares about |
@@ -205,22 +216,35 @@ Each has a default width, min/max width, and properties used by the model. Value
 | `driver_delivery` | Marco, delivery driver | Drives a route, loads at shops | Car/loading capacity, travel time |
 | `student_cyclist` | Priya, student | Bikes to campus | Bike safety, bike continuity |
 | `senior_walker` | Mr. Okafor, senior | Walks to pharmacy and grocery | Sidewalk width, crossings, comfort, nearby parking/loading |
-| `parent_stroller` | Dana, parent with stroller | Walks to daycare, uses transit | Sidewalk, buffer from traffic, bus reliability |
+| `parent_stroller` | Dana, parent with stroller **(Stretch)** | Walks to daycare, uses transit | Sidewalk, buffer from traffic, bus reliability |
 | `shop_owner` | Lin, shop owner | Runs a store on the street | Foot traffic, loading, patio, parking |
 
 Each persona has: `id`, `name`, `blurb`, `weights` (over metrics), `trip` (mode, distance in km), `baselineHappiness`.
 
+Lean scope: the 4 personas without **(Stretch)** are Must. The parent persona keeps its definition for later.
+
 ### 2.4 Levels
 - **Level 1 (required):** one real corridor, simple, goal on emissions + minimum happiness.
-- **Level 2 (should):** a harder context (e.g. streetcar line or narrow downtown block) with a different goal such as safety.
+- **Level 2 (Stretch; was Should):** a harder context (e.g. streetcar line or narrow downtown block) with a different goal such as safety.
 - Each level JSON declares: corridor id, width `W`, baseline layout, baseline demand, allowed elements, goal, star thresholds.
 
-### 2.5 Events (Should)
+### 2.5 Events (Stretch; was Should)
 Applied before "Run a day", with visible modifiers: snowstorm (bike use down, bus delay up), festival (pedestrian demand up), delivery surge (loading demand up), collision (safety weight up for that round).
 
 ### 2.6 Scoring and stars
 - Level goal: set of constraints, e.g. `emissionsReductionPct >= 20` and `min(personaHappiness) >= 40`.
 - Stars: 1 = goal met; 2 = goal met and safety score >= threshold; 3 = goal met, safety >= threshold, fairness (min persona happiness) >= higher threshold.
+
+### 2.7 Gamification (lean)
+- Level goal with 1–3 stars, as specified in 2.6.
+- Badges (thresholds are configurable constants):
+  - **Fair Share:** minimum persona happiness >= 60.
+  - **Low-Carbon Street:** `emissionsReductionPct >= 30` AND minimum persona happiness >= 40.
+  - **Everyone's Second Choice:** spread (max minus min persona happiness) <= 25 AND minimum >= 40.
+- Percentile line on the results screen, from the Tiger Data stats endpoint (for example "you scored higher on fairness than X% of runs"). Hide it when fewer than 20 runs exist.
+- "Copy my result" button: copies a short text summary (stars, badge names, kg CO2e change, game URL) to the clipboard.
+- **Neutrality rule:** scoring and badges must reward balance, fairness and meeting stated goals. No score, badge or message may reward removing or keeping car lanes, bike lanes or parking as such. Do not use the words vote, election, party or candidate in game copy.
+- Keep the Data and Limitations link visible on the scorecard.
 
 ---
 
@@ -570,7 +594,7 @@ Labels show width in metres on or directly under each block.
 
 ---
 
-## 8c. Corridor Map Panel
+## 8c. Corridor Map Panel (Stretch; was Should S7)
 
 - **Purpose:** make the real Toronto data visible in the first 10 seconds of a level (supports the School of Cities "urban insight" and "uses Toronto data" criteria). It is read-only context, not a game mechanic.
 - **Default implementation:** a static SVG generated in `data/prep` from the corridor's GeoJSON (corridor line, nearby bike lanes, transit stops, aggregated collision counts), saved to `data/corridors/<id>.map.svg` and rendered in the level briefing. No third-party tile service, no API keys, no network dependency at demo time.
@@ -585,28 +609,15 @@ Labels show width in metres on or directly under each block.
 
 ## 9. Milestones (fits the developer's schedule)
 
-**Block 1 — Fri ~10 PM–1/2 AM**
-1. Scaffold monorepo, git init, GitHub repo, CI-less.
-2. Shared model skeleton + tests; one hardcoded corridor and level.
-3. Editor + meters + scorecard (Must M1–M5, with placeholder data).
-4. Deploy bare version to Vultr with HTTPS + domain (M6).
-5. *Developer sleeps. Do not start new work after this.*
+**Friday (~3.5 h):** scaffold, model and tests, editor + meters + personas + scorecard, deploy.
 
-**Sat 10 AM–6 PM: developer is at another event. No work expected.**
+**Saturday evening (~5.5 h):** corridor JSON and sourced constants, Gemini call, Tiger Data, badges and percentile, buffer.
 
-**Block 3 — Sat ~7 PM–1 AM**
-1. Replace placeholder data with real corridor data from the workshop (M1, M7).
-2. Gemini reactions with fallback (M8), debrief (S1).
-3. Tiger Data logging + stats (S2).
-4. Events (S4) and sound/feedback (S5).
+**Sunday morning (~2 h):** phone and keyboard check, neutrality review, demo video, Devpost, **submit by 9:00 AM**.
 
-**Block 4 — Sun ~7–9 AM**
-1. Bug fixes, limitations page review, responsive check.
-2. Backup demo video (screen recording, under 2 min).
-3. Devpost submission: draft in `docs/DEVPOST.md`, answer the School of Cities questions, list all data sources, opt in to all target prizes.
-4. **Submit by 9:00 AM.**
+**Fallback rule:** if you are behind at the end of the first hour on Saturday, use canned persona lines and skip the percentile line before cutting anything else.
 
-**Cut order if behind:** C-items → S6 → S4 → S3 → S5 → S2 → S1. Never cut M-items.
+**Cut order if behind:** Stretch items → S3 → S2 → S1. Never cut M-items.
 
 ---
 

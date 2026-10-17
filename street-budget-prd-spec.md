@@ -83,6 +83,7 @@ Rule: every targeted prize needs (a) a feature a judge can see in under 10 secon
 | Responsible interpretation | Visible Limitations panel on the scorecard (not only a separate page); fictional personas labelled; no neighbourhood rankings |
 | AI integration with intention | Gemini persona reactions and debrief are computed from model output, cite the numbers used, and say what they cannot know |
 | Accessibility | Keyboard-operable editor, text labels beside colours, works at phone width |
+| Meaningful use of Toronto data | Corridor map panel on the level briefing, with linked sources |
 Format fit: their listed formats include "scenario explorer"; their listed prompt includes "What would changing how we use road space actually do?" Quote that prompt in the Devpost.
 
 **Best Climate Action & Sustainability (HTV theme prize)**
@@ -167,6 +168,7 @@ Keep a recorded backup of this exact flow.
 - S4. Random events (snowstorm, festival, delivery surge, collision).
 - S5. Sound effects and juicy feedback (meter animations, persona bounce).
 - S6. Shareable result card (image or link).
+- S7. Corridor map panel: a read-only map of the real corridor on the level briefing, showing context data.
 
 **Could / Stretch**
 - C1. Read-only 3D street view (Three.js) rendering the same layout data. Time-box 3 hours. Cut if unstable.
@@ -328,10 +330,12 @@ Plan to confirm each after the School of Cities data workshop and the "Toronto C
   "baselineDemand": { "car": 0, "bus": 0, "bike": 0, "walk": 0 },
   "baselineSafety": { "ksiCollisions5y": 0, "pedestrianInvolved": 0, "cyclistInvolved": 0 },
   "freeFlowSpeedKph": 30,
-  "sources": [{ "label": "", "url": "", "retrieved": "YYYY-MM-DD", "note": "" }]
+  "sources": [{ "label": "", "url": "", "retrieved": "YYYY-MM-DD", "note": "" }],
+  "mapSvg": "data/corridors/example-corridor.map.svg"
 }
 ```
 Numbers above are structure only; fill from real data.
+`mapSvg` is optional: the path to the generated corridor map SVG (see 8c).
 
 ---
 
@@ -563,6 +567,19 @@ Labels show width in metres on or directly under each block.
 1. Set up tokens, fonts and base components (button, card, meter, chip, modal) first.
 2. Build the editor first and share a screenshot with the developer before building other screens.
 3. Do not introduce new colours, fonts or component styles outside this section without asking.
+
+---
+
+## 8c. Corridor Map Panel
+
+- **Purpose:** make the real Toronto data visible in the first 10 seconds of a level (supports the School of Cities "urban insight" and "uses Toronto data" criteria). It is read-only context, not a game mechanic.
+- **Default implementation:** a static SVG generated in `data/prep` from the corridor's GeoJSON (corridor line, nearby bike lanes, transit stops, aggregated collision counts), saved to `data/corridors/<id>.map.svg` and rendered in the level briefing. No third-party tile service, no API keys, no network dependency at demo time.
+- **Upgrade path (only if all Must and Should items are done):** a Leaflet map with a basemap. If used, use a tile provider whose free tier and terms allow a deployed hackathon site, include attribution, and keep the static SVG as a fallback if tiles fail to load.
+- **Content rules:** highlight the corridor; show a legend; show collisions only as aggregated counts or density, never individual incident details; link and credit all data sources, including OpenStreetMap attribution, on the map and on the `/data` page.
+- **Style:** follow section 8b tokens (flat shapes, paper background, 2px ink outlines, pattern + label for each layer, not colour alone).
+- **Accessibility:** provide a text alternative describing what the map shows and the key numbers.
+- **Performance:** the map must not slow the level briefing on a phone.
+- **Schema:** optional corridor JSON field `"mapSvg": "<path to the generated svg>"` (section 4.4).
 
 ---
 

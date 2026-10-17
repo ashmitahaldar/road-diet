@@ -1,4 +1,4 @@
-import { PLACEHOLDER_LEVEL, type LevelStats } from '@road-diet/shared'
+import { BLOOR_LEVEL, type LevelStats } from '@road-diet/shared'
 import type { AddressInfo } from 'node:net'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { createApp } from '../src/app'
@@ -7,17 +7,17 @@ import { migrate } from '../src/migrate'
 import { refreshAggregate } from '../src/runs'
 import { freshSchema, url } from './helpers'
 
-const baseline = PLACEHOLDER_LEVEL.corridor.baselineLayout
+const baseline = BLOOR_LEVEL.corridor.baselineLayout
+// Bloor with one car lane turned into trees and a wider bike lane.
 const redesign = {
   elements: [
-    { id: 'sidewalk', widthM: 2.5 },
+    { id: 'sidewalk', widthM: 3.7 },
+    { id: 'bike_protected', widthM: 1.8 },
     { id: 'parking', widthM: 2.4 },
-    { id: 'car_lane', widthM: 3.4 },
-    { id: 'bike_protected', widthM: 2 },
-    { id: 'planter', widthM: 1.4 },
-    { id: 'car_lane', widthM: 3.4 },
-    { id: 'parking', widthM: 2.4 },
-    { id: 'sidewalk', widthM: 2.5 },
+    { id: 'car_lane', widthM: 3.3 },
+    { id: 'planter', widthM: 3 },
+    { id: 'bike_protected', widthM: 2.1 },
+    { id: 'sidewalk', widthM: 3.7 },
   ],
 }
 const servers: { close: () => void }[] = []
@@ -30,9 +30,9 @@ async function start(db: Db | null, runsPerMinute = 20, statsPerMinute = 60) {
   await new Promise((r) => server.once('listening', r))
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
   return {
-    save: (layout: unknown, levelId = 'placeholder') =>
+    save: (layout: unknown, levelId = BLOOR_LEVEL.id) =>
       fetch(`${base}/runs`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ levelId, layout }) }),
-    stats: (levelId = 'placeholder') => fetch(`${base}/stats/${levelId}`),
+    stats: (levelId = BLOOR_LEVEL.id) => fetch(`${base}/stats/${levelId}`),
   }
 }
 
@@ -71,7 +71,7 @@ describe.skipIf(!url)('with a database (needs TEST_DATABASE_URL)', () => {
     expect(s.demoPlays).toBe(0)
     expect(s.starCounts.reduce((a, b) => a + b, 0)).toBe(3)
     expect(s.starCounts[stars]).toBeGreaterThanOrEqual(2)
-    expect(s.topMix).toEqual({ elements: { sidewalk: 2, parking: 2, car_lane: 2, bike_protected: 1, planter: 1 }, plays: 2 })
+    expect(s.topMix).toEqual({ elements: { sidewalk: 2, bike_protected: 2, parking: 1, car_lane: 1, planter: 1 }, plays: 2 })
     expect(s.avgEmissionsReductionPct).toBeGreaterThan(0)
   })
 
@@ -83,6 +83,15 @@ describe.skipIf(!url)('with a database (needs TEST_DATABASE_URL)', () => {
     expect(await refreshAggregate(db)).toBe(true)
     await api.save(redesign)
     expect(((await (await api.stats()).json()) as LevelStats).plays).toBe(2)
+  })
+
+  test('concurrent refreshes wait for each other instead of failing', async () => {
+    const { db } = await freshSchema()
+    await migrate(db)
+    await db.query(
+      "INSERT INTO runs (level_id, layout, emissions_reduction_pct, safety_score, fairness, stars, created_at) SELECT 'l', '{}', 1, 1, 1, 1, now() - (g || ' hours')::interval FROM generate_series(2, 2000) g",
+    )
+    expect(await Promise.all([refreshAggregate(db), refreshAggregate(db), refreshAggregate(db)])).toEqual([true, true, true])
   })
 
   test('refresh is a no-op on a plain view and throws on a real error', async () => {

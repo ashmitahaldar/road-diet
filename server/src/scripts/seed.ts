@@ -5,7 +5,7 @@ import { connect } from '../db'
 import { insertRun, refreshAggregate } from '../runs'
 
 // Demo runs for an empty database. Rows are marked demo = true, and the chart says how many it includes.
-const { values } = parseArgs({ options: { level: { type: 'string', default: 'placeholder' }, n: { type: 'string', default: '40' } } })
+const { values } = parseArgs({ options: { level: { type: 'string', default: 'bloor-christie-ossington' }, n: { type: 'string', default: '40' } } })
 const level = findLevel(values.level!)
 if (!level) throw new Error(`unknown level ${values.level}`)
 const db = connect()

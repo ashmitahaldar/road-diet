@@ -79,6 +79,8 @@ export type Corridor = {
   freeFlowSpeedKph: number
   sources: DataSource[]
   mapSvg?: string
+  /** Inputs not taken from a verified dataset (spec 4.5); shown on the limitations panel and /data. */
+  estimates?: { field: string; note: string }[]
   source: string
 }
 

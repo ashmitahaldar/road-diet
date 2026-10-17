@@ -31,6 +31,7 @@ ksi = pd.DataFrame({
     "pedestrian": ["true", "true", "false", "true"],
     "cyclist": ["false", "false", "true", "false"],
 })
-assert prep.ksi_summary(ksi, since_year=2021) == {"ksiCollisions": 2, "pedestrianInvolved": 1, "cyclistInvolved": 1}
+assert prep.ksi_summary(ksi, since="2021-10-17") == {"ksiCollisions": 2, "pedestrianInvolved": 1, "cyclistInvolved": 1}
+assert prep.ksi_summary(ksi, since="2024-06-01") == {"ksiCollisions": 1, "pedestrianInvolved": 0, "cyclistInvolved": 1}
 
 print("prep self-check passed")

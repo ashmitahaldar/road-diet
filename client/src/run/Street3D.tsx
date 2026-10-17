@@ -218,7 +218,10 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
     }
     const onUp = (e: PointerEvent) => {
       const { layout: lay, onChange: change, select, selected: current } = live.current
-      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < TAP_PX) {
+      // A cancelled press (the browser took the gesture, e.g. to scroll) is neither a tap nor a drop.
+      if (e.type === 'pointercancel') {
+        if (drag?.kind === 'resize') change(drag.start)
+      } else if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < TAP_PX) {
         // A press that barely moved is a tap, even on the selected element: undo any jitter, then (de)select.
         if (drag?.kind === 'resize') change(drag.start)
         const p = groundAt(e)

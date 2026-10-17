@@ -1,0 +1,17 @@
+[Unit]
+Description=Road Diet game server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=roaddiet
+WorkingDirectory=/opt/road-diet
+Environment=NODE_ENV=production PORT=3000
+# Secrets (GEMINI_API_KEY, ...). Values here override the line above.
+EnvironmentFile=-/opt/road-diet/.env
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

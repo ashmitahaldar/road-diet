@@ -1,0 +1,5 @@
+# setup.sh fills in the domain below. Caddy fetches and renews the HTTPS certificate.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy localhost:3000
+}

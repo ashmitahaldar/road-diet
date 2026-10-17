@@ -5,7 +5,7 @@ import { LimitationsList } from '../Limitations'
 import { Button, GeminiLabel, signed } from '../ui'
 import { Others } from './Others'
 
-type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null }
+type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; closeLabel?: string }
 
 const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> = {
   emissions: (g) => [`Cut emissions by at least ${g.target}%`, `${g.value.toFixed(1)}%`],
@@ -13,7 +13,7 @@ const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> =
   safety: (g) => [`Safety at least ${g.target}`, `${g.value.toFixed(0)}`],
 }
 
-export function Scorecard({ open, onClose, level, metrics, base, react, stats }: Props) {
+export function Scorecard({ open, onClose, level, metrics, base, react, stats, closeLabel = 'Keep editing' }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
@@ -141,7 +141,7 @@ export function Scorecard({ open, onClose, level, metrics, base, react, stats }:
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm">A learning tool, not a forecast. Residents are fictional.</p>
           <Button onClick={onClose} className="bg-primary px-5 text-paper hover:bg-primary hover:brightness-110">
-            Keep editing
+            {closeLabel}
           </Button>
         </div>
       </div>

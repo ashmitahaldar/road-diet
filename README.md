@@ -26,7 +26,7 @@ Copy `.env.example` to `.env` for local secrets. Never commit `.env`.
 
 One-time setup:
 
-1. Create a Vultr instance running Ubuntu 24.04 (the smallest plan is enough) and note its IP.
+1. Create a Vultr instance running Ubuntu 24.04 and note its IPv4 address. Pick a plan that includes IPv4 (the cheapest tier can be IPv6-only, which can't take an `A` record); 1 GB of RAM is enough.
 2. At your domain registrar, add a DNS `A` record for the domain pointing at that IP.
 3. Copy your secrets to the server and run the setup script as root:
 

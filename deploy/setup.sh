@@ -26,9 +26,10 @@ fi
 id roaddiet >/dev/null 2>&1 || useradd --system --create-home --home-dir /var/lib/roaddiet --shell /usr/sbin/nologin roaddiet
 
 if [[ -d $APP/.git ]]; then
-  git -C "$APP" fetch -q origin "$BRANCH"
-  git -C "$APP" checkout -q "$BRANCH"
-  git -C "$APP" reset -q --hard "origin/$BRANCH"
+  # The checkout is owned by roaddiet; tell git that root may update it.
+  git -c safe.directory="$APP" -C "$APP" fetch -q origin "$BRANCH"
+  git -c safe.directory="$APP" -C "$APP" checkout -q "$BRANCH"
+  git -c safe.directory="$APP" -C "$APP" reset -q --hard "origin/$BRANCH"
 else
   git clone -q --branch "$BRANCH" "$REPO" "$APP"
 fi

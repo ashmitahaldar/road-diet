@@ -126,22 +126,22 @@ export function Game({ level }: { level: Level }) {
           <h1 tabIndex={-1} className="font-display text-3xl font-semibold outline-none">{level.name}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        <p className="max-w-md">
-          <strong>Goal:</strong> {goalSentence(level)}
-        </p>
-        <Button
-          aria-pressed={!muted}
-          onClick={() => {
-            setMuted(!muted)
-            setMutedState(!muted)
-          }}
-        >
-          <svg aria-hidden viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
-            {muted ? <path d="M17 9l5 6M22 9l-5 6" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" />}
-          </svg>
-          Sound
-        </Button>
+          <p className="max-w-md">
+            <strong>Goal:</strong> {goalSentence(level)}
+          </p>
+          <Button
+            aria-pressed={!muted}
+            onClick={() => {
+              setMuted(!muted)
+              setMutedState(!muted)
+            }}
+          >
+            <svg aria-hidden viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
+              {muted ? <path d="M17 9l5 6M22 9l-5 6" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" />}
+            </svg>
+            Sound
+          </Button>
         </div>
       </header>
       <main className="grid flex-1 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">

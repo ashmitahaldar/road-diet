@@ -244,10 +244,9 @@ export function Editor({ level, layout, onChange }: Props) {
                 key={id}
                 type="button"
                 aria-disabled={!fits}
-                aria-label={`Add ${def.label}, ${def.defaultW} metres${fits ? '' : `. Needs ${def.minW} metres, ${free.toFixed(1)} free`}`}
                 onPointerDown={fits ? startAdd(id) : undefined}
                 onClick={() => fits && add(id)}
-                className={`flex min-h-11 w-32 min-w-0 shrink-0 flex-col items-start gap-1 rounded-2xl border-2 border-ink p-2 text-left sm:w-auto sm:p-3 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                className={`relative flex min-h-11 w-32 min-w-0 shrink-0 flex-col items-start gap-1 rounded-2xl border-2 border-ink p-2 text-left sm:w-auto sm:p-3 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                   fits ? 'cursor-grab bg-paper shadow-[3px_3px_0_var(--color-ink)] hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none' : 'cursor-not-allowed border-dashed bg-grid'
                 }`}
               >
@@ -257,7 +256,7 @@ export function Editor({ level, layout, onChange }: Props) {
                       <ElementIcon id={id} size={24} />
                     </span>
                   </span>
-                  <span className="min-w-0 font-semibold leading-tight break-words">{def.label}</span>
+                  <span className="min-w-0 font-semibold leading-tight break-words"><span className="sr-only">Add </span>{def.label}</span>
                 </span>
                 <span className="hidden text-sm tabular-nums sm:inline">
                   {def.defaultW} m · {def.minW}–{def.maxW} m

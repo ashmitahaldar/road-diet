@@ -35,9 +35,10 @@ export function RunPanel({ level, base, shown, running, runId, onRun, onShowScor
   return (
     <aside aria-labelledby="run-title" className="flex flex-col gap-4">
       <Button
-        onClick={onRun}
-        disabled={running}
-        className="fixed inset-x-4 bottom-3 z-10 min-h-14 bg-primary text-xl text-paper shadow-[4px_4px_0_var(--color-ink)] hover:bg-primary hover:brightness-110 disabled:hover:bg-primary xl:static"
+        onClick={running ? undefined : onRun}
+        // aria-disabled, not disabled: a disabled button drops keyboard focus, and the scorecard would hand it back to <body>.
+        aria-disabled={running}
+        className="fixed inset-x-4 bottom-3 z-10 min-h-14 bg-primary text-xl text-paper shadow-[4px_4px_0_var(--color-ink)] hover:bg-primary hover:brightness-110 aria-disabled:cursor-wait aria-disabled:opacity-70 xl:static"
       >
         {running ? 'Running…' : shown.kind === 'today' ? 'Run a day' : 'Run another day'}
       </Button>
@@ -49,7 +50,7 @@ export function RunPanel({ level, base, shown, running, runId, onRun, onShowScor
         <p className={`mb-3 text-sm ${shown.kind === 'stale' ? 'font-semibold' : ''}`}>
           {caption}{' '}
           {shown.kind === 'run' && !running && (
-            <button type="button" onClick={onShowScore} className="font-semibold text-primary underline underline-offset-2">
+            <button type="button" onClick={onShowScore} className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
               See scorecard
             </button>
           )}
@@ -96,7 +97,7 @@ export function RunPanel({ level, base, shown, running, runId, onRun, onShowScor
           Fictional residents who use this street.
           {shown.react?.reactions.every((r) => r.source === 'gemini') && !running && <GeminiLabel />}
         </p>
-        <ul className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 xl:mx-0 xl:flex-col xl:overflow-visible xl:px-0">
+        <ul tabIndex={0} aria-labelledby="residents-title" className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 xl:mx-0 xl:flex-col xl:overflow-visible xl:px-0 focus-visible:outline-4 focus-visible:outline-primary">
           {Object.values(PERSONAS).map((p) => (
             <PersonaCard
               key={p.id}

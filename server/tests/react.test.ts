@@ -1,6 +1,6 @@
 import { PLACEHOLDER_LEVEL, type ReactResult } from '@road-diet/shared'
 import type { AddressInfo } from 'node:net'
-import { afterEach, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { createApp } from '../src/app'
 import type { GeminiConfig } from '../src/gemini'
 
@@ -8,6 +8,7 @@ const baseline = PLACEHOLDER_LEVEL.corridor.baselineLayout
 const KEY = 'test-key-not-real'
 const servers: { close: () => void }[] = []
 afterEach(() => servers.splice(0).forEach((s) => s.close()))
+beforeEach(() => void vi.spyOn(console, 'warn').mockImplementation(() => {}))
 
 async function start(gemini: GeminiConfig, reactPerMinute = 20) {
   const server = createApp({ clientDist: '/nonexistent', gemini, reactPerMinute }).listen(0)
@@ -39,7 +40,7 @@ test('no key: canned fallback, Gemini never called', async () => {
   const post = await start({ model: 'gemini-test', fetch: fake })
   const { status, json } = await post()
   expect(status).toBe(200)
-  expect(json.source).toBe('fallback')
+  expect(json.debriefSource).toBe('fallback')
   expect(json.reactions).toHaveLength(4)
   expect(fake).not.toHaveBeenCalled()
 })
@@ -48,7 +49,8 @@ test('good Gemini JSON: lines and debrief used, moods from the model numbers, ke
   const fake = geminiReply(good)
   const post = await start({ apiKey: KEY, model: 'gemini-test', fetch: fake })
   const { json, text } = await post()
-  expect(json.source).toBe('gemini')
+  expect(json.debriefSource).toBe('gemini')
+  expect(json.reactions.map((r) => r.source)).toEqual(['gemini', 'gemini', 'gemini', 'gemini'])
   expect(json.reactions.map((r) => r.line)).toEqual(good.reactions.map((r) => r.line))
   expect(json.reactions.map((r) => r.mood)).toEqual(['flat', 'flat', 'flat', 'flat'])
   expect(json.debrief).toBe(good.debrief)
@@ -72,7 +74,8 @@ test('timeout, HTTP error, malformed JSON and wrong shape all fall back', async 
     const post = await start({ apiKey: KEY, model: 'gemini-test', fetch: f, timeoutMs: 50 })
     const { status, json } = await post()
     expect(status).toBe(200)
-    expect(json.source).toBe('fallback')
+    expect(json.debriefSource).toBe('fallback')
+    expect(json.reactions.every((r) => r.source === 'fallback')).toBe(true)
   }
 })
 
@@ -91,7 +94,7 @@ test('off-limits or overlong lines are replaced; a debrief without a limitation 
     }),
   })
   const { json } = await post()
-  expect(json.source).toBe('gemini')
+  expect(json.reactions.map((r) => r.source)).toEqual(['fallback', 'fallback', 'gemini', 'gemini'])
   expect(json.reactions[0].line).not.toMatch(/vote|election/i)
   expect(json.reactions[1].line).not.toContain('word word')
   expect(json.reactions[2].line).toBe(good.reactions[2].line)
@@ -111,6 +114,7 @@ test('bad input is rejected before any model call', async () => {
   expect((await post({ levelId: 'placeholder', layout: { elements: [{ id: 'monorail', widthM: 3 }] } })).status).toBe(400)
   expect((await post({ levelId: 'placeholder', layout: { elements: [...baseline.elements, { id: 'planter', widthM: 2 }] } })).status).toBe(400)
   expect((await post({ levelId: 'nowhere', layout: baseline })).status).toBe(404)
+  expect((await post({ levelId: 'constructor', layout: baseline })).status).toBe(404)
   expect((await post('just a string')).status).toBe(400)
   expect((await post({ levelId: 'placeholder', layout: baseline, pad: 'x'.repeat(20_000) })).status).toBe(413)
   expect(fake).not.toHaveBeenCalled()
@@ -123,4 +127,15 @@ test('rate limit: extra requests get 429 with a usable fallback body', async () 
   const third = await post()
   expect(third.status).toBe(429)
   expect(third.json.reactions).toHaveLength(4)
+})
+
+test('every line rejected but the debrief accepted: lines are labelled fallback, the debrief gemini', async () => {
+  const post = await start({
+    apiKey: KEY,
+    model: 'gemini-test',
+    fetch: geminiReply({ reactions: [{ personaId: 'driver_delivery', line: 'Vote for change!' }], debrief: good.debrief }),
+  })
+  const { json } = await post()
+  expect(json.reactions.every((r) => r.source === 'fallback')).toBe(true)
+  expect(json.debriefSource).toBe('gemini')
 })

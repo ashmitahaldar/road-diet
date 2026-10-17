@@ -1,7 +1,6 @@
 import {
   MODE_SHIFT_LIMITATION,
   PERSONAS,
-  fallbackReaction,
   fallbackResult,
   moodFor,
   type Layout,
@@ -89,12 +88,9 @@ export async function react(facts: RunFacts, config: GeminiConfig): Promise<Reac
   const cfg = { fetch, timeoutMs: 6000, ...config } as Required<GeminiConfig>
   try {
     const out = await callGemini(buildPrompt(facts), cfg)
-    let used = 0
     const reactions = fallback.reactions.map((fb) => {
       const line = out.reactions.find((r) => r.personaId === fb.personaId)?.line.trim()
-      if (!line || !acceptable(line)) return fallbackReaction(fb.personaId, facts.metrics.happiness[fb.personaId])
-      used++
-      return { ...fb, line }
+      return line && acceptable(line) ? { ...fb, line, source: 'gemini' as const } : fb
     })
     const debriefOk = !OFF_LIMITS.test(out.debrief)
     const debrief = !debriefOk
@@ -102,7 +98,7 @@ export async function react(facts: RunFacts, config: GeminiConfig): Promise<Reac
       : NAMES_A_LIMITATION.test(out.debrief)
         ? out.debrief.trim()
         : `${out.debrief.trim()} ${MODE_SHIFT_LIMITATION}`
-    return { reactions, debrief, source: used > 0 || debriefOk ? 'gemini' : 'fallback' }
+    return { reactions, debrief, debriefSource: debriefOk ? 'gemini' : 'fallback' }
   } catch (err) {
     console.warn(`react: using fallback (${err instanceof Error ? err.name + ': ' + err.message : 'unknown error'})`)
     return fallback

@@ -9,7 +9,8 @@ test('moodFor uses a ±3 dead band around the baseline', () => {
 
 test('fallback for the baseline street: four flat residents and a debrief with the mode-shift limitation', () => {
   const r = fallbackResult(base)
-  expect(r.source).toBe('fallback')
+  expect(r.debriefSource).toBe('fallback')
+  expect(r.reactions.every((x) => x.source === 'fallback')).toBe(true)
   expect(r.reactions.map((x) => x.mood)).toEqual(['flat', 'flat', 'flat', 'flat'])
   expect(r.debrief).toContain('stay about the same')
   expect(r.debrief).toContain('25% of trips switch mode')

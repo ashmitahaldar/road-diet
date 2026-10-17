@@ -13,6 +13,17 @@ npm test       # vitest in shared/ and server/
 npm run build
 ```
 
+## Database (Tiger Data / TimescaleDB)
+
+Run history and "how others solved this street" need Postgres with TimescaleDB. Without `DATABASE_URL` the game still works and the stats section is hidden.
+
+```bash
+docker run -d --name roaddiet-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=roaddiet -p 55432:5432 timescale/timescaledb:latest-pg17
+# .env: DATABASE_URL=postgres://postgres:dev@localhost:55432/roaddiet   (or your Tiger Data connection string)
+npm run migrate -w @road-diet/server     # idempotent; plain table + view if timescaledb is missing
+TEST_DATABASE_URL=postgres://postgres:dev@localhost:55432/roaddiet npm test   # DB tests use throwaway schemas
+```
+
 ## Run in production
 
 ```bash

@@ -1,4 +1,4 @@
-import { computeMetrics, type Layout, type Level, type Metrics } from '@road-diet/shared'
+import { computeMetrics, fallbackResult, type Layout, type Level, type Metrics, type ReactResult } from '@road-diet/shared'
 import { useReducedMotion } from 'motion/react'
 import { useMemo, useRef, useState } from 'react'
 import { Editor } from '../editor/Editor'
@@ -6,9 +6,26 @@ import { RUN_MS, RunPanel, type Shown } from '../run/RunPanel'
 import { Scorecard } from '../run/Scorecard'
 import { goalSentence } from './Briefing'
 
+/** One /api/react call per run. Any failure, including no server at all, gives the shared canned result. */
+async function fetchReactions(level: Level, layout: Layout, metrics: Metrics): Promise<ReactResult> {
+  try {
+    const res = await fetch('/api/react', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ levelId: level.id, layout }),
+      signal: AbortSignal.timeout(8000),
+    })
+    const body = (await res.json()) as Partial<ReactResult>
+    if ((res.ok || res.status === 429) && Array.isArray(body.reactions) && typeof body.debrief === 'string' && typeof body.debriefSource === 'string') return body as ReactResult
+  } catch {
+    // fall through to the canned result
+  }
+  return fallbackResult(metrics)
+}
+
 export function Game({ level }: { level: Level }) {
   const [layout, setLayout] = useState(level.corridor.baselineLayout)
-  const [run, setRun] = useState<{ layout: Layout; metrics: Metrics } | null>(null)
+  const [run, setRun] = useState<{ layout: Layout; metrics: Metrics; react: ReactResult | null } | null>(null)
   const [runId, setRunId] = useState(0)
   const [running, setRunning] = useState(false)
   const [scoreOpen, setScoreOpen] = useState(false)
@@ -18,10 +35,13 @@ export function Game({ level }: { level: Level }) {
 
   const shown: Shown = !run
     ? { metrics: base, kind: 'today' }
-    : { metrics: run.metrics, kind: JSON.stringify(run.layout) === JSON.stringify(layout) ? 'run' : 'stale' }
+    : { metrics: run.metrics, react: run.react, kind: JSON.stringify(run.layout) === JSON.stringify(layout) ? 'run' : 'stale' }
 
   const runDay = () => {
-    setRun({ layout, metrics: computeMetrics(layout, level) })
+    const metrics = computeMetrics(layout, level)
+    setRun({ layout, metrics, react: null })
+    // A slow reply for an older run must not overwrite a newer one.
+    fetchReactions(level, layout, metrics).then((react) => setRun((cur) => (cur?.layout === layout ? { ...cur, react } : cur)))
     setRunId((n) => n + 1)
     setRunning(true)
     window.clearTimeout(timer.current)
@@ -46,7 +66,7 @@ export function Game({ level }: { level: Level }) {
         <Editor level={level} layout={layout} onChange={setLayout} />
         <RunPanel level={level} base={base} shown={shown} running={running} runId={runId} onRun={runDay} onShowScore={() => setScoreOpen(true)} />
       </main>
-      {run && <Scorecard open={scoreOpen} onClose={() => setScoreOpen(false)} level={level} metrics={run.metrics} base={base} />}
+      {run && <Scorecard open={scoreOpen} onClose={() => setScoreOpen(false)} level={level} metrics={run.metrics} base={base} react={run.react} />}
     </div>
   )
 }

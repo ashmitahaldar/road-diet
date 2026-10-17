@@ -1,9 +1,9 @@
-import { MODEL, TODO_SOURCE, listTodoSources, scoreRun, type GoalCheck, type Level, type Metrics } from '@road-diet/shared'
+import { MODEL, TODO_SOURCE, listTodoSources, scoreRun, type GoalCheck, type Level, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef } from 'react'
-import { Button, signed } from '../ui'
+import { Button, GeminiLabel, signed } from '../ui'
 
-type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics }
+type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics; react: ReactResult | null }
 
 const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> = {
   emissions: (g) => [`Cut emissions by at least ${g.target}%`, `${g.value.toFixed(1)}%`],
@@ -13,7 +13,7 @@ const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> =
 
 const pct = (x: number) => `${Math.round(x * 100)}%`
 
-export function Scorecard({ open, onClose, level, metrics, base }: Props) {
+export function Scorecard({ open, onClose, level, metrics, base, react }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
@@ -108,6 +108,21 @@ export function Scorecard({ open, onClose, level, metrics, base }: Props) {
             </strong>{' '}
             per peak hour on this street ({signed(-metrics.emissionsReductionPct)}% vs today: {metrics.emissionsKgPerHour.toFixed(0)} kg instead of {base.emissionsKgPerHour.toFixed(0)} kg).
           </p>
+        </section>
+
+        <section aria-labelledby="debrief-title" aria-busy={!react}>
+          <h3 id="debrief-title" className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            Debrief {react?.debriefSource === 'gemini' && <GeminiLabel />}
+          </h3>
+          {react ? (
+            <p className="mt-1">{react.debrief}</p>
+          ) : (
+            <div aria-label="Writing the debrief" className="mt-2 flex flex-col gap-2">
+              {['w-full', 'w-11/12', 'w-2/3'].map((w) => (
+                <div key={w} className={`h-3 animate-pulse rounded-full bg-grid motion-reduce:animate-none ${w}`} />
+              ))}
+            </div>
+          )}
         </section>
 
         <section aria-labelledby="limits-title" className="rounded-2xl border-2 border-dashed border-ink bg-grid/40 p-4 text-sm">

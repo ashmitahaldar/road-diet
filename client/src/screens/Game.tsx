@@ -18,7 +18,7 @@ export function Game({ level }: { level: Level }) {
 
   const shown: Shown = !run
     ? { metrics: base, kind: 'today' }
-    : { metrics: run.metrics, kind: run.layout === layout ? 'run' : 'stale' }
+    : { metrics: run.metrics, kind: JSON.stringify(run.layout) === JSON.stringify(layout) ? 'run' : 'stale' }
 
   const runDay = () => {
     setRun({ layout, metrics: computeMetrics(layout, level) })

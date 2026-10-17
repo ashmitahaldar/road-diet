@@ -1,7 +1,7 @@
 import { MODEL, TODO_SOURCE, listTodoSources, scoreRun, type GoalCheck, type Level, type Metrics } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef } from 'react'
-import { Button } from '../ui'
+import { Button, signed } from '../ui'
 
 type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics }
 
@@ -18,7 +18,6 @@ export function Scorecard({ open, onClose, level, metrics, base }: Props) {
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
   const score = scoreRun(metrics, level)
-  const kgChange = base.emissionsKgPerHour - metrics.emissionsKgPerHour
   const todo = listTodoSources()
 
   useEffect(() => {
@@ -105,11 +104,9 @@ export function Scorecard({ open, onClose, level, metrics, base }: Props) {
           </h3>
           <p className="mt-1 tabular-nums">
             <strong className="font-display text-2xl">
-              {kgChange >= 0 ? '−' : '+'}
-              {Math.abs(kgChange).toFixed(0)} kg CO₂e
+              {signed(metrics.emissionsKgPerHour - base.emissionsKgPerHour, 0)} kg CO₂e
             </strong>{' '}
-            per peak hour on this street ({metrics.emissionsReductionPct >= 0 ? '−' : '+'}
-            {Math.abs(metrics.emissionsReductionPct).toFixed(1)}% vs today: {metrics.emissionsKgPerHour.toFixed(0)} kg instead of {base.emissionsKgPerHour.toFixed(0)} kg).
+            per peak hour on this street ({signed(-metrics.emissionsReductionPct)}% vs today: {metrics.emissionsKgPerHour.toFixed(0)} kg instead of {base.emissionsKgPerHour.toFixed(0)} kg).
           </p>
         </section>
 

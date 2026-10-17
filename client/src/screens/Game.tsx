@@ -16,7 +16,7 @@ async function fetchReactions(level: Level, layout: Layout, metrics: Metrics): P
       signal: AbortSignal.timeout(8000),
     })
     const body = (await res.json()) as Partial<ReactResult>
-    if ((res.ok || res.status === 429) && Array.isArray(body.reactions) && typeof body.debrief === 'string') return body as ReactResult
+    if ((res.ok || res.status === 429) && Array.isArray(body.reactions) && typeof body.debrief === 'string' && typeof body.debriefSource === 'string') return body as ReactResult
   } catch {
     // fall through to the canned result
   }

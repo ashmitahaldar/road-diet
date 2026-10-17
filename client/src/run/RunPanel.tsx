@@ -94,7 +94,7 @@ export function RunPanel({ level, base, shown, running, runId, onRun, onShowScor
         </h2>
         <p className="mb-2 flex flex-wrap items-center gap-2 text-sm">
           Fictional residents who use this street.
-          {shown.react?.source === 'gemini' && !running && <GeminiLabel />}
+          {shown.react?.reactions.every((r) => r.source === 'gemini') && !running && <GeminiLabel />}
         </p>
         <ul className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 xl:mx-0 xl:flex-col xl:overflow-visible xl:px-0">
           {Object.values(PERSONAS).map((p) => (

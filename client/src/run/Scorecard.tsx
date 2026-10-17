@@ -112,7 +112,7 @@ export function Scorecard({ open, onClose, level, metrics, base, react }: Props)
 
         <section aria-labelledby="debrief-title" aria-busy={!react}>
           <h3 id="debrief-title" className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
-            Debrief {react?.source === 'gemini' && <GeminiLabel />}
+            Debrief {react?.debriefSource === 'gemini' && <GeminiLabel />}
           </h3>
           {react ? (
             <p className="mt-1">{react.debrief}</p>

@@ -1,11 +1,11 @@
-import { earnedBadges, resultText, scoreRun, type GoalCheck, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { earnedBadges, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
 import { Button, GeminiLabel, signed } from '../ui'
 import { Others } from './Others'
 
-type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; fairnessBeatsPct?: number | null; closeLabel?: string }
+type Props = { open: boolean; onClose: () => void; level: Level; layout: Layout; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; fairnessBeatsPct?: number | null; closeLabel?: string }
 
 const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> = {
   emissions: (g) => [`Cut emissions by at least ${g.target}%`, `${g.value.toFixed(1)}%`],
@@ -31,14 +31,36 @@ async function copy(text: string) {
   }
 }
 
-export function Scorecard({ open, onClose, level, metrics, base, react, stats, fairnessBeatsPct = null, closeLabel = 'Keep editing' }: Props) {
+export function Scorecard({ open, onClose, level, layout, metrics, base, react, stats, fairnessBeatsPct = null, closeLabel = 'Keep editing' }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
   const score = scoreRun(metrics, level)
   const badges = earnedBadges(metrics, score.goalMet)
-  const [copied, setCopied] = useState<boolean | null>(null)
-  useEffect(() => setCopied(null), [open, metrics])
+  const [status, setStatus] = useState('')
+  useEffect(() => setStatus(''), [open, metrics])
+  const emissionsDeltaKg = metrics.emissionsKgPerHour - base.emissionsKgPerHour
+  const text = resultText({ levelName: level.name, stars: score.stars, badges, emissionsDeltaKg, url: location.origin })
+
+  // Draw the share image as soon as the scorecard opens, so the tap can go straight to the share sheet.
+  const card = useRef<Promise<{ png: Blob; share: typeof import('./shareCard').shareCard }> | null>(null)
+  useEffect(() => {
+    if (!open) return
+    const s = scoreRun(metrics, level)
+    const data = {
+      levelName: level.name,
+      stars: s.stars,
+      badges: earnedBadges(metrics, s.goalMet),
+      emissionsDeltaKg: metrics.emissionsKgPerHour - base.emissionsKgPerHour,
+      emissionsChangePct: -metrics.emissionsReductionPct,
+      layout,
+      widthM: level.corridor.widthM,
+      url: location.origin,
+    }
+    // Loaded on demand so the image code stays out of the main bundle.
+    card.current = import('./shareCard').then(async (m) => ({ png: await m.drawCard(data), share: m.shareCard }))
+    card.current.catch(() => {})
+  }, [open, metrics, base, layout, level])
 
   useEffect(() => {
     const d = ref.current
@@ -140,7 +162,7 @@ export function Scorecard({ open, onClose, level, metrics, base, react, stats, f
           </h3>
           <p className="mt-1 tabular-nums">
             <strong className="font-display text-2xl">
-              {signed(metrics.emissionsKgPerHour - base.emissionsKgPerHour, 0)} kg CO₂e
+              {signed(emissionsDeltaKg, 0)} kg CO₂e
             </strong>{' '}
             per peak hour on this street ({signed(-metrics.emissionsReductionPct)}% vs today: {metrics.emissionsKgPerHour.toFixed(0)} kg instead of {base.emissionsKgPerHour.toFixed(0)} kg).
           </p>
@@ -179,24 +201,16 @@ export function Scorecard({ open, onClose, level, metrics, base, react, stats, f
           <p className="text-sm">A learning tool, not a forecast. Residents are fictional.</p>
           <div className="flex flex-wrap items-center gap-3">
             <span role="status" className="text-sm">
-              {copied === true ? 'Copied!' : copied === false ? 'Copy failed' : ''}
+              {status}
             </span>
+            <Button onClick={async () => setStatus((await copy(text)) ? 'Copied!' : 'Copy failed')}>Copy my result</Button>
             <Button
-              onClick={async () =>
-                setCopied(
-                  await copy(
-                    resultText({
-                      levelName: level.name,
-                      stars: score.stars,
-                      badges,
-                      emissionsDeltaKg: metrics.emissionsKgPerHour - base.emissionsKgPerHour,
-                      url: location.origin,
-                    }),
-                  ),
-                )
-              }
+              onClick={async () => {
+                const done = await card.current!.then(({ png, share }) => share(png, text)).catch(() => 'failed' as const)
+                setStatus({ shared: 'Shared!', saved: 'Image saved', cancelled: '', failed: 'Image failed' }[done])
+              }}
             >
-              Copy my result
+              Share image
             </Button>
             <Button onClick={onClose} className="bg-primary px-5 text-paper hover:bg-primary hover:brightness-110">
               {closeLabel}

@@ -75,7 +75,11 @@ export function DataPage({ level }: { level: Level }) {
       <Section title="Credits">
         <p>
           Street data: City of Toronto (Open Data portal datasets from Transportation Services and Information & Technology; Official Plan Map 3; Lane
-          Widths Guideline). Emission factors: UK Department for Energy Security and Net Zero. Lane capacities: NACTO Transit Street Design Guide.
+          Widths Guideline). Emission factors: UK Department for Energy Security and Net Zero. Lane capacities: NACTO Transit Street Design Guide. Corridor map streets and subway stations:{' '}
+          <a href="https://www.openstreetmap.org/copyright" className={link}>
+            © OpenStreetMap contributors
+          </a>{' '}
+          (ODbL).
         </p>
       </Section>
     </main>

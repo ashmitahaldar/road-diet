@@ -168,6 +168,7 @@ export function Game({ level }: { level: Level }) {
           open={scoreOpen}
           onClose={() => setScoreOpen(false)}
           level={level}
+          layout={run.layout}
           metrics={run.metrics}
           base={base}
           react={run.react}

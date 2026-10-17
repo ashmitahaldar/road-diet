@@ -4,6 +4,7 @@ Usage:
   python data/prep/prep.py info <dataset-name>               # list resources, no download
   python data/prep/prep.py fetch <dataset-name> <resource>   # download one resource to data/raw/
   python data/prep/prep.py corridor data/prep/corridors/<id>.toml   # build data/corridors/<id>.json
+  python data/prep/prep.py map data/prep/corridors/<id>.toml        # then data/corridors/<id>.map.svg
 """
 
 import argparse
@@ -13,6 +14,7 @@ import tomllib
 import urllib.parse
 import urllib.request
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 import geopandas as gpd
 import pandas as pd
@@ -200,6 +202,130 @@ def build_corridor(cfg):
     }
 
 
+OVERPASS = "https://overpass-api.de/api/interpreter"
+OSM_COPYRIGHT = "https://www.openstreetmap.org/copyright"
+# Spec 8b tokens (client/src/index.css).
+INK, PAPER, PRIMARY, STREET = "#1f2a37", "#faf6ee", "#2b59c3", "#cbd2d9"
+BIKE = {"protected": ("#2fa84f", ""), "painted": ("#7cc576", "10 6"), "other": ("#3e8e5a", "2 6")}
+MAP_PAD_M = 150
+
+
+def bike_kind(infra):
+    """Game mapping (SOURCES.md): *Cycle Track* -> protected, Bike Lane* -> painted; the rest (sharrows, trails, signed routes) -> other."""
+    return "protected" if "Cycle Track" in infra else "painted" if infra.startswith("Bike Lane") else "other"
+
+
+def overpass(s, w, n, e):
+    q = (f'[out:json][timeout:25];(way["highway"~"^(primary|secondary|tertiary|residential|unclassified)$"]({s},{w},{n},{e});'
+         f'node["railway"="station"]["station"="subway"]({s},{w},{n},{e}););out geom;')
+    req = urllib.request.Request(OVERPASS, data=urllib.parse.urlencode({"data": q}).encode(), headers={"User-Agent": "road-diet-prep"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.load(r)
+
+
+def and_list(xs):
+    return ", ".join(xs[:-1]) + " and " + xs[-1] if len(xs) > 1 else "".join(xs)
+
+
+def map_frame(corridor):
+    from shapely.geometry import box
+
+    x0, y0, x1, y1 = corridor.bounds
+    return box(x0 - MAP_PAD_M, y0 - MAP_PAD_M, x1 + MAP_PAD_M, y1 + MAP_PAD_M)
+
+
+def render_map(corridor, street, streets, bikes, stations, ksi_label):
+    """SVG in metres (EPSG:32617), north up. corridor/streets: shapely lines; bikes: [(kind, line)]; stations: [(name, point)]."""
+    frame = map_frame(corridor)
+    x0, y0, x1, _ = corridor.bounds
+    fx, fy, fx1, fy1 = frame.bounds
+    w, h = round(fx1 - fx), round(fy1 - fy)
+    pt = lambda x, y: f"{x - fx:.0f},{fy1 - y:.0f}"
+
+    def path(geom, attrs):
+        geom = geom.intersection(frame)
+        lines = getattr(geom, "geoms", [geom])
+        d = " ".join("M" + " L".join(pt(*c) for c in g.coords) for g in lines if not g.is_empty and g.length > 0)
+        return f'<path d="{d}" fill="none" stroke-linecap="round" stroke-linejoin="round" {attrs}/>' if d else ""
+
+    out = [f'<rect width="{w}" height="{h}" fill="{PAPER}"/>']
+    out += [path(g, f'stroke="{STREET}" stroke-width="7"') for g in streets]
+    out.append(path(corridor, f'stroke="{INK}" stroke-width="26"'))
+    out.append(path(corridor, f'stroke="{PRIMARY}" stroke-width="18"'))
+    for kind, g in bikes:
+        colour, dash = BIKE[kind]
+        out.append(path(g, f'stroke="{colour}" stroke-width="{6 if kind == "protected" else 5}"' + (f' stroke-dasharray="{dash}"' if dash else "")))
+    # Keep centred labels inside the frame (approximate glyph width 0.6 em).
+    inside = lambda x, s, size: min(max(x, 0.3 * size * len(s) + 8), w - 0.3 * size * len(s) - 8)
+    text = lambda x, y, s, anchor="middle", size=22, weight=600: (
+        f'<text x="{inside(x, s, size) if anchor == "middle" else x:.0f}" y="{y:.0f}" text-anchor="{anchor}" font-size="{size}" font-weight="{weight}" fill="{INK}" '
+        f'stroke="{PAPER}" stroke-width="5" paint-order="stroke">{escape(s)}</text>')
+    for name, p in stations:
+        x, y = (float(v) for v in pt(p.x, p.y).split(","))
+        out.append(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="13" fill="{PAPER}" stroke="{INK}" stroke-width="5"/>')
+        out.append(text(x, y - 28, f"{name} station", size=28))
+    mx = (x0 + x1) / 2 - fx
+    below = fy1 - y0 + 50  # under the corridor's lowest point, so a tilted street never crosses the labels
+    out.append(text(mx, below, street, size=32, weight=700))
+    out.append(text(mx, below + 38, ksi_label, size=26, weight=500))
+    out.append(f'<path d="M20,{h - 40} h100" stroke="{INK}" stroke-width="5"/>' + text(70, h - 54, "100 m", size=24, weight=500))
+    out.append(text(w - 16, h - 16, "© OpenStreetMap contributors · City of Toronto", anchor="end", size=20, weight=500))
+    return out, w, h
+
+
+def build_map(cfg):
+    """data/corridors/<id>.map.svg (spec 8c) plus mapSvg/mapAlt and an OSM source on the corridor JSON (run `corridor` first)."""
+    from datetime import date
+    from shapely.geometry import LineString, Point, shape
+    from shapely.ops import linemerge, unary_union
+
+    out_json = CORRIDORS / f"{cfg['id']}.json"
+    corridor = json.loads(out_json.read_text())
+    street = cfg["segment"]["street"]
+    segs = [r for r in datastore(CENTRELINE[1], LINEAR_NAME_FULL=street) if r["CENTRELINE_ID"] in cfg["segment"]["centreline_ids"]]
+    line = gpd.GeoDataFrame(geometry=[shape(json.loads(r["geometry"])) for r in segs], crs=4326)
+    w, s, e, n = line.total_bounds + [-0.003, -0.003, 0.003, 0.003]  # 240-330 m; render_map clips to MAP_PAD_M
+    osm_path = RAW / "osm" / f"{cfg['id']}.json"  # cached: Overpass is a shared, rate-limited service
+    if not osm_path.exists():
+        osm_path.parent.mkdir(parents=True, exist_ok=True)
+        osm_path.write_text(json.dumps(overpass(s, w, n, e)))
+    osm = json.loads(osm_path.read_text())
+    to_m = lambda geoms: list(to_metric(gpd.GeoSeries(geoms, crs=4326)))
+    streets = to_m([LineString([(p["lon"], p["lat"]) for p in el["geometry"]]) for el in osm["elements"] if el["type"] == "way"])
+    stations = [el for el in osm["elements"] if el["type"] == "node"]
+    station_pts = to_m([Point(el["lon"], el["lat"]) for el in stations])
+
+    bikes_path = RAW / CYCLING[0] / "cycling-network-4326.geojson"
+    if not bikes_path.exists():
+        fetch(CYCLING[0], "cycling-network - 4326.geojson")
+    centre = linemerge(unary_union(list(to_metric(line).geometry)))
+    bikes = to_metric(gpd.read_file(bikes_path).cx[w:e, s:n])
+    bikes = bikes[bikes.intersects(map_frame(centre))]
+    bike_lines = [(bike_kind(i), g) for i, g in zip(bikes.INFRA_HIGHORDER, bikes.geometry)]
+    k, sf = corridor["baselineSafety"]["ksiCollisions5y"], cfg["safety"]
+    body, width, height = render_map(centre, street, streets, bike_lines, [(el["tags"]["name"], p) for el, p in zip(stations, station_pts)],
+                                     f"{k} fatal or serious-injury collisions ({sf['buffer_m']} m, {sf['years']} years)")
+    on = lambda kind: and_list(sorted({st for st, i in zip(bikes.STREET_NAME, bikes.INFRA_HIGHORDER) if bike_kind(i) == kind}))
+    bike_text = {"protected": "Protected bike lanes (cycle tracks) on {}. ", "painted": "Painted bike lanes on {}. ", "other": "Other cycling routes on {}. "}
+    names = sorted(el["tags"]["name"] for el in stations)
+    alt = (f"Map of {corridor['name']}, {corridor['lengthKm']} km, highlighted in blue. "
+           + (f"Subway stations: {and_list(names)}. " if names else "")
+           + "".join(t.format(on(kind)) for kind, t in bike_text.items() if on(kind))
+           + f"{k} collisions where someone was killed or seriously injured happened within {sf['buffer_m']} m of this stretch in the last {sf['years']} years (a total, not individual incidents).")
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}" role="img" '
+           f'font-family="Inter, system-ui, sans-serif"><title>{escape(corridor["name"])}</title><desc>{escape(alt)}</desc>'
+           + "".join(body) + "</svg>\n")
+    svg_path = CORRIDORS / f"{cfg['id']}.map.svg"
+    svg_path.write_text(svg)
+
+    osm_source = {"label": "OpenStreetMap contributors", "url": OSM_COPYRIGHT, "retrieved": date.fromtimestamp(osm_path.stat().st_mtime).isoformat(),
+                  "note": f"Streets and subway stations on the corridor map, from the Overpass API. {osm.get('osm3s', {}).get('copyright', '')}".strip()}
+    corridor["sources"] = [src for src in corridor["sources"] if src["url"] != OSM_COPYRIGHT] + [osm_source]
+    corridor |= {"mapSvg": f"data/corridors/{svg_path.name}", "mapAlt": alt}
+    write_corridor(corridor)
+    return svg_path
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -210,6 +336,7 @@ def main(argv=None):
     f.add_argument("--allow-large", action="store_true")
     c = sub.add_parser("corridor")
     c.add_argument("config", help="corridors/<id>.toml")
+    sub.add_parser("map").add_argument("config", help="corridors/<id>.toml")
     a = p.parse_args(argv)
     if a.cmd == "info":
         for r in resources(a.dataset):
@@ -217,6 +344,8 @@ def main(argv=None):
             print(f"{r['name']}  [{r['format']}, {size}]")
     elif a.cmd == "corridor":
         print(write_corridor(build_corridor(tomllib.loads(Path(a.config).read_text()))))
+    elif a.cmd == "map":
+        print(build_map(tomllib.loads(Path(a.config).read_text())))
     else:
         print(fetch(a.dataset, a.resource, a.allow_large))
 

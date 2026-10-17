@@ -42,6 +42,26 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
   const emissionsDeltaKg = metrics.emissionsKgPerHour - base.emissionsKgPerHour
   const text = resultText({ levelName: level.name, stars: score.stars, badges, emissionsDeltaKg, url: location.origin })
 
+  // Draw the share image as soon as the scorecard opens, so the tap can go straight to the share sheet.
+  const card = useRef<Promise<{ png: Blob; share: typeof import('./shareCard').shareCard }> | null>(null)
+  useEffect(() => {
+    if (!open) return
+    const s = scoreRun(metrics, level)
+    const data = {
+      levelName: level.name,
+      stars: s.stars,
+      badges: earnedBadges(metrics, s.goalMet),
+      emissionsDeltaKg: metrics.emissionsKgPerHour - base.emissionsKgPerHour,
+      emissionsChangePct: -metrics.emissionsReductionPct,
+      layout,
+      widthM: level.corridor.widthM,
+      url: location.origin,
+    }
+    // Loaded on demand so the image code stays out of the main bundle.
+    card.current = import('./shareCard').then(async (m) => ({ png: await m.drawCard(data), share: m.shareCard }))
+    card.current.catch(() => {})
+  }, [open, metrics, base, layout, level])
+
   useEffect(() => {
     const d = ref.current
     if (open && !d?.open) {
@@ -186,10 +206,7 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
             <Button onClick={async () => setStatus((await copy(text)) ? 'Copied!' : 'Copy failed')}>Copy my result</Button>
             <Button
               onClick={async () => {
-                setStatus('Making the image…')
-                const card = { levelName: level.name, stars: score.stars, badges, emissionsDeltaKg, layout, widthM: level.corridor.widthM, url: location.origin }
-                // Loaded on demand so the image code stays out of the main bundle.
-                const done = await import('./shareCard').then((m) => m.shareCard({ ...card, emissionsChangePct: -metrics.emissionsReductionPct }, text)).catch(() => 'failed' as const)
+                const done = await card.current!.then(({ png, share }) => share(png, text)).catch(() => 'failed' as const)
                 setStatus({ shared: 'Shared!', saved: 'Image saved', cancelled: '', failed: 'Image failed' }[done])
               }}
             >

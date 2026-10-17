@@ -37,7 +37,9 @@ export async function drawCard(d: CardData): Promise<Blob> {
   }
   const round = (x: number, y: number, w: number, h: number, r: number) => {
     c.beginPath()
-    c.roundRect(x, y, w, h, r)
+    // roundRect arrived in Safari 16; square corners are fine on older phones.
+    if (c.roundRect) c.roundRect(x, y, w, h, r)
+    else c.rect(x, y, w, h)
   }
 
   c.fillStyle = paper
@@ -161,9 +163,12 @@ export async function drawCard(d: CardData): Promise<Blob> {
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'))
 }
 
-/** Native share sheet with the image where the browser supports files (phones), else a download. */
-export async function shareCard(d: CardData, text: string): Promise<'shared' | 'saved' | 'cancelled'> {
-  const file = new File([await drawCard(d)], 'road-diet-result.png', { type: 'image/png' })
+/**
+ * Native share sheet with the image where the browser supports files (phones), else a download. Pass a blob drawn
+ * ahead of time: Safari only allows share() shortly after the tap, so nothing slow may run between the two.
+ */
+export async function shareCard(png: Blob, text: string): Promise<'shared' | 'saved' | 'cancelled'> {
+  const file = new File([png], 'road-diet-result.png', { type: 'image/png' })
   if (navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], text })

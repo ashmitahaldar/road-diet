@@ -1,7 +1,7 @@
 import { PERSONAS, type ElementId, type Level, type Metrics, type Mode, type Persona, type PersonaId } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { ElementIcon } from '../editor/elementVisuals'
-import { Button } from '../ui'
+import { Button, signed } from '../ui'
 
 export const RUN_MS = 3200
 
@@ -17,12 +17,11 @@ const MODE_WORD: Record<Mode, string> = { car: 'drives', bus: 'rides the bus', b
 /** Shown state: today's street before the first run, then the latest run. */
 export type Shown = { metrics: Metrics; kind: 'today' | 'run' | 'stale' }
 
-type Props = { level: Level; base: Metrics; shown: Shown; running: boolean; runId: number; onRun: () => void }
+type Props = { level: Level; base: Metrics; shown: Shown; running: boolean; runId: number; onRun: () => void; onShowScore: () => void }
 
 const mean = (r: Record<PersonaId, number>) => Object.values(r).reduce((a, b) => a + b, 0) / Object.keys(r).length
-const signed = (x: number, digits = 1) => `${x > 0 ? '+' : x < 0 ? '−' : '±'}${Math.abs(x).toFixed(digits)}`
 
-export function RunPanel({ level, base, shown, running, runId, onRun }: Props) {
+export function RunPanel({ level, base, shown, running, runId, onRun, onShowScore }: Props) {
   const m = shown.metrics
   const { goal } = level
   const travel = mean(m.travelTimeMin)
@@ -47,7 +46,14 @@ export function RunPanel({ level, base, shown, running, runId, onRun }: Props) {
         <h2 id="run-title" className="font-display text-xl font-semibold">
           Meters
         </h2>
-        <p className={`mb-3 text-sm ${shown.kind === 'stale' ? 'font-semibold' : ''}`}>{caption}</p>
+        <p className={`mb-3 text-sm ${shown.kind === 'stale' ? 'font-semibold' : ''}`}>
+          {caption}{' '}
+          {shown.kind === 'run' && !running && (
+            <button type="button" onClick={onShowScore} className="font-semibold text-primary underline underline-offset-2">
+              See scorecard
+            </button>
+          )}
+        </p>
         <div className={`flex flex-col gap-3 transition-opacity ${shown.kind === 'stale' ? 'opacity-60' : ''}`}>
           <Meter
             label="Emissions cut"

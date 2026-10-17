@@ -35,6 +35,10 @@ NODE_ENV=production npm start   # one process serves the game and /api on $PORT 
 
 Copy `.env.example` to `.env` for local secrets. Never commit `.env`.
 
+## Submission
+
+The Devpost draft, the prize checklist and the backup demo script are in [docs/DEVPOST.md](docs/DEVPOST.md).
+
 ## Deploy (Vultr + Caddy)
 
 One-time setup:

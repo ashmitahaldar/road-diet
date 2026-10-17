@@ -9,3 +9,9 @@ export function Button({ className = '', ...props }: ButtonHTMLAttributes<HTMLBu
     />
   )
 }
+
+/** "+1.2", "−0.4" or "±0.0", signed after rounding so a tiny change never shows as "−0". */
+export function signed(x: number, digits = 1) {
+  const r = Number(x.toFixed(digits))
+  return `${r > 0 ? '+' : r < 0 ? '−' : '±'}${Math.abs(r).toFixed(digits)}`
+}

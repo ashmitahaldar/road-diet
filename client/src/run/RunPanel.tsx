@@ -1,7 +1,7 @@
 import { PERSONAS, type ElementId, type Level, type Metrics, type Mode, type Persona, type PersonaId } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { ElementIcon } from '../editor/elementVisuals'
-import { Button } from '../ui'
+import { Button, signed } from '../ui'
 
 export const RUN_MS = 3200
 
@@ -20,7 +20,6 @@ export type Shown = { metrics: Metrics; kind: 'today' | 'run' | 'stale' }
 type Props = { level: Level; base: Metrics; shown: Shown; running: boolean; runId: number; onRun: () => void; onShowScore: () => void }
 
 const mean = (r: Record<PersonaId, number>) => Object.values(r).reduce((a, b) => a + b, 0) / Object.keys(r).length
-const signed = (x: number, digits = 1) => `${x > 0 ? '+' : x < 0 ? '−' : '±'}${Math.abs(x).toFixed(digits)}`
 
 export function RunPanel({ level, base, shown, running, runId, onRun, onShowScore }: Props) {
   const m = shown.metrics

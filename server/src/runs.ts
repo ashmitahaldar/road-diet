@@ -48,13 +48,22 @@ export async function getStats(db: Db, levelId: string): Promise<LevelStats> {
  * Materialize runs_hourly up to an hour ago, like the policy. Rows backdated into already-materialized
  * buckets (the seed script) only appear after a refresh. Stopping short matters: materializing the
  * current hour would move the watermark past now, and new runs would vanish from real-time reads.
- * Returns false on a plain-Postgres database, where runs_hourly is a normal view.
+ * Returns false when there is no continuous aggregate to refresh (no timescaledb, or runs_hourly is a
+ * normal view). A refresh already in progress (the policy job, or another caller) is waited out; any
+ * other error is real and is thrown.
  */
 export async function refreshAggregate(db: Db) {
-  try {
-    await db.query("CALL refresh_continuous_aggregate('runs_hourly', NULL, now() - INTERVAL '1 hour')")
-    return true
-  } catch {
-    return false
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await db.query("CALL refresh_continuous_aggregate('runs_hourly', NULL, now() - INTERVAL '1 hour')")
+      return true
+    } catch (err) {
+      const code = (err as { code?: string }).code
+      // 42883: procedure does not exist; 22023: "relation is not a continuous aggregate".
+      if (code === '42883' || code === '22023') return false
+      // 55P03: "could not refresh ... due to a concurrent refresh".
+      if (code !== '55P03' || attempt >= 10) throw err
+      await new Promise((r) => setTimeout(r, 200 * attempt))
+    }
   }
 }

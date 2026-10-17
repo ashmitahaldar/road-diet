@@ -1,6 +1,7 @@
-import { MODEL, TODO_SOURCE, listTodoSources, scoreRun, type GoalCheck, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { scoreRun, type GoalCheck, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef } from 'react'
+import { LimitationsList } from '../Limitations'
 import { Button, GeminiLabel, signed } from '../ui'
 import { Others } from './Others'
 
@@ -12,14 +13,11 @@ const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> =
   safety: (g) => [`Safety at least ${g.target}`, `${g.value.toFixed(0)}`],
 }
 
-const pct = (x: number) => `${Math.round(x * 100)}%`
-
 export function Scorecard({ open, onClose, level, metrics, base, react, stats }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
   const score = scoreRun(metrics, level)
-  const todo = listTodoSources()
 
   useEffect(() => {
     const d = ref.current
@@ -132,19 +130,10 @@ export function Scorecard({ open, onClose, level, metrics, base, react, stats }:
           <h3 id="limits-title" className="font-display text-lg font-semibold">
             Limitations
           </h3>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            <li>This is a simplified estimate, not a prediction.</li>
-            <li>
-              Some trips switch mode when the street changes, capped at {pct(MODEL.maxTotalShift.value)} of all trips and{' '}
-              {pct(MODEL.maxShiftPerMode.value)} per mode. Emissions depend on that assumption.
-            </li>
-            <li>Safety is an index built from the street layout, not a forecast of collisions.</li>
-            <li>Residents are fictional. How much each one cares about time, safety, comfort and access is a design choice.</li>
-            {level.corridor.source === TODO_SOURCE && <li>This street uses placeholder data until the real Toronto corridor is added.</li>}
-          </ul>
-          <p className="mt-3 font-semibold">Values still waiting for a source ({todo.length}):</p>
-          <p className="mt-1 break-words font-mono text-xs">{todo.join(', ')}</p>
-          <a href="/data" className="mt-3 inline-block font-semibold text-primary underline underline-offset-2">
+          <div className="mt-2">
+            <LimitationsList level={level} />
+          </div>
+          <a href="/data" target="_blank" className="mt-3 inline-block font-semibold text-primary underline underline-offset-2">
             Data & Limitations
           </a>
         </section>

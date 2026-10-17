@@ -18,11 +18,23 @@ export async function freshSchema() {
   return { db, schema }
 }
 
+/** TimescaleDB's background policy jobs can race a drop ("tuple concurrently updated", "deadlock detected"); retry those. */
+async function drop(admin: Db, schema: string) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await admin.query(`DROP SCHEMA ${schema} CASCADE`)
+    } catch (err) {
+      if (attempt >= 5 || !/concurrently|deadlock/.test((err as Error).message)) throw err
+      await new Promise((r) => setTimeout(r, 200))
+    }
+  }
+}
+
 afterAll(async () => {
   const admin = connect(url)
   for (const db of pools) await db.end()
   if (admin) {
-    for (const schema of schemas) await admin.query(`DROP SCHEMA ${schema} CASCADE`)
+    for (const schema of schemas) await drop(admin, schema)
     await admin.end()
   }
 })

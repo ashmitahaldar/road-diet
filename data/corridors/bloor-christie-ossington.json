@@ -1,0 +1,130 @@
+{
+  "id": "bloor-christie-ossington",
+  "name": "Bloor St W (Christie St to Ossington Ave)",
+  "widthM": 20,
+  "lengthKm": 0.61,
+  "baselineLayout": {
+    "elements": [
+      {
+        "id": "sidewalk",
+        "widthM": 3.7
+      },
+      {
+        "id": "bike_protected",
+        "widthM": 1.8
+      },
+      {
+        "id": "parking",
+        "widthM": 2.4
+      },
+      {
+        "id": "car_lane",
+        "widthM": 3.3
+      },
+      {
+        "id": "car_lane",
+        "widthM": 3.3
+      },
+      {
+        "id": "bike_protected",
+        "widthM": 1.8
+      },
+      {
+        "id": "sidewalk",
+        "widthM": 3.7
+      }
+    ]
+  },
+  "baselineDemand": {
+    "car": 958,
+    "bus": 0,
+    "bike": 654,
+    "walk": 553
+  },
+  "baselineSafety": {
+    "ksiCollisions5y": 4,
+    "pedestrianInvolved": 3,
+    "cyclistInvolved": 2
+  },
+  "freeFlowSpeedKph": 40,
+  "sources": [
+    {
+      "label": "Toronto Centreline (TCL) v2",
+      "url": "https://open.toronto.ca/dataset/toronto-centreline-tcl/",
+      "retrieved": "2026-10-17",
+      "note": "9 segments of Bloor St W (Christie St to Ossington Ave): 0.61 km."
+    },
+    {
+      "label": "Traffic Volumes at Intersections for All Modes",
+      "url": "https://open.toronto.ca/dataset/traffic-volumes-at-intersections-for-all-modes/",
+      "retrieved": "2026-10-17",
+      "note": "Bloor St W / Shaw St, 2025-06-25, 14 h count; PM peak hour, Bloor approaches only."
+    },
+    {
+      "label": "Motor Vehicle Collisions involving Killed or Seriously Injured Persons",
+      "url": "https://open.toronto.ca/dataset/motor-vehicle-collisions-involving-killed-or-seriously-injured-persons/",
+      "retrieved": "2026-10-17",
+      "note": "Within 30 m of the segment since 2021-10-17; deduplicated by collision; aggregate counts only."
+    },
+    {
+      "label": "Cycling Network",
+      "url": "https://open.toronto.ca/dataset/cycling-network/",
+      "retrieved": "2026-10-17",
+      "note": "Bloor St W, Shaw St to Salem Ave: Cycle Track (2020); Bloor St W, Bathurst St to Shaw St: Cycle Track (2016)."
+    },
+    {
+      "label": "Official Plan Map 3: Right-of-Way Widths Associated with Existing Major Streets (June 2026)",
+      "url": "https://www.toronto.ca/wp-content/uploads/2026/06/98b4-CityPlanning-Map-3-ROW-Widths-Associated-with-Existing-Major-Streets.pdf",
+      "retrieved": "2026-10-17",
+      "note": "Official Plan Map 3 (June 2026): Bloor St W from Ossington Ave to Bathurst St is drawn in the 20 m colour. Planned right-of-way, read from the PDF."
+    }
+  ],
+  "estimates": [
+    {
+      "field": "baselineLayout",
+      "note": "No open dataset gives lane widths. Cycle tracks come from cycling-network (Cycle Track, installed 2016/2020); the rest is an estimate of today's street within 20 m. Confirm."
+    },
+    {
+      "field": "freeFlowSpeedKph",
+      "note": "Posted speed is not in a verified dataset; 40 km/h is assumed. Confirm."
+    },
+    {
+      "field": "baselineDemand.walk",
+      "note": "Peak-hour pedestrians scaled from the 14 h crossing count by the vehicle peak-hour share."
+    },
+    {
+      "field": "baselineDemand.car",
+      "note": "Vehicles x 1.0 persons per vehicle (occupancy not yet sourced)."
+    },
+    {
+      "field": "baselineDemand.bus",
+      "note": "Subway Line 2 runs below; no daytime surface bus on this segment."
+    }
+  ],
+  "observed": {
+    "count": {
+      "location_name": "Bloor St W / Shaw St",
+      "latest_count_date": "2025-06-25",
+      "count_duration": "14",
+      "total_vehicle": 13337,
+      "total_bike": 7687,
+      "total_pedestrian": 6659,
+      "pm_peak_start": "2025-06-25T16:45:00",
+      "pm_peak_vehicle": 1108,
+      "pm_peak_bike": 968,
+      "e_appr_vehicle": 5181,
+      "w_appr_vehicle": 6346,
+      "e_appr_bike": 2428,
+      "w_appr_bike": 2766
+    },
+    "peakHour": {
+      "vehicles": 958,
+      "bikes": 654,
+      "pedestrians": 553
+    },
+    "bikeFacility": [
+      "Cycle Track"
+    ]
+  },
+  "source": "Toronto Open Data and City of Toronto Official Plan; see sources and estimates."
+}

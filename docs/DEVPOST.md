@@ -56,7 +56,7 @@ Each resident reacts in their own words. The scorecard checks the level goal: cu
 
 ## Prize sections
 **Best Climate Action & Sustainability.**
-- Every scorecard leads with estimated emissions in kg CO₂e and the % change against today's street.
+- Every scorecard shows estimated emissions in kg CO₂e and the % change against today's street.
 - Level 1's goal is an emissions cut, so every winning run is a climate result.
 - The debrief states the mode-shift assumption behind the emissions number.
 - Emission factors: UK DESNZ 2024, "average car" 0.16691 kg CO₂e/km and "average local bus" 0.10846 kg CO₂e/passenger-km.
@@ -76,7 +76,7 @@ Each resident reacts in their own words. The scorecard checks the level goal: cu
 - Tiger Data service URL: **UNVERIFIED** until it is connected.
 
 **MLH Best Use of Vultr.**
-- The production game, its API and the Caddy reverse proxy with HTTPS run on a Vultr instance.
+- **UNVERIFIED until the deploy (#10):** the production game, its API and the Caddy reverse proxy with HTTPS run on a Vultr instance.
 - The footer says "Hosted on Vultr".
 - Instance type: **UNVERIFIED**.
 

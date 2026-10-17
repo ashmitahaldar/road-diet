@@ -8,8 +8,7 @@ export function Start({ onPlay }: { onPlay: () => void }) {
       </h1>
       <p className="font-display text-2xl sm:text-3xl">Every street has a budget. How would you spend it?</p>
       <p className="max-w-xl text-lg">
-        Redesign a Toronto street within its fixed width, then play out one day and see what happens to emissions, safety, travel times and four
-        fictional residents. For anyone curious how street space gets shared.
+        Redesign a Toronto street. Run a day. See how residents feel.
       </p>
       <Button onClick={onPlay} className="min-h-16 bg-primary px-14 font-display text-3xl text-paper shadow-[5px_5px_0_var(--color-ink)] hover:bg-primary hover:brightness-110">
         Play

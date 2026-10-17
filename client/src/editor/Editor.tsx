@@ -12,20 +12,15 @@ import {
   type Level,
 } from '@road-diet/shared'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { ElementIcon, SvgPatterns, VISUALS } from './elementVisuals'
-import { TrafficStrip } from './TrafficStrip'
-import { Button } from '../ui'
+import { Movers, laneTraffic, type Mover } from './traffic'
 import { BudgetBar, Palette, SelectionBar, STEP_M } from './controls'
 
 const PX_PER_M = 48
 const TOP = 20
-const CURB = 12
 const BASE = TOP + 150
 const VIEW_H = BASE + 84
-/** Traffic preview strip drawn above the cross-section, in the same SVG so its lanes line up and scroll together. */
-const PLAN_H = 96
-const PLAN_GAP = 14
 const DRAG_START_PX = 6
 
 /** `slot` is the gap (0..n) the dragged item would drop into, or null when off the street. */
@@ -34,9 +29,9 @@ type Drag =
   | { kind: 'move'; index: number; startX: number; startY: number; x: number; y: number; active: boolean; slot: number | null }
   | { kind: 'add'; id: ElementId; startX: number; startY: number; x: number; y: number; active: boolean; slot: number | null }
 
-type Props = { level: Level; layout: Layout; onChange: (layout: Layout) => void; onOpen3d?: () => void }
+type Props = { level: Level; layout: Layout; onChange: (layout: Layout) => void }
 
-export function Editor({ level, layout, onChange, onOpen3d }: Props) {
+export function Editor({ level, layout, onChange }: Props) {
   const [selected, setSelected] = useState<number | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -57,6 +52,7 @@ export function Editor({ level, layout, onChange, onOpen3d }: Props) {
   const starts: number[] = []
   layout.elements.reduce((offset, el) => (starts.push(offset), offset + el.widthM), 0)
   const used = snap(W - free)
+  const traffic = laneTraffic(layout, level.corridor, BASE - TOP)
 
   const apply = (next: Layout, nextSelected: number | null, focus = false) => {
     if (next === layout) return
@@ -144,96 +140,88 @@ export function Editor({ level, layout, onChange, onOpen3d }: Props) {
   const x = (m: number) => m * PX_PER_M
 
   return (
-    <section aria-labelledby="editor-title" className={`flex flex-col gap-4 ${drag ? 'select-none' : ''}`}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="editor-title" tabIndex={-1} className="font-display text-2xl font-semibold outline-none">
-          Street cross-section
-        </h2>
-        <p className="text-sm">Drag cards onto the street. Drag a block to move it, or its handles to resize it.</p>
-        {onOpen3d && <Button onClick={onOpen3d}>Edit in 3D</Button>}
-      </div>
-
+    <div className={`flex flex-col gap-3 ${drag ? 'select-none' : ''}`}>
       <BudgetBar layout={layout} level={level} announce={drag?.kind !== 'resize'} />
 
-      <p className="-mt-2 text-sm">The strip on top is a live traffic preview: illustrative, not to scale.</p>
-      <p className="-mt-2 text-sm sm:hidden">Scroll sideways to see the whole street. Tap a block before dragging it.</p>
+      <p className="text-sm">
+        Drag pieces to move them, handles to resize. Traffic is illustrative.
+        <span className="sm:hidden"> Scroll sideways for the whole street. Tap a piece before dragging it.</span>
+      </p>
       <div className="overflow-x-auto rounded-2xl border-2 border-ink bg-paper px-3 pt-2 shadow-[4px_4px_0_var(--color-ink)]">
         <svg
           ref={svgRef}
-          viewBox={`0 0 ${x(W)} ${PLAN_H + PLAN_GAP + VIEW_H}`}
-          style={{ width: '100%', minWidth: W * 36 }}
-          className="overflow-visible"
+          viewBox={`0 0 ${x(W)} ${VIEW_H}`}
+          // Phones scroll sideways rather than shrink the street below a readable size; the one-screen layout fits it to the column.
+          style={{ width: '100%', '--min-w': `${W * 36}px` } as CSSProperties}
+          className="min-w-(--min-w) overflow-visible fit:min-w-0"
           role="group"
           aria-label={`Street cross-section, ${W} metres wide, ${layout.elements.length} elements`}
         >
           <SvgPatterns />
-          <TrafficStrip layout={layout} corridor={level.corridor} height={PLAN_H} pxPerM={PX_PER_M} />
-          <g transform={`translate(0 ${PLAN_H + PLAN_GAP})`}>
-            <AnimatePresence initial={false}>
-              {layout.elements.map((el, i) => {
-                const key = `${el.id}-${layout.elements.slice(0, i).filter((e) => e.id === el.id).length}`
-                const dragged = drag?.kind === 'move' && drag.active && drag.index === i
-                return (
-                  <motion.g
-                    key={key}
-                    ref={(node: SVGGElement | null) => {
-                      blockRefs.current[i] = node
-                    }}
-                    initial={{ opacity: 0, x: x(starts[i]), y: -24 }}
-                    animate={{ opacity: dragged ? 0.35 : 1, x: x(starts[i]), y: i === selected ? -6 : 0 }}
-                    exit={{ opacity: 0, y: 40, transition: { duration: reduceMotion ? 0 : 0.18 } }}
-                    transition={transition}
-                    tabIndex={0}
-                    role="button"
-                    aria-pressed={i === selected}
-                    aria-label={`${ELEMENTS[el.id].label}, ${el.widthM.toFixed(1)} metres`}
-                    aria-describedby="editor-keys"
-                    onClick={() => setSelected(i)}
-                    onFocus={() => setSelected(i)}
-                    onKeyDown={onKeyDown(i)}
-                    onPointerDown={startMove(i)}
-                    style={{ touchAction: i === selected ? 'none' : 'auto' }}
-                    className="cursor-grab outline-none"
-                  >
-                    <Block id={el.id} w={x(el.widthM)} widthM={el.widthM} prev={layout.elements[i - 1]?.id} next={layout.elements[i + 1]?.id} lifted={i === selected} />
-                  </motion.g>
-                )
-              })}
-            </AnimatePresence>
+          <AnimatePresence initial={false}>
+            {layout.elements.map((el, i) => {
+              const key = `${el.id}-${layout.elements.slice(0, i).filter((e) => e.id === el.id).length}`
+              const dragged = drag?.kind === 'move' && drag.active && drag.index === i
+              return (
+                <motion.g
+                  key={key}
+                  ref={(node: SVGGElement | null) => {
+                    blockRefs.current[i] = node
+                  }}
+                  initial={{ opacity: 0, x: x(starts[i]), y: -24 }}
+                  animate={{ opacity: dragged ? 0.35 : 1, x: x(starts[i]), y: i === selected ? -6 : 0 }}
+                  exit={{ opacity: 0, y: 40, transition: { duration: reduceMotion ? 0 : 0.18 } }}
+                  transition={transition}
+                  tabIndex={0}
+                  role="button"
+                  aria-pressed={i === selected}
+                  aria-label={`${ELEMENTS[el.id].label}, ${el.widthM.toFixed(1)} metres`}
+                  aria-describedby="editor-keys"
+                  onClick={() => setSelected(i)}
+                  onFocus={() => setSelected(i)}
+                  onKeyDown={onKeyDown(i)}
+                  onPointerDown={startMove(i)}
+                  style={{ touchAction: i === selected ? 'none' : 'auto' }}
+                  className="cursor-grab outline-none"
+                >
+                  <Block id={el.id} w={x(el.widthM)} widthM={el.widthM} prev={layout.elements[i - 1]?.id} next={layout.elements[i + 1]?.id} lifted={i === selected} movers={traffic[i]} />
+                </motion.g>
+              )
+            })}
+          </AnimatePresence>
 
-            {free > 0 && (
-              <motion.g aria-hidden initial={false} animate={{ x: x(used) }} transition={transition}>
-                <rect x={4} y={TOP + CURB} width={Math.max(0, x(free) - 8)} height={BASE - TOP - CURB} rx={10} fill="none" stroke="var(--color-ink)" strokeOpacity={0.55} strokeWidth={2} strokeDasharray="6 6" />
-                {x(free) > 40 && (
-                  <>
-                    <text x={x(free) / 2} y={BASE + 22} textAnchor="middle" fontSize={13} fill="var(--color-ink)">
-                      Unused
-                    </text>
-                    <text x={x(free) / 2} y={BASE + 40} textAnchor="middle" fontSize={13} fill="var(--color-ink)" className="tabular-nums">
-                      {free.toFixed(1)} m
-                    </text>
-                  </>
-                )}
-              </motion.g>
-            )}
+          {free > 0 && (
+            <motion.g aria-hidden initial={false} animate={{ x: x(used) }} transition={transition}>
+              <rect x={4} y={TOP} width={Math.max(0, x(free) - 8)} height={BASE - TOP} rx={10} fill="none" stroke="var(--color-ink)" strokeOpacity={0.55} strokeWidth={2} strokeDasharray="6 6" />
+              {x(free) > 40 && (
+                <>
+                  <text x={x(free) / 2} y={BASE + 22} textAnchor="middle" fontSize={13} fill="var(--color-ink)">
+                    Unused
+                  </text>
+                  <text x={x(free) / 2} y={BASE + 40} textAnchor="middle" fontSize={13} fill="var(--color-ink)" className="tabular-nums">
+                    {free.toFixed(1)} m
+                  </text>
+                </>
+              )}
+            </motion.g>
+          )}
 
-            {sel && selected !== null && !carrying && (
-              <motion.g aria-hidden initial={false} animate={{ x: x(starts[selected]), y: -6 }} transition={transition}>
-                <rect x={-2} y={TOP - 4} width={x(sel.widthM) + 4} height={BASE - TOP + 8} rx={8} fill="none" stroke="var(--color-primary)" strokeWidth={4} pointerEvents="none" />
-                <Handle cx={0} onPointerDown={startResize(selected, -1)} />
-                <Handle cx={x(sel.widthM)} onPointerDown={startResize(selected, 1)} />
-              </motion.g>
-            )}
+          {sel && selected !== null && !carrying && (
+            <motion.g aria-hidden initial={false} animate={{ x: x(starts[selected]), y: -6 }} transition={transition}>
+              <rect x={-2} y={TOP - 4} width={x(sel.widthM) + 4} height={BASE - TOP + 8} rx={8} fill="none" stroke="var(--color-primary)" strokeWidth={4} pointerEvents="none" />
+              <Handle cx={0} onPointerDown={startResize(selected, -1)} />
+              <Handle cx={x(sel.widthM)} onPointerDown={startResize(selected, 1)} />
+            </motion.g>
+          )}
 
-            {dropSlot !== null && dropSlot !== undefined && (
-              <g aria-hidden pointerEvents="none">
-                <rect x={x(starts[dropSlot] ?? used) - 3} y={TOP - 12} width={6} height={BASE - TOP + 20} rx={3} fill="var(--color-primary)" />
-                <path d={`M${x(starts[dropSlot] ?? used) - 9} ${TOP - 18} h18 l-9 10 z`} fill="var(--color-primary)" />
-              </g>
-            )}
+          {dropSlot !== null && dropSlot !== undefined && (
+            <g aria-hidden pointerEvents="none">
+              <rect x={x(starts[dropSlot] ?? used) - 3} y={TOP - 12} width={6} height={BASE - TOP + 20} rx={3} fill="var(--color-primary)" />
+              <path d={`M${x(starts[dropSlot] ?? used) - 9} ${TOP - 18} h18 l-9 10 z`} fill="var(--color-primary)" />
+            </g>
+          )}
 
-            <Ruler W={W} />
-          </g>
+          <Ruler W={W} />
         </svg>
       </div>
 
@@ -241,7 +229,7 @@ export function Editor({ level, layout, onChange, onOpen3d }: Props) {
 
       <SelectionBar level={level} layout={layout} selected={selected} resize={resize} move={move} remove={remove} />
       <p id="editor-keys" className="-mt-2 text-sm">
-        Keyboard: Tab to a block, ← / → resize by 0.1 m, Alt + ← / → move it, Delete removes it.
+        Keys: Tab to a piece · ← → resize · Alt + ← → move · Delete removes.
       </p>
 
       {ghost && drag && drag.kind !== 'resize' && (
@@ -258,16 +246,16 @@ export function Editor({ level, layout, onChange, onOpen3d }: Props) {
           {ELEMENTS[ghost].label}
         </div>
       )}
-    </section>
+    </div>
   )
 }
 
-/** One element drawn at local x = 0. Lane markings and curbs depend on the neighbours. */
-function Block({ id, w, widthM, prev, next, lifted }: { id: ElementId; w: number; widthM: number; prev?: ElementId; next?: ElementId; lifted: boolean }) {
+/** One element seen from above, drawn at local x = 0, with its share of the moving traffic. Lane markings and curbs depend on the neighbours. */
+function Block({ id, w, widthM, prev, next, lifted, movers }: { id: ElementId; w: number; widthM: number; prev?: ElementId; next?: ElementId; lifted: boolean; movers: Mover[] }) {
   const v = VISUALS[id]
-  const top = v.raised ? TOP : TOP + CURB
+  const top = TOP
   const mid = (top + BASE) / 2
-  const prevTop = prev && VISUALS[prev].raised ? TOP : TOP + CURB
+  const r = Math.min(16, w / 2 - 3)
   const barrierRight = next === 'car_lane' || next === 'bus_lane'
   return (
     <>
@@ -283,12 +271,15 @@ function Block({ id, w, widthM, prev, next, lifted }: { id: ElementId; w: number
           <path d={`M4 ${top + 10} V${BASE - 10}`} stroke="var(--color-paper)" strokeWidth={2} strokeDasharray="6 10" />
         </g>
       )}
-      <LeftEdge prev={prev} id={id} top={top} prevTop={prevTop} />
+      <svg y={top}>
+        <Movers movers={movers} w={w} h={BASE - top} pxPerM={w / widthM} />
+      </svg>
+      <LeftEdge prev={prev} id={id} curb={!!prev && VISUALS[prev].raised !== v.raised} />
       {!next && <line x1={w} x2={w} y1={top} y2={BASE} stroke="var(--color-ink)" strokeWidth={2} />}
       <line x1={0} x2={w} y1={top} y2={top} stroke="var(--color-ink)" strokeWidth={2} />
       <line x1={0} x2={w} y1={BASE} y2={BASE} stroke="var(--color-ink)" strokeWidth={2} />
-      <circle cx={w / 2} cy={mid} r={Math.min(21, w / 2 - 3)} fill="var(--color-paper)" stroke="var(--color-ink)" strokeWidth={2} />
-      <ElementIcon id={id} size={Math.min(30, w - 12)} x={w / 2 - Math.min(15, w / 2 - 6)} y={mid - Math.min(15, w / 2 - 6)} />
+      <circle cx={w / 2} cy={mid} r={r} fill="var(--color-paper)" stroke="var(--color-ink)" strokeWidth={2} />
+      <ElementIcon id={id} size={r * 1.4} x={w / 2 - r * 0.7} y={mid - r * 0.7} />
       <text x={w / 2} y={BASE + 22} textAnchor="middle" fontSize={13} fontWeight={600} fill="var(--color-ink)">
         {v.short}
       </text>
@@ -299,12 +290,13 @@ function Block({ id, w, widthM, prev, next, lifted }: { id: ElementId; w: number
   )
 }
 
-function LeftEdge({ prev, id, top, prevTop }: { prev?: ElementId; id: ElementId; top: number; prevTop: number }) {
+/** `curb`: one side is raised and the other isn't, so the edge is drawn heavier. */
+function LeftEdge({ prev, id, curb }: { prev?: ElementId; id: ElementId; curb: boolean }) {
   const lane = (a?: ElementId) => a === 'car_lane' || a === 'bus_lane'
   if (prev === 'car_lane' && id === 'car_lane')
-    return <line x1={0} x2={0} y1={top + 10} y2={BASE - 10} stroke="var(--color-paper)" strokeWidth={3} strokeDasharray="16 12" />
-  if (lane(prev) && lane(id)) return <line x1={0} x2={0} y1={top + 4} y2={BASE - 4} stroke="var(--color-paper)" strokeWidth={3} />
-  return <line x1={0} x2={0} y1={Math.min(top, prevTop)} y2={BASE} stroke="var(--color-ink)" strokeWidth={prevTop !== top ? 3 : 2} />
+    return <line x1={0} x2={0} y1={TOP + 10} y2={BASE - 10} stroke="var(--color-paper)" strokeWidth={3} strokeDasharray="16 12" />
+  if (lane(prev) && lane(id)) return <line x1={0} x2={0} y1={TOP + 4} y2={BASE - 4} stroke="var(--color-paper)" strokeWidth={3} />
+  return <line x1={0} x2={0} y1={TOP} y2={BASE} stroke="var(--color-ink)" strokeWidth={curb ? 3 : 2} />
 }
 
 function Handle({ cx, onPointerDown }: { cx: number; onPointerDown: (e: ReactPointerEvent) => void }) {

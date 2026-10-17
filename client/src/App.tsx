@@ -24,7 +24,9 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <Background subtle={screen === 'play'} />
-      <div className={`mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 pt-6 ${screen === 'play' ? 'pb-24 xl:pb-6' : 'pb-6'}`}>
+      <div
+        className={`mx-auto flex min-h-dvh max-w-7xl flex-col px-4 ${screen === 'play' ? 'gap-3 pt-3 pb-24 fit:h-dvh fit:pb-3' : 'gap-6 pt-6 pb-6'}`}
+      >
         {dataPage ? (
           <div className="flex-1">
             <DataPage level={level} />
@@ -34,7 +36,7 @@ export default function App() {
             <motion.div
               key={screen}
               ref={view}
-              className="flex-1"
+              className="flex-1 fit:min-h-0"
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -24 }}

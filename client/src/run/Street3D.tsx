@@ -22,7 +22,7 @@ import {
   type Material,
 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { BudgetBar, Palette, SelectionBar } from '../editor/controls'
+import { BudgetBar, CANVAS_SIZE, Palette, SelectionBar } from '../editor/controls'
 import { VISUALS } from '../editor/elementVisuals'
 import { inkMaterial, instances, part, toon, tokenColor, type Part } from './street3d/materials'
 import * as props from './street3d/props'
@@ -162,7 +162,8 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
 
     const camera = new PerspectiveCamera(45, 1, 0.5, 400)
     const s = Math.max(1, level.corridor.widthM / 20)
-    camera.position.set(20 * s, 34 * s, 42 * s)
+    // Close enough to grab a handle straight away; zoom out to see the whole block.
+    camera.position.set(13 * s, 22 * s, 27 * s)
     const controls = new OrbitControls(camera, canvas)
     Object.assign(controls, { enablePan: false, enableDamping: true, autoRotate: true, autoRotateSpeed: 0.6, minDistance: 15, maxDistance: 110, minPolarAngle: 0.3, maxPolarAngle: 1.35 })
 
@@ -327,19 +328,15 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
   }
   const label = `${counts.car} cars, ${counts.bus} buses, ${counts.bike} bikes and ${counts.walk} people walking, roughly in proportion to who uses the street.`
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 fit:min-h-0 fit:flex-1">
       <BudgetBar layout={layout} level={level} announce={!dragging} />
       <div
         ref={host}
         role="img"
         aria-label={`3D view of your street: ${label}`}
         data-objects={MODES.map((m) => `${m}:${counts[m]}`).join(' ')}
-        className={`h-[min(60dvh,34rem)] min-h-72 overflow-hidden rounded-2xl border-2 border-ink bg-paper ${sel === null ? 'cursor-pointer' : 'cursor-grab'}`}
+        className={`${CANVAS_SIZE} overflow-hidden rounded-2xl border-2 border-ink bg-paper ${sel === null ? 'cursor-pointer' : 'cursor-grab'}`}
       />
-      <p className="-mt-2 text-sm">
-        Tap a piece of street to select it, then drag its blue handles to resize it or drag it sideways to move it. Tap it again to let go. Drag anywhere
-        else to look around. For keyboard editing, use the 2D editor.
-      </p>
       <SelectionBar
         level={level}
         layout={layout}
@@ -347,7 +344,7 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
         resize={(i, d) => apply(resizeElement(layout, level, i, d), i)}
         move={(i, dir) => apply(moveElement(layout, i, dir), i + dir)}
         remove={(i) => apply(removeElement(layout, i), layout.elements.length > 1 ? Math.max(0, i - 1) : null)}
-        empty="Tap a piece of street to resize, move or remove it."
+        empty="Tap a piece, then drag its blue handles. Keyboard: switch to 2D."
       />
       <Palette
         level={level}

@@ -1,4 +1,4 @@
-import { earnedBadges, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { PERSONAS, earnedBadges, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
@@ -87,7 +87,7 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
             <p className="mt-1">
               {score.goalMet
                 ? 'Your street went on a diet and kept its residents on board.'
-                : 'Part of the goal is still open. Adjust the street and run another day.'}
+                : 'Tweak the street and run another day.'}
             </p>
           </div>
           <div role="img" aria-label={`${score.stars} of 3 stars`} className="flex shrink-0 gap-1">
@@ -136,8 +136,28 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
             })}
           </ul>
           <p className="mt-2 text-sm">
-            Stars: ★ goal met · ★★ also safety at least {level.stars.safety} · ★★★ also every resident at least {level.stars.fairness} happy.
+            ★ goal · ★★ + safety {level.stars.safety} · ★★★ + everyone {level.stars.fairness} happy
           </p>
+        </section>
+
+        <section aria-labelledby="said-title" aria-busy={!react}>
+          <h3 id="said-title" className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            What residents said {react?.reactions.every((r) => r.source === 'gemini') && <GeminiLabel />}
+          </h3>
+          {react ? (
+            <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+              {react.reactions.map((r) => (
+                <li key={r.personaId} className="rounded-xl border-2 border-ink px-3 py-2">
+                  <span className="font-semibold">
+                    {PERSONAS[r.personaId].name} · <span className="tabular-nums">{metrics.happiness[r.personaId].toFixed(0)}/100</span>
+                  </span>
+                  <q className="mt-0.5 block text-sm">{r.line}</q>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div aria-label="Waiting for reactions" className="mt-2 h-16 animate-pulse rounded-xl bg-grid motion-reduce:animate-none" />
+          )}
         </section>
 
         {badges.length > 0 && (
@@ -164,7 +184,7 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
             <strong className="font-display text-2xl">
               {signed(emissionsDeltaKg, 0)} kg CO₂e
             </strong>{' '}
-            per peak hour on this street ({signed(-metrics.emissionsReductionPct)}% vs today: {metrics.emissionsKgPerHour.toFixed(0)} kg instead of {base.emissionsKgPerHour.toFixed(0)} kg).
+            per peak hour ({signed(-metrics.emissionsReductionPct)}% vs today).
           </p>
         </section>
 

@@ -1,6 +1,7 @@
 import type { Persona, PersonaId } from './model/types'
 
 // Fictional composites, never real people. Trips and weights are design choices, not data.
+// Lean scope: 4 personas. The parent-with-stroller persona is Stretch (spec 2.3).
 export const PERSONAS: Record<PersonaId, Persona> = {
   driver_delivery: {
     id: 'driver_delivery',
@@ -24,14 +25,6 @@ export const PERSONAS: Record<PersonaId, Persona> = {
     blurb: 'Senior who walks to the pharmacy and grocery (fictional resident).',
     trip: { mode: 'walk', distanceKm: 0.8 },
     weights: { travelTime: 1, safety: 2, comfort: 3, access: 2 },
-    baselineHappiness: 60,
-  },
-  parent_stroller: {
-    id: 'parent_stroller',
-    name: 'Dana',
-    blurb: 'Parent with a stroller who walks to daycare and takes the bus (fictional resident).',
-    trip: { mode: 'bus', distanceKm: 3 },
-    weights: { travelTime: 2, safety: 3, comfort: 2, access: 0 },
     baselineHappiness: 60,
   },
   shop_owner: {

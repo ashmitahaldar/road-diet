@@ -20,7 +20,6 @@ export type PersonaId =
   | 'driver_delivery'
   | 'student_cyclist'
   | 'senior_walker'
-  | 'parent_stroller'
   | 'shop_owner'
 
 export type Metrics = {

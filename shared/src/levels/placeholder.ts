@@ -1,5 +1,5 @@
-import { ELEMENTS, TODO_SOURCE } from '../model/constants'
-import type { ElementId, Level } from '../model/types'
+import { TODO_SOURCE } from '../model/constants'
+import type { Level } from '../model/types'
 
 // Placeholder until a real corridor is built from Toronto data (#11).
 export const PLACEHOLDER_LEVEL: Level = {
@@ -27,7 +27,8 @@ export const PLACEHOLDER_LEVEL: Level = {
     sources: [],
     source: TODO_SOURCE,
   },
-  allowedElements: Object.keys(ELEMENTS) as ElementId[],
+  // Lean scope (spec 2.2): loading zone and patio are Stretch.
+  allowedElements: ['sidewalk', 'car_lane', 'bus_lane', 'bike_painted', 'bike_protected', 'parking', 'planter'],
   goal: { minEmissionsReductionPct: 20, minHappiness: 40 },
   stars: { safety: 60, fairness: 55 },
 }

@@ -41,3 +41,9 @@ describe('validateLayout', () => {
     expect(r.errors).toEqual([{ kind: 'not-allowed', index: 0, id: 'patio' }])
   })
 })
+
+test('lean Level 1 allows the 7 Must elements only (spec 1.9)', () => {
+  expect(PLACEHOLDER_LEVEL.allowedElements).toHaveLength(7)
+  const r = validateLayout({ elements: [{ id: 'loading', widthM: 3 }, { id: 'patio', widthM: 2 }] }, PLACEHOLDER_LEVEL)
+  expect(r.errors.filter((e) => e.kind === 'not-allowed')).toHaveLength(2)
+})

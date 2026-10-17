@@ -1,11 +1,11 @@
-import { scoreRun, type GoalCheck, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { earnedBadges, resultText, scoreRun, type GoalCheck, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
 import { Button, GeminiLabel, signed } from '../ui'
 import { Others } from './Others'
 
-type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; closeLabel?: string }
+type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; fairnessBeatsPct?: number | null; closeLabel?: string }
 
 const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> = {
   emissions: (g) => [`Cut emissions by at least ${g.target}%`, `${g.value.toFixed(1)}%`],
@@ -13,11 +13,32 @@ const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> =
   safety: (g) => [`Safety at least ${g.target}`, `${g.value.toFixed(0)}`],
 }
 
-export function Scorecard({ open, onClose, level, metrics, base, react, stats, closeLabel = 'Keep editing' }: Props) {
+/** Clipboard API first; the hidden-textarea fallback covers browsers without it (older iOS, plain http). */
+async function copy(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    const t = Object.assign(document.createElement('textarea'), { value: text, readOnly: true })
+    t.style.position = 'fixed'
+    t.style.opacity = '0'
+    document.body.appendChild(t)
+    t.select()
+    t.setSelectionRange(0, text.length)
+    const ok = document.execCommand('copy')
+    t.remove()
+    return ok
+  }
+}
+
+export function Scorecard({ open, onClose, level, metrics, base, react, stats, fairnessBeatsPct = null, closeLabel = 'Keep editing' }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
   const score = scoreRun(metrics, level)
+  const badges = earnedBadges(metrics, score.goalMet)
+  const [copied, setCopied] = useState<boolean | null>(null)
+  useEffect(() => setCopied(null), [open, metrics])
 
   useEffect(() => {
     const d = ref.current
@@ -97,6 +118,22 @@ export function Scorecard({ open, onClose, level, metrics, base, react, stats, c
           </p>
         </section>
 
+        {badges.length > 0 && (
+          <section aria-labelledby="badges-title">
+            <h3 id="badges-title" className="font-display text-lg font-semibold">
+              Badges
+            </h3>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {badges.map((b) => (
+                <li key={b.id} className="rounded-xl border-2 border-ink bg-loading/40 px-3 py-1.5">
+                  <strong className="font-semibold">{b.name}</strong>
+                  <span className="block text-sm">{b.description}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         <section aria-labelledby="co2-title" className="rounded-2xl border-2 border-ink p-4">
           <h3 id="co2-title" className="font-display text-lg font-semibold">
             Emissions
@@ -124,7 +161,7 @@ export function Scorecard({ open, onClose, level, metrics, base, react, stats, c
           )}
         </section>
 
-        {stats !== null && <Others stats={stats} yourStars={score.stars} />}
+        {stats !== null && <Others stats={stats} yourStars={score.stars} fairnessBeatsPct={fairnessBeatsPct} />}
 
         <section aria-labelledby="limits-title" className="rounded-2xl border-2 border-dashed border-ink bg-grid/40 p-4 text-sm">
           <h3 id="limits-title" className="font-display text-lg font-semibold">
@@ -140,9 +177,31 @@ export function Scorecard({ open, onClose, level, metrics, base, react, stats, c
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm">A learning tool, not a forecast. Residents are fictional.</p>
-          <Button onClick={onClose} className="bg-primary px-5 text-paper hover:bg-primary hover:brightness-110">
-            {closeLabel}
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <span role="status" className="text-sm">
+              {copied === true ? 'Copied!' : copied === false ? 'Copy failed' : ''}
+            </span>
+            <Button
+              onClick={async () =>
+                setCopied(
+                  await copy(
+                    resultText({
+                      levelName: level.name,
+                      stars: score.stars,
+                      badges,
+                      emissionsDeltaKg: metrics.emissionsKgPerHour - base.emissionsKgPerHour,
+                      url: location.origin,
+                    }),
+                  ),
+                )
+              }
+            >
+              Copy my result
+            </Button>
+            <Button onClick={onClose} className="bg-primary px-5 text-paper hover:bg-primary hover:brightness-110">
+              {closeLabel}
+            </Button>
+          </div>
         </div>
       </div>
     </dialog>

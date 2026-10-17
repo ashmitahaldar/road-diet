@@ -1,7 +1,8 @@
 import { LEVELS } from './levels'
+import { BADGES } from './model/badges'
 import { DESIGN_CHOICE, ELEMENTS, MODEL, TODO_SOURCE } from './model/constants'
 
-const ROOT = { elements: ELEMENTS, model: MODEL, levels: LEVELS }
+const ROOT = { elements: ELEMENTS, model: MODEL, levels: LEVELS, badges: BADGES }
 
 /** `[path, source]` for every object whose string `source` passes `keep`, e.g. `['elements.car_lane', '...']`. */
 function listSources(keep: (source: string) => boolean, root: object, path = ''): [string, string][] {

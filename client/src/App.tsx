@@ -1,51 +1,49 @@
-import { PLACEHOLDER_LEVEL, computeMetrics, type Layout, type Metrics } from '@road-diet/shared'
-import { useReducedMotion } from 'motion/react'
-import { useMemo, useRef, useState } from 'react'
-import { Editor } from './editor/Editor'
-import { RUN_MS, RunPanel, type Shown } from './run/RunPanel'
-import { Scorecard } from './run/Scorecard'
+import { PLACEHOLDER_LEVEL } from '@road-diet/shared'
+import { AnimatePresence, MotionConfig, motion } from 'motion/react'
+import { useRef, useState } from 'react'
+import { Background } from './Background'
+import { Briefing } from './screens/Briefing'
+import { Game } from './screens/Game'
+import { Start } from './screens/Start'
+
+type Screen = 'start' | 'briefing' | 'play'
 
 export default function App() {
   const level = PLACEHOLDER_LEVEL
-  const [layout, setLayout] = useState(level.corridor.baselineLayout)
-  const [run, setRun] = useState<{ layout: Layout; metrics: Metrics } | null>(null)
-  const [runId, setRunId] = useState(0)
-  const [running, setRunning] = useState(false)
-  const [scoreOpen, setScoreOpen] = useState(false)
-  const timer = useRef<number>(undefined)
-  const reduce = useReducedMotion()
-  const base = useMemo(() => computeMetrics(level.corridor.baselineLayout, level), [level])
-
-  const shown: Shown = !run
-    ? { metrics: base, kind: 'today' }
-    : { metrics: run.metrics, kind: JSON.stringify(run.layout) === JSON.stringify(layout) ? 'run' : 'stale' }
-
-  const runDay = () => {
-    setRun({ layout, metrics: computeMetrics(layout, level) })
-    setRunId((n) => n + 1)
-    setRunning(true)
-    window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(() => {
-      setRunning(false)
-      setScoreOpen(true)
-    }, reduce ? 0 : RUN_MS)
+  const [screen, setScreen] = useState<Screen>('start')
+  const view = useRef<HTMLDivElement>(null)
+  const go = (next: Screen) => {
+    setScreen(next)
+    window.scrollTo(0, 0)
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 px-4 pt-6 pb-24 xl:pb-6">
-      <header>
-        <h1 className="font-display text-4xl font-semibold">Road Diet</h1>
-        <p className="mt-1 text-lg">Every street has a budget. How would you spend it?</p>
-        <p className="mt-2">
-          <strong>{level.name}</strong> · {level.corridor.widthM} m wide · placeholder data
-        </p>
-      </header>
-      <main className="grid flex-1 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <Editor level={level} layout={layout} onChange={setLayout} />
-        <RunPanel level={level} base={base} shown={shown} running={running} runId={runId} onRun={runDay} onShowScore={() => setScoreOpen(true)} />
-      </main>
-      {run && <Scorecard open={scoreOpen} onClose={() => setScoreOpen(false)} level={level} metrics={run.metrics} base={base} />}
-      <footer className="text-sm">A learning tool, not a forecast. Residents are fictional.</footer>
-    </div>
+    <MotionConfig reducedMotion="user">
+      <Background subtle={screen === 'play'} />
+      <div className={`mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 pt-6 ${screen === 'play' ? 'pb-24 xl:pb-6' : 'pb-6'}`}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={screen}
+            ref={view}
+            className="flex-1"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -24 }}
+            transition={{ duration: 0.25 }}
+            onAnimationComplete={() => view.current?.querySelector('h1')?.focus({ preventScroll: true })}
+          >
+            {screen === 'start' && <Start onPlay={() => go('briefing')} />}
+            {screen === 'briefing' && <Briefing level={level} onStart={() => go('play')} onBack={() => go('start')} />}
+            {screen === 'play' && <Game level={level} />}
+          </motion.div>
+        </AnimatePresence>
+        <footer className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-sm">
+          <span>A learning tool, not a forecast. Residents are fictional.</span>
+          <a href="/data" className="font-semibold text-primary underline underline-offset-2">
+            Data & Limitations
+          </a>
+        </footer>
+      </div>
+    </MotionConfig>
   )
 }

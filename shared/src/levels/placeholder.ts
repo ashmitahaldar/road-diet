@@ -30,7 +30,7 @@ export const PLACEHOLDER_LEVEL: Level = {
   // Lean scope (spec 2.2): loading zone and patio are Stretch.
   allowedElements: ['sidewalk', 'car_lane', 'bus_lane', 'bike_painted', 'bike_protected', 'parking', 'planter'],
   goal: { minEmissionsReductionPct: 20, minHappiness: 40 },
-  stars: { safety: 60, fairness: 55 },
+  stars: { safety: 55, fairness: 55 },
 }
 
 export const LEVELS: Record<string, Level> = { placeholder: PLACEHOLDER_LEVEL }

@@ -1,11 +1,21 @@
+import { PLACEHOLDER_LEVEL } from '@road-diet/shared'
+import { Editor } from './editor/Editor'
+
 export default function App() {
+  const level = PLACEHOLDER_LEVEL
   return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex-1 p-8">
-        <h1 className="text-4xl font-bold">Road Diet</h1>
-        <p className="mt-2 text-lg">Every street has a budget. How would you spend it?</p>
+    <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-4 py-6">
+      <header>
+        <h1 className="font-display text-4xl font-semibold">Road Diet</h1>
+        <p className="mt-1 text-lg">Every street has a budget. How would you spend it?</p>
+        <p className="mt-2">
+          <strong>{level.name}</strong> · {level.corridor.widthM} m wide · placeholder data
+        </p>
+      </header>
+      <main className="flex-1">
+        <Editor level={level} />
       </main>
-      <footer className="p-4 text-sm">Not an election prediction. No candidates or parties.</footer>
+      <footer className="text-sm">A learning tool, not a forecast. Residents are fictional.</footer>
     </div>
   )
 }

@@ -1,10 +1,40 @@
 import { computeMetrics, fallbackResult, type Layout, type Level, type Metrics, type ReactResult } from '@road-diet/shared'
 import { useReducedMotion } from 'motion/react'
-import { useMemo, useRef, useState } from 'react'
+import { Component, Suspense, lazy, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Editor } from '../editor/Editor'
 import { RUN_MS, RunPanel, type Shown } from '../run/RunPanel'
 import { Scorecard } from '../run/Scorecard'
+import { Button } from '../ui'
 import { goalSentence } from './Briefing'
+
+const Street3D = lazy(() => import('../run/Street3D'))
+const NO_3D = 'road-diet:no-3d'
+
+/** WebGL present and the 3D view hasn't failed earlier this session. */
+function can3d() {
+  try {
+    if (sessionStorage.getItem(NO_3D)) return false
+  } catch {
+    // storage blocked: just probe WebGL
+  }
+  const canvas = document.createElement('canvas')
+  return !!(canvas.getContext('webgl2') ?? canvas.getContext('webgl'))
+}
+
+/** Any 3D failure, including a chunk that won't load, drops back to the 2D editor for the rest of the session. */
+class Fallback extends Component<{ children: ReactNode; onError: () => void }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError = () => ({ failed: true })
+  componentDidCatch() {
+    try {
+      sessionStorage.setItem(NO_3D, '1')
+    } catch {
+      // the in-memory flag below still covers this page
+    }
+    this.props.onError()
+  }
+  render = () => (this.state.failed ? null : this.props.children)
+}
 
 /** One /api/react call per run. Any failure, including no server at all, gives the shared canned result. */
 async function fetchReactions(level: Level, layout: Layout, metrics: Metrics): Promise<ReactResult> {
@@ -29,6 +59,8 @@ export function Game({ level }: { level: Level }) {
   const [runId, setRunId] = useState(0)
   const [running, setRunning] = useState(false)
   const [scoreOpen, setScoreOpen] = useState(false)
+  const [webgl, setWebgl] = useState(can3d)
+  const [stage, setStage] = useState(false)
   const timer = useRef<number>(undefined)
   const reduce = useReducedMotion()
   const base = useMemo(() => computeMetrics(level.corridor.baselineLayout, level), [level])
@@ -43,6 +75,7 @@ export function Game({ level }: { level: Level }) {
     // A slow reply for an older run must not overwrite a newer one.
     fetchReactions(level, layout, metrics).then((react) => setRun((cur) => (cur?.layout === layout ? { ...cur, react } : cur)))
     setRunId((n) => n + 1)
+    setStage(webgl && !reduce)
     setRunning(true)
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(() => {
@@ -63,10 +96,31 @@ export function Game({ level }: { level: Level }) {
         </p>
       </header>
       <main className="grid flex-1 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <Editor level={level} layout={layout} onChange={setLayout} />
+        {stage && run ? (
+          <section aria-labelledby="stage-title" className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 id="stage-title" className="font-display text-2xl font-semibold">
+                Your street in 3D
+              </h2>
+              <Button onClick={() => setStage(false)}>Edit street</Button>
+            </div>
+            <Fallback
+              onError={() => {
+                setWebgl(false)
+                setStage(false)
+              }}
+            >
+              <Suspense fallback={<div className="h-[min(60dvh,34rem)] min-h-72 animate-pulse rounded-2xl border-2 border-ink bg-grid motion-reduce:animate-none" />}>
+                <Street3D level={level} layout={run.layout} />
+              </Suspense>
+            </Fallback>
+          </section>
+        ) : (
+          <Editor level={level} layout={layout} onChange={setLayout} />
+        )}
         <RunPanel level={level} base={base} shown={shown} running={running} runId={runId} onRun={runDay} onShowScore={() => setScoreOpen(true)} />
       </main>
-      {run && <Scorecard open={scoreOpen} onClose={() => setScoreOpen(false)} level={level} metrics={run.metrics} base={base} react={run.react} />}
+      {run && <Scorecard open={scoreOpen} onClose={() => setScoreOpen(false)} level={level} metrics={run.metrics} base={base} react={run.react} closeLabel={stage ? 'See it in 3D' : undefined} />}
     </div>
   )
 }

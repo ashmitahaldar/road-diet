@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import { Button, GeminiLabel, signed } from '../ui'
 
-type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics; react: ReactResult | null }
+type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics; react: ReactResult | null; closeLabel?: string }
 
 const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> = {
   emissions: (g) => [`Cut emissions by at least ${g.target}%`, `${g.value.toFixed(1)}%`],
@@ -13,7 +13,7 @@ const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> =
 
 const pct = (x: number) => `${Math.round(x * 100)}%`
 
-export function Scorecard({ open, onClose, level, metrics, base, react }: Props) {
+export function Scorecard({ open, onClose, level, metrics, base, react, closeLabel = 'Keep editing' }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
@@ -149,7 +149,7 @@ export function Scorecard({ open, onClose, level, metrics, base, react }: Props)
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm">A learning tool, not a forecast. Residents are fictional.</p>
           <Button onClick={onClose} className="bg-primary px-5 text-paper hover:bg-primary hover:brightness-110">
-            Keep editing
+            {closeLabel}
           </Button>
         </div>
       </div>

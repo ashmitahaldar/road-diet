@@ -29,7 +29,7 @@ export const PLACEHOLDER_LEVEL: Level = {
   },
   allowedElements: Object.keys(ELEMENTS) as ElementId[],
   goal: { minEmissionsReductionPct: 20, minHappiness: 40 },
-  stars: { safety: 60, fairness: 55 },
+  stars: { safety: 55, fairness: 55 },
 }
 
 export const LEVELS: Record<string, Level> = { placeholder: PLACEHOLDER_LEVEL }

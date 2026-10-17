@@ -34,6 +34,8 @@ export type Metrics = {
   happiness: Record<PersonaId, number>
   /** min happiness */
   fairness: number
+  /** max - min happiness, for the debrief */
+  fairnessSpread: number
   unusedWidthM: number
 }
 
@@ -44,8 +46,15 @@ export type ElementDef = {
   minW: number
   maxW: number
   modes: Mode[]
+  /** Persons/hour at defaultW for the modes it serves. */
+  capacityPph: number
   source: string
 }
+
+/** A model constant and where its value comes from (or TODO-SOURCE). */
+export type Sourced<T> = { value: T; source: string }
+
+export type BikeFacility = 'none' | 'painted' | 'protected'
 
 export type Persona = {
   id: PersonaId

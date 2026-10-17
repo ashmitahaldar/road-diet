@@ -79,7 +79,7 @@ Rule: every targeted prize needs (a) a feature a judge can see in under 10 secon
 | How does the data solve it? | Every level starts from real corridor data (width, volumes, collisions, mode share) shown on the level briefing |
 | How does it benefit the user? | Scorecard + planner debrief explain trade-offs in plain language |
 | Links to all data sources | `/data` page auto-generated from each corridor JSON `sources`; also pasted into Devpost |
-| Not predicting the election / no candidate support | Footer statement on every page; no candidate or party content anywhere |
+| Not predicting the election / no candidate support | Footer statement on every page: "A learning tool, not a forecast. Residents are fictional."; no candidate or party content anywhere |
 | Responsible interpretation | Visible Limitations panel on the scorecard (not only a separate page); fictional personas labelled; no neighbourhood rankings |
 | AI integration with intention | Gemini persona reactions and debrief are computed from model output, cite the numbers used, and say what they cannot know |
 | Accessibility | Keyboard-operable editor, text labels beside colours, works at phone width |
@@ -97,7 +97,7 @@ Format fit: their listed formats include "scenario explorer"; their listed promp
 - Ask the organizers how they treat AI coding assistants and pre-event prep (keys, accounts); state in Devpost what was built during the event.
 
 **MLH: Best Use of Gemini API**
-- Two visible Gemini features: persona reactions after every run, and the end-of-level planner debrief.
+- One Gemini call per run (lean scope S1) returns persona reactions and a 2–3 sentence debrief: reactions show after every run, the debrief on the scorecard.
 - Both use structured JSON output and are grounded in computed metrics.
 - UI shows a small "Powered by Gemini" label next to those outputs; Devpost names the model used.
 
@@ -147,34 +147,43 @@ Keep a recorded backup of this exact flow.
 4. Edit the cross-section: add/remove/resize street elements within the fixed width.
 5. Press "Run a day": model computes metrics, residents' trips play out, residents react (Gemini).
 6. See the scorecard (stars), try again or continue to the next level.
-7. End: planner debrief (Gemini), data sources, limitations, "how other players solved this" (Tiger Data).
+7. End: debrief (from the same Gemini call), data sources, limitations, "how other players solved this" (Tiger Data).
 
 ### 1.9 Feature priority
 
+**Lean scope.** Items cut from Must/Should are kept under Stretch and marked with their old ID.
+
 **Must (ship or don't submit)**
-- M1. One level on a real corridor with real baseline data.
-- M2. 2D cross-section editor with fixed total width and 6+ element types.
-- M3. Model: emissions, travel time per persona, safety, happiness, fairness.
-- M4. Five personas, each with a daily trip and mood.
-- M5. Scorecard with target check and 1–3 stars.
+- M1. One level on one real corridor with real baseline data.
+- M2. 2D cross-section editor with fixed total width and 7 elements: sidewalk, car lane, bus lane, painted bike lane, protected bike lane, parking, planter.
+- M3. Model: capacity, capped mode shift, congestion, emissions, safety index, happiness, fairness.
+- M4. Four personas: delivery driver, student cyclist, senior pedestrian, shop owner.
+- M5. Scorecard with goal check and 1–3 stars.
 - M6. Deployed on Vultr with HTTPS and a custom domain.
 - M7. Data & Limitations page with all sources linked.
 - M8. Gemini persona reactions with canned fallback.
 
 **Should**
-- S1. Planner debrief (Gemini) at end of level.
-- S2. Tiger Data run logging + "how others solved it".
-- S3. Second level/corridor.
-- S4. Random events (snowstorm, festival, delivery surge, collision).
-- S5. Sound effects and juicy feedback (meter animations, persona bounce).
-- S6. Shareable result card (image or link).
-- S7. Corridor map panel: a read-only map of the real corridor on the level briefing, showing context data.
+- S1. One Gemini call that returns persona reactions plus a 2–3 sentence debrief.
+- S2. Tiger Data run logging, one continuous aggregate, one stats endpoint and one chart ("how others solved this street").
+- S3. The three badges, the percentile line and the "Copy my result" text button (section 2.7).
 
-**Could / Stretch**
-- C1. Read-only 3D street view (Three.js) rendering the same layout data. Time-box 3 hours. Cut if unstable.
-- C2. "Political capital" resource that limits big changes.
-- C3. Animated traffic strip above the editor.
-- C4. Unlockable tools across levels.
+**Stretch (do not build unless everything above is done and deployed)**
+- Random events: snowstorm, festival, delivery surge, collision. *(was S4)*
+- Sound effects and juicy feedback: meter animations, persona bounce. *(was S5)*
+- Level 2: a second level/corridor. *(was S3)*
+- Shareable result image card. *(was S6)*
+- Corridor map panel: a read-only map of the real corridor on the level briefing, showing context data (section 8c). *(was S7)*
+- "Political capital" resource that limits big changes. *(was C2)*
+- Town-hall round.
+- Daily challenge.
+- Read-only 3D street view (Three.js) rendering the same layout data. Time-box 3 hours. Cut if unstable. *(was C1)*
+- Animated traffic strip above the editor. *(was C3)*
+- Unlockable tools across levels. *(was C4)*
+- Loading zone and patio elements (section 2.2). *(cut from M2)*
+- The parent-with-stroller persona (section 2.3). *(cut from M4)*
+- Extra datasets: TTC delay, Bike Share, parks, child care (section 4.2).
+- Separate end-of-level planner debrief. *(was S1; folded into the single Gemini call)*
 
 ---
 
@@ -195,9 +204,11 @@ Each has a default width, min/max width, and properties used by the model. Value
 | `bus_lane` | Bus lane | 3.3 | 3–3.7 | High person throughput, transit speed |
 | `car_lane` | Car lane | 3.3 | 3–3.7 | Vehicle throughput, emissions |
 | `parking` | On-street parking | 2.4 | 2–2.7 | Shop access, blocks space, door-zone risk |
-| `loading` | Loading zone | 3.0 | 2.5–3.5 | Deliveries, shop access |
+| `loading` | Loading zone **(Stretch)** | 3.0 | 2.5–3.5 | Deliveries, shop access |
 | `planter` | Trees/planting strip | 1.5 | 1–3 | Comfort, buffer, small safety gain |
-| `patio` | Patio/public space | 2.0 | 1.5–4 | Shop revenue, comfort |
+| `patio` | Patio/public space **(Stretch)** | 2.0 | 1.5–4 | Shop revenue, comfort |
+
+Lean scope: the 7 elements without **(Stretch)** are Must. Loading zone and patio keep their definitions for later.
 
 ### 2.3 Personas (fictional composites, never real people)
 | id | Name (example) | Trip | Cares about |
@@ -205,22 +216,35 @@ Each has a default width, min/max width, and properties used by the model. Value
 | `driver_delivery` | Marco, delivery driver | Drives a route, loads at shops | Car/loading capacity, travel time |
 | `student_cyclist` | Priya, student | Bikes to campus | Bike safety, bike continuity |
 | `senior_walker` | Mr. Okafor, senior | Walks to pharmacy and grocery | Sidewalk width, crossings, comfort, nearby parking/loading |
-| `parent_stroller` | Dana, parent with stroller | Walks to daycare, uses transit | Sidewalk, buffer from traffic, bus reliability |
+| `parent_stroller` | Dana, parent with stroller **(Stretch)** | Walks to daycare, uses transit | Sidewalk, buffer from traffic, bus reliability |
 | `shop_owner` | Lin, shop owner | Runs a store on the street | Foot traffic, loading, patio, parking |
 
 Each persona has: `id`, `name`, `blurb`, `weights` (over metrics), `trip` (mode, distance in km), `baselineHappiness`.
 
+Lean scope: the 4 personas without **(Stretch)** are Must. The parent persona keeps its definition for later.
+
 ### 2.4 Levels
 - **Level 1 (required):** one real corridor, simple, goal on emissions + minimum happiness.
-- **Level 2 (should):** a harder context (e.g. streetcar line or narrow downtown block) with a different goal such as safety.
+- **Level 2 (Stretch; was Should):** a harder context (e.g. streetcar line or narrow downtown block) with a different goal such as safety.
 - Each level JSON declares: corridor id, width `W`, baseline layout, baseline demand, allowed elements, goal, star thresholds.
 
-### 2.5 Events (Should)
+### 2.5 Events (Stretch; was Should)
 Applied before "Run a day", with visible modifiers: snowstorm (bike use down, bus delay up), festival (pedestrian demand up), delivery surge (loading demand up), collision (safety weight up for that round).
 
 ### 2.6 Scoring and stars
 - Level goal: set of constraints, e.g. `emissionsReductionPct >= 20` and `min(personaHappiness) >= 40`.
 - Stars: 1 = goal met; 2 = goal met and safety score >= threshold; 3 = goal met, safety >= threshold, fairness (min persona happiness) >= higher threshold.
+
+### 2.7 Gamification (lean)
+- Level goal with 1–3 stars, as specified in 2.6.
+- Badges (thresholds are configurable constants):
+  - **Fair Share:** minimum persona happiness >= 60.
+  - **Low-Carbon Street:** `emissionsReductionPct >= 30` AND minimum persona happiness >= 40.
+  - **Everyone's Second Choice:** spread (max minus min persona happiness) <= 25 AND minimum >= 40.
+- Percentile line on the results screen, from the Tiger Data stats endpoint (for example "you scored higher on fairness than X% of runs"). Hide it when fewer than 20 runs exist.
+- "Copy my result" button: copies a short text summary (stars, badge names, kg CO2e change, game URL) to the clipboard.
+- **Neutrality rule:** scoring and badges must reward balance, fairness and meeting stated goals. No score, badge or message may reward removing or keeping car lanes, bike lanes or parking as such. Do not use the words vote, election, party or candidate in game copy.
+- Keep the Data and Limitations link visible on the scorecard.
 
 ---
 
@@ -303,15 +327,45 @@ Weights live in persona definitions. Add event modifiers when active.
 ### 4.1 Principle
 Real Toronto data is the foundation. Use a small preprocessing step to produce one static JSON per corridor so the app never depends on live data at demo time.
 
-### 4.2 Candidate datasets (verify availability and licence before use)
-Plan to confirm each after the School of Cities data workshop and the "Toronto Civic Data Starter Guide":
-- Street/centreline geometry and right-of-way width
-- Traffic volumes (City of Toronto)
-- Collision data (e.g. Toronto Police Service open data on killed or seriously injured collisions)
-- Cycling network (City of Toronto)
-- TTC routes, stops, and (if available) ridership/delay data
-- Census/neighbourhood indicators (commute mode share, demographics) from the Census and City neighbourhood profiles
-- Neighbourhood/ward boundaries
+### 4.2 Datasets
+Priority is in brackets: [core], [use], [should], [nice], [optional], [skip]. Toronto Open Data pages live at `https://open.toronto.ca/dataset/<dataset-name>/`. Metadata comes from the portal API (`https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=<dataset-name>`). **VERIFIED** means the row was checked against the API or the source document on 2026-10-16; **UNVERIFIED** means it has not been checked yet. Full details and the per-dataset licence status are in `data/SOURCES.md`.
+
+**Verified on the Toronto Open Data portal (retrieved 2026-10-16)**
+
+| Dataset | Dataset name / URL | Priority | Use | Notes and caveats | Status |
+|---|---|---|---|---|---|
+| Motor Vehicle Collisions Involving Killed or Seriously Injured Persons | `motor-vehicle-collisions-involving-killed-or-seriously-injured-persons` | [core] | Safety baseline | Owner: Transportation Services. Refreshed daily. KSI collisions since 2006, **one row per involved person**: 20,809 person rows, but only 7,638 distinct `collision_id` values. CSV, SHP, GeoJSON, GPKG (4326 and 2952). Only collisions in the City right-of-way involving a motor vehicle or streetcar; excludes private property, provincial highways and outside Toronto; dooring included from 2023. Records can lag months to over a year and can be corrected later. **MUST deduplicate by `collision_id` before counting.** Fields: `collision_id`, `accdate`, `stname1`–`stname3`, `latitude`/`longitude`, `acclass`, `injury`, `road_user`, and the collision-level flags `pedestrian`/`cyclist`, which repeat on every person row. The portal text mentions a data dictionary, but none is listed as a resource. | VERIFIED (dictionary UNVERIFIED) |
+| Traffic Volumes - Multimodal Intersection Turning Movement Counts | `traffic-volumes-at-intersections-for-all-modes` | [core] | Demand baseline | Counts since 1984 for cars, trucks, buses, bicycles and pedestrians in 15-minute bins; pedestrians are counted crossing each leg. 8 non-continuous hours before Sept 2023, 14 continuous hours from Sept 2023. Bicycle volumes were not collected in every count before 2014. Ad hoc coverage. `tmc_most_recent_summary_data` has 6,401 locations with AM/PM peaks; `tmc_summary_data` has 30,953 counts. Fields: `latest_count_id`/`count_id`, `latest_count_date`/`count_date`, `location_name`, `centreline_id`, `count_duration` (values seen: `14`, `8R`, `8S`; the 8R/8S meaning is UNVERIFIED), `total_vehicle`, `total_bike`, `total_pedestrian`, `am_peak_*`/`pm_peak_*`, and per-approach `n/e/s/w_appr_*`. Overlay with Toronto Centreline and Intersection File. | VERIFIED |
+| Traffic Collisions (Toronto Police) | `police-annual-statistical-report-traffic-collisions` | [optional, probably skip] | Only if KSI is not enough | All police-recorded collisions since 2014, 825,265 records, occurrence level (multiple offences/victims per record). Refreshed annually. 4326 GeoJSON is 493 MB, so **do not download**. Fields: `OCC_DATE`, `OCC_YEAR`, `OCC_HOUR`, `DIVISION`, `FATALITIES`, `INJURY_COLLISIONS`, `FTR_COLLISIONS`, `PD_COLLISIONS`, `LONG_WGS84`, `LAT_WGS84`, `AUTOMOBILE`, `MOTORCYCLE`, `PASSENGER`, `BICYCLE`, `PEDESTRIAN`. The linked TPS documentation has not been read. | VERIFIED (docs UNVERIFIED) |
+| Permanent Bicycle Counters | `permanent-bicycle-counters` | [optional] | Bike volumes, only if the corridor has a detector | 59 detector locations, 15-minute counts, refreshed monthly. Counts only bikes and micromobility inside the designated bike lane. Includes a readme/data-dictionary PDF. | VERIFIED |
+| Right-of-way width: Official Plan Map 3 | [Map 3 PDF](https://www.toronto.ca/wp-content/uploads/2026/06/98b4-CityPlanning-Map-3-ROW-Widths-Associated-with-Existing-Major-Streets.pdf) | [core] | Corridor width | "Right-of-Way Widths Associated with Existing Major Streets", published June 2026, includes OPAs up to OPA765. Width classes: 20, 23, 27, 30, 33, 36, 43, 45 m and over, plus "non-uniform width, to be retained as existing". Widths are shown by colour only, so look up the corridor **by hand**. These are **planned** widths: always label the value "planned right-of-way width". | VERIFIED |
+| Right-of-way width: Official Plan Schedule 1 | [Schedule 1 PDF](https://www.toronto.ca/wp-content/uploads/2017/11/908d-cp-official-plan-Schedule-1.pdf) | [core] | Width for minor streets | "Existing Minor Streets with Right-of-Way Widths Greater Than 20 Metres": a text table of street, from, to and planned right-of-way width. Label as "planned right-of-way width". | VERIFIED |
+| Toronto Centreline (TCL) | `toronto-centreline-tcl` | [use] | Corridor geometry, joins | Owner: Information & Technology. Refreshed daily. The datastore schema (Version 2) has **no width attribute**: names, address ranges, from/to intersections, feature code, jurisdiction, one-way. | VERIFIED |
+| Cycling Network | `cycling-network` | [core] | Existing bike facilities | Transportation Services, semi-annual (last refreshed 2026-09-14), 1,581 segments. `INFRA_HIGHORDER` values include `Bike Lane`, `Bike Lane - Buffered`, `Bike Lane - Contraflow`, `Cycle Track`, `Cycle Track - Contraflow`, `Bi-Directional Cycle Track`, `Sharrows*`, `Multi-Use Trail*`, `Signed Route (No Pavement Markings)` and `Park Road` (full list in `data/SOURCES.md`). Game mapping (our choice): `Bike Lane*` → painted, `*Cycle Track*` → protected. | VERIFIED |
+| Bike ways in Toronto (ArcGIS) | `https://services.arcgis.com/As5CFN3ThbQpy8Ph/ArcGIS/rest/services/TorontoBikeways/FeatureServer` | [skip, use `cycling-network`] | — | Layer `TorontoBikeways`, 7,049 features. The facility field is `CP_TYPE`: `Bike Lanes` (painted) vs `Cycle Tracks` (separated); other values are trails and routes. Uses older Centreline field names (`GEO_ID`, `LF_NAME`, `FCODE`). The portal dataset `bikeways` is marked "Will not be Refreshed" (last 2023-08-07); whether this service is the same data is UNVERIFIED. | VERIFIED (fields) |
+
+**From the School of Cities starter guide.** The guide itself has not been located. "Dataset found" means the portal search returned this dataset name; the contents have not been reviewed.
+
+| Dataset | Dataset name / URL | Priority | Use | Status |
+|---|---|---|---|---|
+| City of Toronto Open Data catalogue | https://open.toronto.ca/ | [core] | Search for everything | VERIFIED (site) |
+| TTC Routes and Schedules (GTFS) | `ttc-routes-and-schedules` | [core] | Stops, routes, trips per hour | Dataset found; GTFS contents UNVERIFIED |
+| OpenStreetMap via OSMnx or Overpass | https://www.openstreetmap.org/copyright, https://osmnx.readthedocs.io/, https://overpass-turbo.eu/ | [core, supplement] | Lane tags, sidewalks, parking, shops, amenities, persona destinations. Attribution required. Overpass Turbo for exploring/exporting GeoJSON; OSMnx in the reproducible script. | VERIFIED (pages); tag coverage UNVERIFIED |
+| 2021 Census Profile and census tract boundaries (Statistics Canada) | — | [core] | Commute mode share and demographics, joined to the corridor's tract. Mark as an approximation. | UNVERIFIED (Statistics Canada site blocked automated access) |
+| Neighbourhood Profiles | `neighbourhood-profiles` | [use] | Context | Dataset found |
+| Ward Profiles (25-Ward Model) | `ward-profiles-25-ward-model` | [use] | Context | Dataset found |
+| City Wards | `city-wards` | [use] | Boundaries | Dataset found |
+| Neighbourhoods | `neighbourhoods` | [use] | Boundaries | Dataset found |
+| TTC Bus Delay Data / TTC Streetcar Delay Data | `ttc-bus-delay-data`, `ttc-streetcar-delay-data` | [should] | Transit reliability | Dataset found |
+| Bike Share Toronto | `bike-share-toronto` | [nice] | Bike context | Dataset found |
+| Parks and Recreation Facilities | `parks-and-recreation-facilities` | [nice] | Persona destinations | Dataset found |
+| Licensed Child Care Centres | `licensed-child-care-centres` | [nice] | Persona destinations | Dataset found |
+| 311 Service Requests - Customer Initiated | `311-service-requests-customer-initiated` | [skip unless time] | Public dataset is partial and categories changed over time | Dataset found; caveat UNVERIFIED |
+
+**NOT USED:** CMHC housing data, zoning, building permits, development applications, the housing data hub, election results and campaign finance. The project must not predict elections or support candidates, and these are outside the street-space question.
+
+### 4.2b Licences and credits
+Most datasets above show "License not specified" in the portal metadata (some show none at all); Licensed Child Care Centres shows the Open Government Licence – Toronto (https://open.toronto.ca/open-data-licence/). Record the licence as **"verify"** for every dataset in `data/SOURCES.md` until it is confirmed. The `/data` page credits the City of Toronto, the Toronto Police Service and OpenStreetMap contributors (OSM attribution is required).
 
 **Corridor selection criteria:** (1) has collision, volume and transit data nearby; (2) real, defensible right-of-way width; (3) has meaningful car/bike/bus/pedestrian mix; (4) recognizable to Toronto residents; (5) one to a few blocks only.
 
@@ -337,6 +391,14 @@ Plan to confirm each after the School of Cities data workshop and the "Toronto C
 Numbers above are structure only; fill from real data.
 `mapSvg` is optional: the path to the generated corridor map SVG (see 8c).
 
+### 4.5 Fallback policy
+If an input is missing, use the documented substitute, mark it as an **estimate**, and list it on the in-app limitations panel and the `/data` page:
+- No intersection turning movement count near the corridor → census commute mode share.
+- Few KSI records → a wider buffer or a longer period.
+- No corridor-specific width → the Official Plan class width, or the City's street design standard.
+
+KSI counts for a short corridor may be small. Use a configurable buffer and period, show only aggregate counts (never individual incident details), and avoid over-precise claims.
+
 ---
 
 ## 5. AI Spec (Gemini)
@@ -348,13 +410,14 @@ Numbers above are structure only; fill from real data.
 - **Safe fallback:** on error or timeout (>6 s), show canned lines per persona and a generic debrief.
 
 ### 5.2 Endpoints and prompts
-**`POST /api/react`** — input: layout, metrics before/after, active event, personas. Output:
+**`POST /api/react`** — one Gemini call per run. Input: layout, metrics before/after, goal result, level facts, active event, personas. Output:
 ```json
-{ "reactions": [{ "personaId": "senior_walker", "mood": "up|flat|down", "line": "<=25 words, first person" }] }
+{ "reactions": [{ "personaId": "senior_walker", "mood": "up|flat|down", "line": "<=25 words, first person" }],
+  "debrief": "2-3 sentences, plain language, at least one limitation relevant to the design" }
 ```
-Prompt rules: stay in character; refer only to supplied numbers; one concrete reason per line; no real people or politicians.
+Prompt rules: stay in character; refer only to supplied numbers; one concrete reason per line; no real people or politicians. `reactions` is Must (M8); `debrief` is Should (S1). On failure, return canned lines and a generic debrief.
 
-**`POST /api/debrief`** — input: final layout, metrics, goal result, level facts. Output:
+**`POST /api/debrief`** *(Stretch; replaced in the lean scope by the `debrief` field of `/api/react`)* — input: final layout, metrics, goal result, level facts. Output:
 ```json
 { "summary": "<=120 words plain language",
   "tradeoffs": ["..."],
@@ -428,8 +491,8 @@ NODE_ENV=production
 |---|---|---|
 | GET | `/api/levels` | List levels |
 | GET | `/api/levels/:id` | Level + corridor data |
-| POST | `/api/react` | Persona reactions (Gemini, with fallback) |
-| POST | `/api/debrief` | Planner debrief (Gemini, with fallback) |
+| POST | `/api/react` | Persona reactions + 2–3 sentence debrief in one Gemini call (with fallback) |
+| POST | `/api/debrief` | *(Stretch)* Separate planner debrief; the lean scope uses `/api/react` |
 | POST | `/api/runs` | Save a finished run (Tiger Data) |
 | GET | `/api/stats/:levelId` | Aggregates: star distribution, most common element mix |
 | GET | `/api/health` | Health check |
@@ -477,7 +540,7 @@ Confirm extension availability on the Tiger Data instance; fall back to a plain 
 - **Scorecard:** stars, goal checklist, four meters (emissions, safety, travel time, fairness).
 - **Data & Limitations page:** sources (with links), model assumptions, every `TODO-SOURCE` constant, and plain statements such as "This is a simplified estimate, not a prediction" and "Personas are fictional".
 - **Tone:** friendly, neutral, civic. Clear, large text; keyboard accessible; sufficient colour contrast; do not rely on colour alone to carry meaning; works on laptop and phone widths.
-- **Neutrality:** no election content beyond a one-line context note. Never rank neighbourhoods against each other.
+- **Neutrality:** no election content in game copy (see 2.7). Footer: "A learning tool, not a forecast. Residents are fictional." Never rank neighbourhoods against each other.
 
 ---
 
@@ -554,7 +617,7 @@ Labels show width in metres on or directly under each block.
 
 ### Copy and tone
 - Friendly, plain language, light humour (for example "Your street went on a diet").
-- Never name candidates, parties or elections beyond one neutral context line in the footer.
+- Never name candidates, parties or elections in game copy (see 2.7). The footer line is "A learning tool, not a forecast. Residents are fictional."
 - Always say what the model cannot know.
 
 ### Accessibility checklist
@@ -570,7 +633,7 @@ Labels show width in metres on or directly under each block.
 
 ---
 
-## 8c. Corridor Map Panel
+## 8c. Corridor Map Panel (Stretch; was Should S7)
 
 - **Purpose:** make the real Toronto data visible in the first 10 seconds of a level (supports the School of Cities "urban insight" and "uses Toronto data" criteria). It is read-only context, not a game mechanic.
 - **Default implementation:** a static SVG generated in `data/prep` from the corridor's GeoJSON (corridor line, nearby bike lanes, transit stops, aggregated collision counts), saved to `data/corridors/<id>.map.svg` and rendered in the level briefing. No third-party tile service, no API keys, no network dependency at demo time.
@@ -585,28 +648,15 @@ Labels show width in metres on or directly under each block.
 
 ## 9. Milestones (fits the developer's schedule)
 
-**Block 1 — Fri ~10 PM–1/2 AM**
-1. Scaffold monorepo, git init, GitHub repo, CI-less.
-2. Shared model skeleton + tests; one hardcoded corridor and level.
-3. Editor + meters + scorecard (Must M1–M5, with placeholder data).
-4. Deploy bare version to Vultr with HTTPS + domain (M6).
-5. *Developer sleeps. Do not start new work after this.*
+**Friday (~3.5 h):** scaffold, model and tests, editor + meters + personas + scorecard, deploy.
 
-**Sat 10 AM–6 PM: developer is at another event. No work expected.**
+**Saturday evening (~5.5 h):** corridor JSON and sourced constants, Gemini call, Tiger Data, badges and percentile, buffer.
 
-**Block 3 — Sat ~7 PM–1 AM**
-1. Replace placeholder data with real corridor data from the workshop (M1, M7).
-2. Gemini reactions with fallback (M8), debrief (S1).
-3. Tiger Data logging + stats (S2).
-4. Events (S4) and sound/feedback (S5).
+**Sunday morning (~2 h):** phone and keyboard check, neutrality review, demo video, Devpost, **submit by 9:00 AM**.
 
-**Block 4 — Sun ~7–9 AM**
-1. Bug fixes, limitations page review, responsive check.
-2. Backup demo video (screen recording, under 2 min).
-3. Devpost submission: draft in `docs/DEVPOST.md`, answer the School of Cities questions, list all data sources, opt in to all target prizes.
-4. **Submit by 9:00 AM.**
+**Fallback rule:** if you are behind at the end of the first hour on Saturday, use canned persona lines and skip the percentile line before cutting anything else.
 
-**Cut order if behind:** C-items → S6 → S4 → S3 → S5 → S2 → S1. Never cut M-items.
+**Cut order if behind:** Stretch items → S3 → S2 → S1. Never cut M-items.
 
 ---
 

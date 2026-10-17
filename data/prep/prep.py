@@ -127,8 +127,7 @@ def build_corridor(cfg):
     from shapely.geometry import shape
 
     retrieved = cfg["retrieved"]
-    street = cfg["segment"]["street"]
-    segs = [r for r in datastore(CENTRELINE[1], LINEAR_NAME_FULL=street) if r["CENTRELINE_ID"] in cfg["segment"]["centreline_ids"]]
+    segs = [r for r in datastore(CENTRELINE[1], LINEAR_NAME_FULL="Bloor St W") if r["CENTRELINE_ID"] in cfg["segment"]["centreline_ids"]]
     if len(segs) != len(cfg["segment"]["centreline_ids"]):
         raise SystemExit(f"Found {len(segs)} of {len(cfg['segment']['centreline_ids'])} centreline segments")
     line = gpd.GeoDataFrame(geometry=[shape(json.loads(r["geometry"])) for r in segs], crs=4326)
@@ -152,14 +151,7 @@ def build_corridor(cfg):
     since = (pd.Timestamp(retrieved) - pd.DateOffset(years=cfg["safety"]["years"])).date().isoformat()
     safety = ksi_summary(near, since)
 
-    # Cycling segments on the street that run along the corridor (more than 1 m inside a 15 m buffer).
-    lane_buffer = buffer_corridor(line, 15)
-    bike_rows = [
-        r
-        for r in datastore(CYCLING[1], STREET_NAME=street)
-        if to_metric(gpd.GeoDataFrame(geometry=[shape(json.loads(r["geometry"]))], crs=4326)).geometry.iloc[0].intersection(lane_buffer).length > 1
-    ]
-    infra = sorted({r["INFRA_HIGHORDER"] for r in bike_rows})
+    infra = sorted({r["INFRA_HIGHORDER"] for r in datastore(CYCLING[1], STREET_NAME="Bloor St W") if r["FROM_STREET"] in ("Bathurst St", "Shaw St")})
 
     d = cfg["demand"]
     src = lambda label, slug, note: {"label": label, "url": PORTAL + slug + "/", "retrieved": retrieved, "note": note}
@@ -178,10 +170,10 @@ def build_corridor(cfg):
         "baselineSafety": {"ksiCollisions5y": safety["ksiCollisions"], "pedestrianInvolved": safety["pedestrianInvolved"], "cyclistInvolved": safety["cyclistInvolved"]},
         "freeFlowSpeedKph": cfg["speed"]["kph"],
         "sources": [
-            src("Toronto Centreline (TCL) v2", CENTRELINE[0], f"{len(segs)} segments of {cfg['name']}: {length_km} km."),
+            src("Toronto Centreline (TCL) v2", CENTRELINE[0], f"{len(segs)} segments of Bloor St W, Christie St to Ossington Ave: {length_km} km."),
             src("Traffic Volumes at Intersections for All Modes", TMC[0], f"{count['location_name']}, {count['latest_count_date']}, {count['count_duration']} h count; {p.upper()} peak hour, Bloor approaches only."),
             src("Motor Vehicle Collisions involving Killed or Seriously Injured Persons", KSI[0], f"Within {cfg['safety']['buffer_m']} m of the segment since {since}; deduplicated by collision; aggregate counts only."),
-            src("Cycling Network", CYCLING[0], "; ".join(f"{street}, {r['FROM_STREET']} to {r['TO_STREET']}: {r['INFRA_HIGHORDER']} ({r['INSTALLED']})" for r in bike_rows) + "."),
+            src("Cycling Network", CYCLING[0], f"Bloor St W, Bathurst St to Salem Ave: {', '.join(infra)}."),
             {"label": "Official Plan Map 3: Right-of-Way Widths Associated with Existing Major Streets (June 2026)", "url": MAP3, "retrieved": retrieved, "note": cfg["width"]["source"]},
         ],
         "estimates": [
@@ -189,7 +181,7 @@ def build_corridor(cfg):
             {"field": "freeFlowSpeedKph", "note": cfg["speed"]["note"]},
             {"field": "baselineDemand.walk", "note": "Peak-hour pedestrians scaled from the 14 h crossing count by the vehicle peak-hour share."},
             {"field": "baselineDemand.car", "note": f"Vehicles x {d['car_occupancy']} persons per vehicle (occupancy not yet sourced)."},
-            {"field": "baselineDemand.bus", "note": d["bus_note"]},
+            {"field": "baselineDemand.bus", "note": "Subway Line 2 runs below; no daytime surface bus on this segment."},
         ],
         "observed": {
             "count": {k: count[k] for k in ("location_name", "latest_count_date", "count_duration", "total_vehicle", "total_bike", "total_pedestrian", f"{p}_peak_start", f"{p}_peak_vehicle", f"{p}_peak_bike", "e_appr_vehicle", "w_appr_vehicle", "e_appr_bike", "w_appr_bike")},

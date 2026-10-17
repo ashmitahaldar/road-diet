@@ -11,6 +11,19 @@ export async function insertRun(db: Db, r: RunRow) {
   )
 }
 
+export const MIN_RUNS_FOR_PERCENTILE = 20
+
+/** Share of earlier runs on this level whose least happy resident was less happy; null under 20 runs. */
+export async function fairnessBeatsPct(db: Db, levelId: string, fairness: number): Promise<number | null> {
+  // ponytail: full scan of the level's runs per save; read from a percentile aggregate if runs grow large.
+  const { rows } = await db.query(
+    'SELECT count(*)::int AS n, count(*) FILTER (WHERE fairness < $2)::int AS below FROM runs WHERE level_id = $1',
+    [levelId, fairness],
+  )
+  const { n, below } = rows[0]
+  return n < MIN_RUNS_FOR_PERCENTILE ? null : (100 * below) / n
+}
+
 export async function getStats(db: Db, levelId: string): Promise<LevelStats> {
   const [agg, mix] = await Promise.all([
     db.query(

@@ -6,7 +6,7 @@ const CHART_H = 120
 const TOP = 24
 
 /** "How others solved this street" (#19). `stats` undefined = loading; the parent hides it on null. */
-export function Others({ stats, yourStars }: { stats?: LevelStats; yourStars: Stars }) {
+export function Others({ stats, yourStars, fairnessBeatsPct }: { stats?: LevelStats; yourStars: Stars; fairnessBeatsPct: number | null }) {
   if (!stats)
     return (
       <section aria-labelledby="others-title" aria-busy>
@@ -34,6 +34,9 @@ export function Others({ stats, yourStars }: { stats?: LevelStats; yourStars: St
         {summary}
         {demoPlays > 0 && ` Includes ${demoPlays} demo ${demoPlays === 1 ? 'run' : 'runs'}.`}
       </p>
+      {fairnessBeatsPct !== null && (
+        <p className="mt-1 font-semibold">Your least happy resident is happier than in {Math.round(fairnessBeatsPct)}% of earlier runs.</p>
+      )}
       {plays > 0 && (
         <div className="mt-3 flex flex-wrap items-end gap-6">
           <svg

@@ -103,6 +103,17 @@ describe.skipIf(!url)('with a database (needs TEST_DATABASE_URL)', () => {
     await dead.end()
   })
 
+  test('the fairness percentile appears from the 20th earlier run and excludes the new one', async () => {
+    const { db } = await freshSchema()
+    await migrate(db)
+    const api = await start(db, 100)
+    const beats = async (layout: unknown) => ((await (await api.save(layout)).json()) as { fairnessBeatsPct: number | null }).fairnessBeatsPct
+    for (let i = 0; i < 20; i++) expect(await beats(baseline)).toBeNull()
+    expect(await beats(baseline)).toBe(0)
+    await db.query('UPDATE runs SET fairness = fairness - 1 WHERE ctid IN (SELECT ctid FROM runs LIMIT 5)')
+    expect(await beats(baseline)).toBeCloseTo((100 * 5) / 21)
+  })
+
   test('writes and stats reads are rate limited', async () => {
     const { db } = await freshSchema()
     await migrate(db)

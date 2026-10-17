@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
 import { connect, type Db } from './db'
 import { react, type GeminiConfig } from './gemini'
-import { getStats, insertRun } from './runs'
+import { fairnessBeatsPct, getStats, insertRun } from './runs'
 
 const CLIENT_DIST = fileURLToPath(new URL('../../client/dist', import.meta.url))
 
@@ -94,8 +94,9 @@ export function createApp({
     if (runsLimited(req.ip)) return void res.status(429).json({ error: 'rate-limited' })
     const score = scoreRun(run.metrics, run.level)
     try {
+      const beats = await fairnessBeatsPct(db, run.level.id, run.metrics.fairness)
       await insertRun(db, { levelId: run.level.id, layout: run.layout, metrics: run.metrics, score })
-      res.status(201).json({ stars: score.stars })
+      res.status(201).json({ stars: score.stars, fairnessBeatsPct: beats })
     } catch (err) {
       console.warn(`runs: insert failed (${(err as Error).message})`)
       res.status(503).json({ error: 'no-db' })

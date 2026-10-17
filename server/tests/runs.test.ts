@@ -24,8 +24,8 @@ const servers: { close: () => void }[] = []
 afterEach(() => servers.splice(0).forEach((s) => s.close()))
 beforeEach(() => void vi.spyOn(console, 'warn').mockImplementation(() => {}))
 
-async function start(db: Db | null, runsPerMinute = 20) {
-  const server = createApp({ clientDist: '/nonexistent', gemini: {}, db, runsPerMinute }).listen(0)
+async function start(db: Db | null, runsPerMinute = 20, statsPerMinute = 60) {
+  const server = createApp({ clientDist: '/nonexistent', gemini: {}, db, runsPerMinute, statsPerMinute }).listen(0)
   servers.push(server)
   await new Promise((r) => server.once('listening', r))
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
@@ -85,12 +85,24 @@ describe.skipIf(!url)('with a database (needs TEST_DATABASE_URL)', () => {
     expect(((await (await api.stats()).json()) as LevelStats).plays).toBe(2)
   })
 
-  test('writes are rate limited', async () => {
+  test('refresh is a no-op on a plain view and throws on a real error', async () => {
+    const { db } = await freshSchema()
+    await migrate(db, { useTimescale: false })
+    expect(await refreshAggregate(db)).toBe(false)
+    const dead = connect('postgres://nobody:x@127.0.0.1:1/none', { connectionTimeoutMillis: 300 })!
+    await expect(refreshAggregate(dead)).rejects.toThrow()
+    await dead.end()
+  })
+
+  test('writes and stats reads are rate limited', async () => {
     const { db } = await freshSchema()
     await migrate(db)
-    const api = await start(db, 2)
+    const api = await start(db, 2, 2)
     expect((await api.save(baseline)).status).toBe(201)
     expect((await api.save(baseline)).status).toBe(201)
     expect((await api.save(baseline)).status).toBe(429)
+    expect((await api.stats()).status).toBe(200)
+    expect((await api.stats()).status).toBe(200)
+    expect((await api.stats()).status).toBe(429)
   })
 })

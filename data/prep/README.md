@@ -13,6 +13,14 @@ python prep.py info motor-vehicle-collisions-involving-killed-or-seriously-injur
 python prep.py fetch motor-vehicle-collisions-involving-killed-or-seriously-injured-persons "Motor Vehicle Collisions with KSI Data - 4326.geojson"
 ```
 
+Build a corridor from its config (small datastore queries plus the 11 MB KSI CSV, fetched if missing):
+
+```bash
+python prep.py corridor corridors/bloor-christie-ossington.toml   # writes data/corridors/bloor-christie-ossington.json
+```
+
+The config pins every input: centreline segment ids, the TMC count id and peak, the KSI buffer and window, the Official Plan width, and the values marked `estimate` (copied into the JSON's `estimates` list).
+
 (With uv: `uv run --no-project --with-requirements requirements.txt python test_prep.py`.)
 
 Downloads go to `data/raw/<dataset>/`, which is git-ignored. `fetch` refuses anything over 50 MB unless you pass `--allow-large`.

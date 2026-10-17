@@ -139,6 +139,16 @@ export function Scorecard({ open, onClose, level, metrics, base, react }: Props)
             <li>Residents are fictional. How much each one cares about time, safety, comfort and access is a design choice.</li>
             {level.corridor.source === TODO_SOURCE && <li>This street uses placeholder data until the real Toronto corridor is added.</li>}
           </ul>
+          {!!level.corridor.estimates?.length && (
+            <>
+              <p className="mt-3 font-semibold">Estimates in this street's data:</p>
+              <ul className="mt-1 list-disc space-y-1 pl-5">
+                {level.corridor.estimates.map((e) => (
+                  <li key={e.field}>{e.note}</li>
+                ))}
+              </ul>
+            </>
+          )}
           <p className="mt-3 font-semibold">Values still waiting for a source ({todo.length}):</p>
           <p className="mt-1 break-words font-mono text-xs">{todo.join(', ')}</p>
           <a href="/data" className="mt-3 inline-block font-semibold text-primary underline underline-offset-2">

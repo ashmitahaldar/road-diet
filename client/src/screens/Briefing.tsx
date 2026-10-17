@@ -2,6 +2,62 @@ import { ELEMENTS, PERSONAS, TODO_SOURCE, type Level } from '@road-diet/shared'
 import { ElementIcon, VISUALS } from '../editor/elementVisuals'
 import { Button } from '../ui'
 
+const MAPS = import.meta.glob<string>('../../../data/corridors/*.map.svg', { query: '?url', import: 'default', eager: true })
+const MAP_SOURCES = /Centreline|Cycling|Killed|OpenStreetMap/
+
+/** Legend swatches drawn with the same strokes as prep.py render_map, so the key matches the map. */
+const LEGEND: [string, { stroke: string; width: number; dash?: string; casing?: boolean }?][] = [
+  ['This level’s street', { stroke: 'var(--color-primary)', width: 6, casing: true }],
+  ['Protected bike lane', { stroke: 'var(--color-bike-protected)', width: 3 }],
+  ['Painted bike lane', { stroke: 'var(--color-bike-painted)', width: 3, dash: '6 4' }],
+  ['Other cycling route', { stroke: 'var(--color-planter)', width: 3, dash: '1 4' }],
+  ['Other streets', { stroke: 'var(--color-sidewalk)', width: 3 }],
+  ['Subway station'],
+]
+
+function CorridorMap({ corridor }: { corridor: Level['corridor'] }) {
+  const src = corridor.mapSvg && MAPS[`../../../${corridor.mapSvg}`]
+  if (!src) return null
+  return (
+    <section aria-labelledby="map-title" className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+      <h2 id="map-title" className="font-display text-2xl font-semibold">
+        Where it is
+      </h2>
+      <img src={src} alt={corridor.mapAlt ?? ''} loading="lazy" decoding="async" className="mt-3 w-full rounded-xl border-2 border-ink" />
+      <ul aria-label="Map legend" className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        {LEGEND.map(([label, line]) => (
+          <li key={label} className="flex items-center gap-2">
+            <svg aria-hidden width="28" height="14" viewBox="0 0 28 14">
+              {line ? (
+                <>
+                  {line.casing && <path d="M3 7h22" stroke="var(--color-ink)" strokeWidth={line.width + 3} strokeLinecap="round" />}
+                  <path d="M3 7h22" stroke={line.stroke} strokeWidth={line.width} strokeDasharray={line.dash} strokeLinecap="round" />
+                </>
+              ) : (
+                <circle cx="14" cy="7" r="5" fill="var(--color-paper)" stroke="var(--color-ink)" strokeWidth={2.5} />
+              )}
+            </svg>
+            {label}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-sm">
+        Collisions are a total for the whole stretch, not individual incidents. Map data:{' '}
+        {corridor.sources
+          .filter((s) => MAP_SOURCES.test(s.label))
+          .map((s, i, all) => (
+            <span key={s.url}>
+              <a href={s.url} className="font-semibold text-primary underline underline-offset-2">
+                {s.label === 'OpenStreetMap contributors' ? '© OpenStreetMap contributors' : s.label}
+              </a>
+              {i < all.length - 1 ? ', ' : '.'}
+            </span>
+          ))}
+      </p>
+    </section>
+  )
+}
+
 export function goalSentence(level: Level) {
   const { minEmissionsReductionPct, minHappiness, minSafety } = level.goal
   const parts = [
@@ -44,6 +100,8 @@ export function Briefing({ level, onStart, onBack }: { level: Level; onStart: ()
       <p className="-mt-2 text-sm">
         {corridor.baselineLayout.elements.map((el) => `${VISUALS[el.id].short} ${el.widthM} m`).join(' · ')}
       </p>
+
+      <CorridorMap corridor={corridor} />
 
       <section className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
         <h2 className="font-display text-2xl font-semibold">Your goal</h2>

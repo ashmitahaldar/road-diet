@@ -1,4 +1,4 @@
-import { MODEL, TODO_SOURCE, listTodoSources, scoreRun, type GoalCheck, type Level, type Metrics, type ReactResult } from '@road-diet/shared'
+import { MODEL, TODO_SOURCE, listDesignChoices, listTodoSources, scoreRun, type GoalCheck, type Level, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import { Button, GeminiLabel, signed } from '../ui'
@@ -19,6 +19,7 @@ export function Scorecard({ open, onClose, level, metrics, base, react }: Props)
   const reduce = useReducedMotion()
   const score = scoreRun(metrics, level)
   const todo = listTodoSources()
+  const design = listDesignChoices()
 
   useEffect(() => {
     const d = ref.current
@@ -151,6 +152,8 @@ export function Scorecard({ open, onClose, level, metrics, base, react }: Props)
           )}
           <p className="mt-3 font-semibold">Values still waiting for a source ({todo.length}):</p>
           <p className="mt-1 break-words font-mono text-xs">{todo.join(', ')}</p>
+          <p className="mt-3 font-semibold">Game-design parameters, chosen for play and not measured ({design.length}):</p>
+          <p className="mt-1 break-words font-mono text-xs">{design.join(', ')}</p>
           <a href="/data" className="mt-3 inline-block font-semibold text-primary underline underline-offset-2">
             Data & Limitations
           </a>

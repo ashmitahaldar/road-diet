@@ -52,7 +52,7 @@
       "label": "Toronto Centreline (TCL) v2",
       "url": "https://open.toronto.ca/dataset/toronto-centreline-tcl/",
       "retrieved": "2026-10-17",
-      "note": "9 segments of Bloor St W, Christie St to Ossington Ave: 0.61 km."
+      "note": "9 segments of Bloor St W (Christie St to Ossington Ave): 0.61 km."
     },
     {
       "label": "Traffic Volumes at Intersections for All Modes",
@@ -70,7 +70,7 @@
       "label": "Cycling Network",
       "url": "https://open.toronto.ca/dataset/cycling-network/",
       "retrieved": "2026-10-17",
-      "note": "Bloor St W, Bathurst St to Salem Ave: Cycle Track."
+      "note": "Bloor St W, Shaw St to Salem Ave: Cycle Track (2020); Bloor St W, Bathurst St to Shaw St: Cycle Track (2016)."
     },
     {
       "label": "Official Plan Map 3: Right-of-Way Widths Associated with Existing Major Streets (June 2026)",

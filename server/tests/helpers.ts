@@ -18,13 +18,13 @@ export async function freshSchema() {
   return { db, schema }
 }
 
-/** TimescaleDB's background policy jobs can touch catalog rows mid-drop ("tuple concurrently updated"); retry those. */
+/** TimescaleDB's background policy jobs can race a drop ("tuple concurrently updated", "deadlock detected"); retry those. */
 async function drop(admin: Db, schema: string) {
   for (let attempt = 1; ; attempt++) {
     try {
       return await admin.query(`DROP SCHEMA ${schema} CASCADE`)
     } catch (err) {
-      if (attempt >= 5 || !/concurrently/.test((err as Error).message)) throw err
+      if (attempt >= 5 || !/concurrently|deadlock/.test((err as Error).message)) throw err
       await new Promise((r) => setTimeout(r, 200))
     }
   }

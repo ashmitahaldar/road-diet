@@ -18,13 +18,8 @@ export async function freshSchema() {
   return { db, schema }
 }
 
-/**
- * Dropping a schema while one of its policy jobs runs makes TimescaleDB 2.30 log "job was deleted during
- * execution", fail with "tuple concurrently updated" or "deadlock detected", and once crashed the server
- * (signal 11). So unschedule the schema's jobs, wait for running ones to finish, then drop.
- */
+/** Dropping a schema while its policy job runs can deadlock or crash TimescaleDB 2.30, so pause its jobs first. */
 async function drop(admin: Db, schema: string) {
-  // Refresh jobs list the aggregate's schema, compression jobs the hypertable's: both are this schema.
   const { rows } = await admin.query<{ job_id: number }>('SELECT job_id FROM timescaledb_information.jobs WHERE hypertable_schema = $1', [schema])
   const ids = rows.map((r) => r.job_id)
   for (const id of ids) await admin.query('SELECT alter_job($1, scheduled => false)', [id])

@@ -39,9 +39,12 @@ export default function App() {
         </AnimatePresence>
         <footer className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-sm">
           <span>A learning tool, not a forecast. Residents are fictional.</span>
-          <a href="/data" className="font-semibold text-primary underline underline-offset-2">
-            Data & Limitations
-          </a>
+          <span className="flex flex-wrap items-center gap-x-4">
+            <span>Hosted on Vultr</span>
+            <a href="/data" className="font-semibold text-primary underline underline-offset-2">
+              Data & Limitations
+            </a>
+          </span>
         </footer>
       </div>
     </MotionConfig>

@@ -18,16 +18,18 @@ export async function freshSchema() {
   return { db, schema }
 }
 
-/** TimescaleDB's background policy jobs can race a drop ("tuple concurrently updated", "deadlock detected"); retry those. */
+/** Dropping a schema while its policy job runs can deadlock or crash TimescaleDB 2.30, so pause its jobs first. */
 async function drop(admin: Db, schema: string) {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      return await admin.query(`DROP SCHEMA ${schema} CASCADE`)
-    } catch (err) {
-      if (attempt >= 5 || !/concurrently|deadlock/.test((err as Error).message)) throw err
-      await new Promise((r) => setTimeout(r, 200))
-    }
+  const { rows } = await admin.query<{ job_id: number }>('SELECT job_id FROM timescaledb_information.jobs WHERE hypertable_schema = $1', [schema])
+  const ids = rows.map((r) => r.job_id)
+  for (const id of ids) await admin.query('SELECT alter_job($1, scheduled => false)', [id])
+  // Background workers name themselves "<policy> [<job id>]".
+  for (let wait = 0; ids.length && wait < 50; wait++) {
+    const running = await admin.query("SELECT 1 FROM pg_stat_activity WHERE application_name ~ $1", [`\\[(${ids.join('|')})\\]$`])
+    if (!running.rowCount) break
+    await new Promise((r) => setTimeout(r, 100))
   }
+  await admin.query(`DROP SCHEMA ${schema} CASCADE`)
 }
 
 afterAll(async () => {

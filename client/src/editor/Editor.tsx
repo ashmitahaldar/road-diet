@@ -235,7 +235,7 @@ export function Editor({ level, layout, onChange }: Props) {
             ? 'The street is full. Make a block narrower or remove one to make room.'
             : `${free.toFixed(1)} m free. Drag a card by its icon to a spot on the street, or press it to add ${selected === null ? 'at the end' : 'after the selected block'}.`}
         </p>
-        <div role="group" aria-label="Street elements" className="-mx-4 flex gap-3 overflow-x-auto px-4 pt-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-0 lg:grid-cols-7">
+        <div role="group" aria-label="Street elements" className="-mx-4 flex gap-3 overflow-x-auto px-4 pt-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-0">
           {level.allowedElements.map((id) => {
             const def = ELEMENTS[id]
             const fits = addElement(layout, level, id) !== layout
@@ -251,7 +251,7 @@ export function Editor({ level, layout, onChange }: Props) {
                   fits ? 'cursor-grab bg-paper shadow-[3px_3px_0_var(--color-ink)] hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none' : 'cursor-not-allowed border-dashed bg-grid'
                 }`}
               >
-                <span className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center lg:flex-col lg:items-start">
+                <span className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center">
                   <span aria-hidden data-drag-handle className="grid size-10 shrink-0 touch-none place-items-center rounded-xl border-2 border-ink" style={{ background: VISUALS[id].color }}>
                     <span className="grid size-8 place-items-center rounded-full bg-paper">
                       <ElementIcon id={id} size={24} />

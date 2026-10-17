@@ -21,6 +21,8 @@ Run history and "how others solved this street" need Postgres with TimescaleDB. 
 docker run -d --name roaddiet-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=roaddiet -p 55432:5432 timescale/timescaledb:latest-pg17
 # .env: DATABASE_URL=postgres://postgres:dev@localhost:55432/roaddiet   (or your Tiger Data connection string)
 npm run migrate -w @road-diet/server     # idempotent; plain table + view if timescaledb is missing
+npm run seed -w @road-diet/server -- --level bloor-christie-ossington --n 40   # demo runs, marked demo = true
+npm run refresh -w @road-diet/server     # materialize the hourly aggregate now (demos)
 TEST_DATABASE_URL=postgres://postgres:dev@localhost:55432/roaddiet npm test   # DB tests use throwaway schemas
 ```
 

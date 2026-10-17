@@ -93,3 +93,16 @@ export type Level = {
   /** 2 stars: goal + safetyScore >= safety; 3 stars: also fairness >= fairness (spec 2.6). */
   stars: { safety: number; fairness: number }
 }
+
+/** GET /api/stats/:levelId — how other players solved a level (spec 7, #18). */
+export type LevelStats = {
+  plays: number
+  /** Seeded demo runs included in `plays`; the UI says so. */
+  demoPlays: number
+  avgStars: number | null
+  avgEmissionsReductionPct: number | null
+  /** Runs with 0, 1, 2 and 3 stars. */
+  starCounts: [number, number, number, number]
+  /** Most common element mix (element counts) over recent runs. */
+  topMix: { elements: Partial<Record<ElementId, number>>; plays: number } | null
+}

@@ -14,7 +14,7 @@ import { z } from 'zod'
 export type GeminiConfig = { apiKey?: string; model?: string; fetch?: typeof fetch; timeoutMs?: number }
 
 // Spec 2.7 / 5.1: residents never talk about elections or real politicians. A hit swaps in the canned text.
-const OFF_LIMITS =
+export const OFF_LIMITS =
   /\b(vot(e|es|ed|er|ers|ing)|elect(ion|ions|ed|oral)|part(y|ies)|candidates?|campaign\w*|ballots?|politic\w*|mayor|council\w*|premier|prime minister|MPPs?|MPs?)\b/i
 const NAMES_A_LIMITATION = /assum|estimate|simplif|limit|cap(ped|s)?\b|uncertain/i
 const MAX_WORDS = 30

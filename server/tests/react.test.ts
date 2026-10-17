@@ -1,8 +1,8 @@
-import { BLOOR_LEVEL, type ReactResult } from '@road-diet/shared'
+import { BLOOR_LEVEL, computeMetrics, scoreRun, type ReactResult } from '@road-diet/shared'
 import type { AddressInfo } from 'node:net'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { createApp } from '../src/app'
-import type { GeminiConfig } from '../src/gemini'
+import { buildPrompt, type GeminiConfig } from '../src/gemini'
 
 const baseline = BLOOR_LEVEL.corridor.baselineLayout
 const KEY = 'test-key-not-real'
@@ -99,6 +99,15 @@ test('off-limits or overlong lines are replaced; a debrief without a limitation 
   expect(json.reactions[1].line).not.toContain('word word')
   expect(json.reactions[2].line).toBe(good.reactions[2].line)
   expect(json.debrief).toMatch(/^Emissions stay the same on this street\. This is a simplified estimate/)
+})
+
+test('the prompt carries the neutrality rules (spec 2.7, 5.1)', () => {
+  const layout = BLOOR_LEVEL.corridor.baselineLayout
+  const m = computeMetrics(layout, BLOOR_LEVEL)
+  const { system } = buildPrompt({ level: BLOOR_LEVEL, layout, metrics: m, base: m, score: scoreRun(m, BLOOR_LEVEL) })
+  expect(system).toContain('Never mention real people, politicians, parties, elections or voting.')
+  expect(system).toContain('Do not praise or criticise lane types as such')
+  expect(system).toContain('Each resident is fictional.')
 })
 
 test('a debrief mentioning a party is replaced by the fallback debrief', async () => {

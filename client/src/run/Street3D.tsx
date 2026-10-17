@@ -1,37 +1,18 @@
-import { MODES, previewTraffic, type ElementId, type Layout, type Level, type Mode } from '@road-diet/shared'
+import { MODES, previewTraffic, type Layout, type Level, type Mode } from '@road-diet/shared'
 import { useEffect, useMemo, useRef } from 'react'
-import {
-  BoxGeometry,
-  Clock,
-  Color,
-  CylinderGeometry,
-  DirectionalLight,
-  Fog,
-  HemisphereLight,
-  InstancedMesh,
-  Mesh,
-  MeshStandardMaterial,
-  Object3D,
-  PerspectiveCamera,
-  PlaneGeometry,
-  Scene,
-  SphereGeometry,
-  WebGLRenderer,
-  type BufferGeometry,
-  type Material,
-} from 'three'
+import { Clock, DirectionalLight, Fog, HemisphereLight, Mesh, Object3D, PerspectiveCamera, PlaneGeometry, Scene, WebGLRenderer, type InstancedMesh, type Material } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { VISUALS } from '../editor/elementVisuals'
+import { instances, toon, tokenColor, type Part } from './street3d/materials'
+import * as props from './street3d/props'
+import { CAR_TINTS, CURB_M, LENGTH_M, PEOPLE_TINTS, ROAD, buildStreet, place, rng, tints, type Lane } from './street3d/street'
 
-const LENGTH_M = 260
-const CURB_M = 0.15
 /** Movement runs faster than real time so a walker visibly moves. */
 const TIME_SCALE = 2.5
-const SIZE: Record<Mode, [number, number, number]> = { car: [1.8, 1.4, 4.4], bus: [2.6, 3.2, 12], bike: [0.6, 1.6, 1.8], walk: [0.6, 1.7, 0.6] }
-const TOKEN: Record<Mode, string> = { car: '--color-paper', bus: '--color-loading', bike: '--color-ink', walk: '--color-patio' }
-const ROAD: ElementId[] = ['car_lane', 'bus_lane']
-
-type Lane = { id: ElementId; widthM: number; x: number; top: number }
+const MODELS: Record<Mode, () => Part[]> = { car: props.car, bus: props.bus, bike: props.bike, walk: props.walker }
+const TINTS: Record<Mode, string[] | undefined> = { car: CAR_TINTS, bus: undefined, bike: PEOPLE_TINTS, walk: PEOPLE_TINTS }
+/** Per-frame bob: walkers step, cyclists pedal; vehicles ride level. [height m, rate rad/s] */
+const BOB: Record<Mode, [number, number]> = { car: [0, 0], bus: [0, 0], bike: [0.04, 9], walk: [0.07, 7] }
 
 export default function Street3D({ level, layout }: { level: Level; layout: Layout }) {
   const host = useRef<HTMLDivElement>(null)
@@ -48,71 +29,34 @@ export default function Street3D({ level, layout }: { level: Level; layout: Layo
 
   useEffect(() => {
     const el = host.current!
-    const css = getComputedStyle(document.documentElement)
-    const color = (token: string) => new Color(css.getPropertyValue(token).trim())
     const renderer = new WebGLRenderer({ antialias: true })
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
+    // Phones: 1.5x keeps the toon edges crisp at a third fewer pixels than their usual 2-3x.
+    renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 640 ? 1.5 : 2))
     renderer.domElement.setAttribute('aria-hidden', 'true')
     el.appendChild(renderer.domElement)
 
     const scene = new Scene()
-    scene.background = color('--color-paper')
-    scene.fog = new Fog(scene.background, 90, 200)
-    scene.add(new HemisphereLight(0xffffff, color('--color-grid'), 2.2))
-    const sun = new DirectionalLight(0xffffff, 1.6)
+    const paper = tokenColor('--color-paper')
+    scene.background = paper
+    scene.fog = new Fog(paper, 90, 200)
+    scene.add(new HemisphereLight(0xffffff, tokenColor('--color-grid'), 2.2))
+    const sun = new DirectionalLight(0xffffff, 1.8)
     sun.position.set(20, 40, 10)
     scene.add(sun)
-    const mat = (c: Color | string) => new MeshStandardMaterial({ color: c instanceof Color ? c : color(c), roughness: 0.9 })
-    const add = (geometry: BufferGeometry, material: Material, x: number, y: number, z = 0) => {
-      const m = new Mesh(geometry, material)
-      m.position.set(x, y, z)
-      scene.add(m)
-    }
 
-    const ground = new Mesh(new PlaneGeometry(400, 400), mat('--color-grid'))
+    const ground = new Mesh(new PlaneGeometry(400, 400), toon('--color-grid'))
     ground.rotation.x = -Math.PI / 2
     ground.position.y = -0.21
     scene.add(ground)
-    for (const lane of lanes) add(new BoxGeometry(lane.widthM, lane.top + 0.2, LENGTH_M), mat(VISUALS[lane.id].color.slice(4, -1)), lane.x, (lane.top - 0.2) / 2)
-
-    // Buildings either side, so the street reads as a street. Heights vary on a fixed pattern.
-    const half = level.corridor.widthM / 2
-    for (let z = -LENGTH_M / 2 + 6; z < LENGTH_M / 2; z += 13)
-      for (const side of [-1, 1]) {
-        const h = 4 + (Math.abs(z * 7 + side * 11) % 5) * 2
-        add(new BoxGeometry(10, h, 11), mat(side * z > 0 ? '--color-sidewalk' : '--color-grid'), side * (half + 5.5), h / 2 - 0.2, z)
-      }
-
-    const dummy = new Object3D()
-    const instanced = (geometry: BufferGeometry, material: Material, at: [number, number, number][]) => {
-      const mesh = new InstancedMesh(geometry, material, at.length)
-      at.forEach(([x, y, z], i) => {
-        dummy.position.set(x, y, z)
-        dummy.updateMatrix()
-        mesh.setMatrixAt(i, dummy.matrix)
-      })
-      scene.add(mesh)
-      return mesh
-    }
-    const dashes: [number, number, number][] = []
-    lanes.forEach((lane, i) => {
-      const next = lanes[i + 1]
-      if (next && ROAD.includes(lane.id) && ROAD.includes(next.id))
-        for (let z = -LENGTH_M / 2; z < LENGTH_M / 2; z += 9) dashes.push([lane.x + lane.widthM / 2, 0.01, z])
-    })
-    instanced(new BoxGeometry(0.15, 0.02, 3), mat('--color-paper'), dashes)
-    const trees = lanes.filter((l) => l.id === 'planter').flatMap((l) => Array.from({ length: LENGTH_M / 8 }, (_, k): [number, number, number] => [l.x, CURB_M, k * 8 - LENGTH_M / 2 + 4]))
-    instanced(new CylinderGeometry(0.15, 0.2, 2.4), mat('--color-ink'), trees.map(([x, y, z]) => [x, y + 1.2, z]))
-    instanced(new SphereGeometry(1.4, 12, 8), mat('--color-planter'), trees.map(([x, y, z]) => [x, y + 3, z]))
+    scene.add(buildStreet(lanes, level.corridor.widthM))
 
     // Objects in one lane share a speed and start evenly spaced, so they never overlap.
+    const rand = rng(7)
     const movers = MODES.flatMap((mode) => {
       const { count, speedMps } = preview[mode]
       const use = preview[mode].lanes.map((i) => lanes[i])
-      const [w, h, l] = SIZE[mode]
-      const mesh = new InstancedMesh(new BoxGeometry(w, h, l), mat(TOKEN[mode]), Math.max(1, count))
-      mesh.count = count
-      scene.add(mesh)
+      const tint = TINTS[mode]
+      const meshes = instances(scene, MODELS[mode](), Array.from({ length: count }, () => place(0, -10, 0)), tint && tints(count, rand, tint))
       return Array.from({ length: count }, (_, i) => {
         const lane = use[i % use.length]
         const nth = Math.floor(i / use.length)
@@ -120,7 +64,7 @@ export default function Street3D({ level, layout }: { level: Level; layout: Layo
         const shared = !ROAD.includes(lane.id) || mode === 'bike'
         const dir = shared ? (nth % 2 ? 1 : -1) : lane.x < 0 ? -1 : 1
         const x = lane.x + (shared ? (dir * lane.widthM) / 4 : 0)
-        return { mesh, i, x, y: lane.top + h / 2, z: (nth / inLane) * LENGTH_M - LENGTH_M / 2, v: dir * speedMps * TIME_SCALE }
+        return { mode, meshes, i, x, y: lane.top, z: (nth / inLane) * LENGTH_M - LENGTH_M / 2, v: dir * speedMps * TIME_SCALE, phase: rand() * 6 }
       })
     })
 
@@ -143,15 +87,24 @@ export default function Street3D({ level, layout }: { level: Level; layout: Layo
     resize()
 
     const clock = new Clock()
+    const touched = new Set<InstancedMesh>()
+    const dummy = new Object3D()
     renderer.setAnimationLoop(() => {
       const dt = Math.min(clock.getDelta(), 0.1)
+      const t = clock.elapsedTime
       for (const m of movers) {
         m.z = ((((m.z + m.v * dt + LENGTH_M / 2) % LENGTH_M) + LENGTH_M) % LENGTH_M) - LENGTH_M / 2
-        dummy.position.set(m.x, m.y, m.z)
+        const [height, rate] = BOB[m.mode]
+        dummy.position.set(m.x, m.y + height * Math.abs(Math.sin(t * rate + m.phase)), m.z)
+        dummy.rotation.y = m.v < 0 ? Math.PI : 0
         dummy.updateMatrix()
-        m.mesh.setMatrixAt(m.i, dummy.matrix)
-        m.mesh.instanceMatrix.needsUpdate = true
+        for (const mesh of m.meshes) {
+          mesh.setMatrixAt(m.i, dummy.matrix)
+          touched.add(mesh)
+        }
       }
+      for (const mesh of touched) mesh.instanceMatrix.needsUpdate = true
+      touched.clear()
       controls.update()
       renderer.render(scene, camera)
     })

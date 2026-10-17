@@ -126,8 +126,9 @@ export function Editor({ level, layout, onChange }: Props) {
     setSelected(i)
     setDrag({ kind: 'resize', index: i, edge, startX: e.clientX, start: layout })
   }
+  // On touch, only the card's icon starts a drag, so swiping the palette still scrolls.
   const startAdd = (id: ElementId) => (e: ReactPointerEvent) => {
-    if (e.button !== 0) return
+    if (e.button !== 0 || (e.pointerType !== 'mouse' && !(e.target as Element).closest('[data-drag-handle]'))) return
     setDrag({ kind: 'add', id, startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY, active: false, slot: null })
   }
 
@@ -147,7 +148,7 @@ export function Editor({ level, layout, onChange }: Props) {
         <p className="text-sm">Drag cards onto the street. Drag a block to move it, or its handles to resize it.</p>
       </div>
 
-      <BudgetBar layout={layout} W={W} used={used} free={free} />
+      <BudgetBar layout={layout} W={W} used={used} free={free} announce={drag?.kind !== 'resize'} />
 
       <p className="-mt-2 text-sm sm:hidden">Scroll sideways to see the whole street. Tap a block before dragging it.</p>
       <div className="overflow-x-auto rounded-2xl border-2 border-ink bg-paper px-3 pt-2 shadow-[4px_4px_0_var(--color-ink)]">
@@ -227,6 +228,49 @@ export function Editor({ level, layout, onChange }: Props) {
         </svg>
       </div>
 
+      <div className="sm:order-1">
+        <h3 className="font-display text-lg font-semibold">Add to the street</h3>
+        <p className="mb-3 text-sm">
+          {free === 0
+            ? 'The street is full. Make a block narrower or remove one to make room.'
+            : `${free.toFixed(1)} m free. Drag a card by its icon to a spot on the street, or press it to add ${selected === null ? 'at the end' : 'after the selected block'}.`}
+        </p>
+        <div role="group" aria-label="Street elements" className="-mx-4 flex gap-3 overflow-x-auto px-4 pt-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-0 lg:grid-cols-7">
+          {level.allowedElements.map((id) => {
+            const def = ELEMENTS[id]
+            const fits = addElement(layout, level, id) !== layout
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-disabled={!fits}
+                aria-label={`Add ${def.label}, ${def.defaultW} metres${fits ? '' : `. Needs ${def.minW} metres, ${free.toFixed(1)} free`}`}
+                onPointerDown={fits ? startAdd(id) : undefined}
+                onClick={() => fits && add(id)}
+                className={`flex min-h-11 w-32 min-w-0 shrink-0 flex-col items-start gap-1 rounded-2xl border-2 border-ink p-2 text-left sm:w-auto sm:p-3 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                  fits ? 'cursor-grab bg-paper shadow-[3px_3px_0_var(--color-ink)] hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none' : 'cursor-not-allowed border-dashed bg-grid'
+                }`}
+              >
+                <span className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center lg:flex-col lg:items-start">
+                  <span aria-hidden data-drag-handle className="grid size-10 shrink-0 touch-none place-items-center rounded-xl border-2 border-ink" style={{ background: VISUALS[id].color }}>
+                    <span className="grid size-8 place-items-center rounded-full bg-paper">
+                      <ElementIcon id={id} size={24} />
+                    </span>
+                  </span>
+                  <span className="min-w-0 font-semibold leading-tight break-words">{def.label}</span>
+                </span>
+                <span className="hidden text-sm tabular-nums sm:inline">
+                  {def.defaultW} m · {def.minW}–{def.maxW} m
+                </span>
+                {!fits && (
+                  <span className="text-sm font-medium tabular-nums">Needs {def.minW} m</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="flex min-h-11 flex-wrap items-center gap-2">
         {sel && selected !== null ? (
           <>
@@ -255,49 +299,6 @@ export function Editor({ level, layout, onChange }: Props) {
         Keyboard: Tab to a block, ← / → resize by 0.1 m, Alt + ← / → move it, Delete removes it.
       </p>
 
-      <div>
-        <h3 className="font-display text-lg font-semibold">Add to the street</h3>
-        <p className="mb-3 text-sm">
-          {free === 0
-            ? 'The street is full. Make a block narrower or remove one to make room.'
-            : `${free.toFixed(1)} m free. Drag a card to a spot on the street, or press it to add ${selected === null ? 'at the end' : 'after the selected block'}.`}
-        </p>
-        <div role="group" aria-label="Street elements" className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-          {level.allowedElements.map((id) => {
-            const def = ELEMENTS[id]
-            const fits = addElement(layout, level, id) !== layout
-            return (
-              <button
-                key={id}
-                type="button"
-                aria-disabled={!fits}
-                aria-label={`Add ${def.label}, ${def.defaultW} metres${fits ? '' : `. Needs ${def.minW} metres, ${free.toFixed(1)} free`}`}
-                onPointerDown={fits ? startAdd(id) : undefined}
-                onClick={() => fits && add(id)}
-                className={`flex min-h-11 min-w-0 touch-none flex-col items-start gap-1 rounded-2xl border-2 border-ink p-2 text-left sm:p-3 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                  fits ? 'cursor-grab bg-paper shadow-[3px_3px_0_var(--color-ink)] hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none' : 'cursor-not-allowed border-dashed bg-grid'
-                }`}
-              >
-                <span className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center lg:flex-col lg:items-start">
-                  <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-xl border-2 border-ink" style={{ background: VISUALS[id].color }}>
-                    <span className="grid size-8 place-items-center rounded-full bg-paper">
-                      <ElementIcon id={id} size={24} />
-                    </span>
-                  </span>
-                  <span className="min-w-0 font-semibold leading-tight break-words">{def.label}</span>
-                </span>
-                <span className="hidden text-sm tabular-nums sm:inline">
-                  {def.defaultW} m · {def.minW}–{def.maxW} m
-                </span>
-                {!fits && (
-                  <span className="text-sm font-medium tabular-nums">Needs {def.minW} m</span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
       {ghost && drag && drag.kind !== 'resize' && (
         <div
           aria-hidden
@@ -316,15 +317,19 @@ export function Editor({ level, layout, onChange }: Props) {
   )
 }
 
-function BudgetBar({ layout, W, used, free }: { layout: Layout; W: number; used: number; free: number }) {
+function BudgetBar({ layout, W, used, free, announce }: { layout: Layout; W: number; used: number; free: number; announce: boolean }) {
   return (
-    <div>
+    <div className="relative">
       <div className="mb-1 flex flex-wrap justify-between gap-2">
         <span className="font-display text-lg font-semibold">{W} m budget</span>
-        <span aria-live="polite" className="tabular-nums">
+        <span className="tabular-nums">
           <strong>{used.toFixed(1)} m</strong> used · <strong>{free.toFixed(1)} m</strong> unused
         </span>
       </div>
+      {/* Silent while a resize drag is in progress, so screen readers hear the final width, not every 0.1 m step. */}
+      <p aria-live="polite" className="sr-only">
+        {announce ? `${used.toFixed(1)} metres used, ${free.toFixed(1)} unused` : ''}
+      </p>
       <div aria-hidden className="flex h-7 overflow-hidden rounded-full border-2 border-ink bg-paper">
         {layout.elements.map((el, i) => (
           <div

@@ -1,9 +1,10 @@
-import { MODEL, TODO_SOURCE, listTodoSources, scoreRun, type GoalCheck, type Level, type Metrics, type ReactResult } from '@road-diet/shared'
+import { MODEL, TODO_SOURCE, listTodoSources, scoreRun, type GoalCheck, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import { Button, GeminiLabel, signed } from '../ui'
+import { Others } from './Others'
 
-type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics; react: ReactResult | null }
+type Props = { open: boolean; onClose: () => void; level: Level; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null }
 
 const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> = {
   emissions: (g) => [`Cut emissions by at least ${g.target}%`, `${g.value.toFixed(1)}%`],
@@ -13,7 +14,7 @@ const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> =
 
 const pct = (x: number) => `${Math.round(x * 100)}%`
 
-export function Scorecard({ open, onClose, level, metrics, base, react }: Props) {
+export function Scorecard({ open, onClose, level, metrics, base, react, stats }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
@@ -124,6 +125,8 @@ export function Scorecard({ open, onClose, level, metrics, base, react }: Props)
             </div>
           )}
         </section>
+
+        {stats !== null && <Others stats={stats} yourStars={score.stars} />}
 
         <section aria-labelledby="limits-title" className="rounded-2xl border-2 border-dashed border-ink bg-grid/40 p-4 text-sm">
           <h3 id="limits-title" className="font-display text-lg font-semibold">

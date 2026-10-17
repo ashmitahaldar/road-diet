@@ -3,6 +3,7 @@ import { ElementIcon, VISUALS } from '../editor/elementVisuals'
 
 const BAR_W = 56
 const CHART_H = 120
+const TOP = 24
 
 /** "How others solved this street" (#19). `stats` undefined = loading; the parent hides it on null. */
 export function Others({ stats, yourStars }: { stats?: LevelStats; yourStars: Stars }) {
@@ -36,10 +37,10 @@ export function Others({ stats, yourStars }: { stats?: LevelStats; yourStars: St
       {plays > 0 && (
         <div className="mt-3 flex flex-wrap items-end gap-6">
           <svg
-            viewBox={`0 0 ${BAR_W * 4 + 24} ${CHART_H + 40}`}
+            viewBox={`0 0 ${BAR_W * 4 + 24} ${TOP + CHART_H + 32}`}
             className="w-64 max-w-full"
             role="img"
-            aria-label={`Runs by stars: ${starCounts.map((n, s) => `${s} stars ${n}`).join(', ')}. You got ${yourStars}.`}
+            aria-label={`Runs by stars: ${starCounts.map((n, s) => `${s} ${s === 1 ? 'star' : 'stars'}: ${n}`).join(', ')}. You got ${yourStars}.`}
           >
             {starCounts.map((n, s) => {
               const h = Math.max(2, (n / max) * CHART_H)
@@ -47,11 +48,11 @@ export function Others({ stats, yourStars }: { stats?: LevelStats; yourStars: St
               const you = s === yourStars
               return (
                 <g key={s}>
-                  <rect x={x} y={CHART_H - h + 8} width={BAR_W - 8} height={h} rx={6} fill={you ? 'var(--color-primary)' : 'var(--color-grid)'} stroke="var(--color-ink)" strokeWidth={2} />
-                  <text x={x + (BAR_W - 8) / 2} y={CHART_H - h} textAnchor="middle" fontSize={13} fontWeight={600} fill="var(--color-ink)" className="tabular-nums">
+                  <rect x={x} y={TOP + CHART_H - h} width={BAR_W - 8} height={h} rx={6} fill={you ? 'var(--color-primary)' : 'var(--color-grid)'} stroke="var(--color-ink)" strokeWidth={2} />
+                  <text x={x + (BAR_W - 8) / 2} y={TOP + CHART_H - h - 6} textAnchor="middle" fontSize={13} fontWeight={600} fill="var(--color-ink)" className="tabular-nums">
                     {n}
                   </text>
-                  <text x={x + (BAR_W - 8) / 2} y={CHART_H + 26} textAnchor="middle" fontSize={13} fill="var(--color-ink)">
+                  <text x={x + (BAR_W - 8) / 2} y={TOP + CHART_H + 22} textAnchor="middle" fontSize={13} fill="var(--color-ink)">
                     {s}★{you ? ' (you)' : ''}
                   </text>
                 </g>
@@ -63,14 +64,14 @@ export function Others({ stats, yourStars }: { stats?: LevelStats; yourStars: St
             <tbody>
               {starCounts.map((n, s) => (
                 <tr key={s}>
-                  <th scope="row">{s} stars</th>
+                  <th scope="row">{s} {s === 1 ? 'star' : 'stars'}</th>
                   <td>{n}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           {topMix && (
-            <div className="min-w-0 flex-1">
+            <div className="min-w-56 flex-1">
               <p className="text-sm font-semibold">
                 Most common street ({topMix.plays} {topMix.plays === 1 ? 'run' : 'runs'})
               </p>

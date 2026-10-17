@@ -1,4 +1,4 @@
-import { computeMetrics, fallbackResult, type Layout, type Level, type Metrics, type ReactResult } from '@road-diet/shared'
+import { computeMetrics, fallbackResult, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { useReducedMotion } from 'motion/react'
 import { useMemo, useRef, useState } from 'react'
 import { Editor } from '../editor/Editor'
@@ -23,9 +23,26 @@ async function fetchReactions(level: Level, layout: Layout, metrics: Metrics): P
   return fallbackResult(metrics)
 }
 
+/** Save the run, then read stats, so the player's own run is counted. Null hides the section (no database). */
+async function saveAndFetchStats(level: Level, layout: Layout): Promise<LevelStats | null> {
+  try {
+    await fetch('/api/runs', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ levelId: level.id, layout }),
+      signal: AbortSignal.timeout(5000),
+    })
+    const res = await fetch(`/api/stats/${encodeURIComponent(level.id)}`, { signal: AbortSignal.timeout(5000) })
+    const stats = (await res.json()) as LevelStats
+    return res.ok && Array.isArray(stats.starCounts) ? stats : null
+  } catch {
+    return null
+  }
+}
+
 export function Game({ level }: { level: Level }) {
   const [layout, setLayout] = useState(level.corridor.baselineLayout)
-  const [run, setRun] = useState<{ layout: Layout; metrics: Metrics; react: ReactResult | null } | null>(null)
+  const [run, setRun] = useState<{ layout: Layout; metrics: Metrics; react: ReactResult | null; stats?: LevelStats | null } | null>(null)
   const [runId, setRunId] = useState(0)
   const [running, setRunning] = useState(false)
   const [scoreOpen, setScoreOpen] = useState(false)
@@ -42,6 +59,7 @@ export function Game({ level }: { level: Level }) {
     setRun({ layout, metrics, react: null })
     // A slow reply for an older run must not overwrite a newer one.
     fetchReactions(level, layout, metrics).then((react) => setRun((cur) => (cur?.layout === layout ? { ...cur, react } : cur)))
+    saveAndFetchStats(level, layout).then((stats) => setRun((cur) => (cur?.layout === layout ? { ...cur, stats } : cur)))
     setRunId((n) => n + 1)
     setRunning(true)
     window.clearTimeout(timer.current)
@@ -66,7 +84,7 @@ export function Game({ level }: { level: Level }) {
         <Editor level={level} layout={layout} onChange={setLayout} />
         <RunPanel level={level} base={base} shown={shown} running={running} runId={runId} onRun={runDay} onShowScore={() => setScoreOpen(true)} />
       </main>
-      {run && <Scorecard open={scoreOpen} onClose={() => setScoreOpen(false)} level={level} metrics={run.metrics} base={base} react={run.react} />}
+      {run && <Scorecard open={scoreOpen} onClose={() => setScoreOpen(false)} level={level} metrics={run.metrics} base={base} react={run.react} stats={run.stats} />}
     </div>
   )
 }

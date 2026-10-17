@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { createApp } from '../src/app'
 import { connect, type Db } from '../src/db'
 import { migrate } from '../src/migrate'
+import { refreshAggregate } from '../src/runs'
 import { freshSchema, url } from './helpers'
 
 const baseline = PLACEHOLDER_LEVEL.corridor.baselineLayout
@@ -72,6 +73,16 @@ describe.skipIf(!url)('with a database (needs TEST_DATABASE_URL)', () => {
     expect(s.starCounts[stars]).toBeGreaterThanOrEqual(2)
     expect(s.topMix).toEqual({ elements: { sidewalk: 2, parking: 2, car_lane: 2, bike_protected: 1, planter: 1 }, plays: 2 })
     expect(s.avgEmissionsReductionPct).toBeGreaterThan(0)
+  })
+
+  test('a run saved after a manual refresh still shows up immediately', async () => {
+    const { db } = await freshSchema()
+    await migrate(db)
+    const api = await start(db)
+    await api.save(baseline)
+    expect(await refreshAggregate(db)).toBe(true)
+    await api.save(redesign)
+    expect(((await (await api.stats()).json()) as LevelStats).plays).toBe(2)
   })
 
   test('writes are rate limited', async () => {

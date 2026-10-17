@@ -45,13 +45,14 @@ export async function getStats(db: Db, levelId: string): Promise<LevelStats> {
 }
 
 /**
- * Materialize runs_hourly now. Live inserts already show through real-time aggregation, but rows
- * backdated into already-materialized buckets (the seed script) only appear after a refresh.
+ * Materialize runs_hourly up to an hour ago, like the policy. Rows backdated into already-materialized
+ * buckets (the seed script) only appear after a refresh. Stopping short matters: materializing the
+ * current hour would move the watermark past now, and new runs would vanish from real-time reads.
  * Returns false on a plain-Postgres database, where runs_hourly is a normal view.
  */
 export async function refreshAggregate(db: Db) {
   try {
-    await db.query("CALL refresh_continuous_aggregate('runs_hourly', NULL, NULL)")
+    await db.query("CALL refresh_continuous_aggregate('runs_hourly', NULL, now() - INTERVAL '1 hour')")
     return true
   } catch {
     return false

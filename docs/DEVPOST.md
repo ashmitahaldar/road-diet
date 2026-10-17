@@ -37,7 +37,7 @@ Each resident reacts in their own words. The scorecard checks the level goal: cu
   - existing cycle tracks from the Cycling Network
   - the planned right-of-way width from Official Plan Map 3
 
-  Lane widths follow the City's Lane Widths Guideline. Lane capacities come from NACTO, and emission factors from UK DESNZ. Every source is linked in the app at `/data`.
+  The briefing opens with a map of the corridor drawn from this data: the street, nearby bike routes, subway stations and the collision total. Lane widths follow the City's Lane Widths Guideline. Lane capacities come from NACTO, and emission factors from UK DESNZ. Every source is linked in the app at `/data`.
 - **How does it benefit the user?** It makes trade-offs concrete and personal: you see the effect through residents' eyes, not only as totals.
   - It explains each result in plain language.
   - It always says what the model cannot know.
@@ -93,7 +93,7 @@ Each resident reacts in their own words. The scorecard checks the level goal: cu
 - **Client:** React 19, Vite, Tailwind CSS v4, Motion, and Three.js for the read-only 3D view.
 - **Server:** Express 5 and zod, plus `pg` for Tiger Data / TimescaleDB.
 - **Model:** pure TypeScript functions shared by the client and server, with vitest tests. Every constant is tagged with its source or marked as a design choice.
-- **Data prep:** a Python script that pulls only corridor-sized extracts from Toronto Open Data.
+- **Data prep:** a Python script that pulls only corridor-sized extracts from Toronto Open Data, and draws the briefing's corridor map as a static SVG (no map tiles or API keys at demo time).
 
 ## Data sources
 These are the sources used in the game, also listed in the app at `/data`.
@@ -105,6 +105,7 @@ These are the sources used in the game, also listed in the app at `/data`.
 - City of Toronto Lane Widths Guideline v3.0 (2025): https://www.toronto.ca/wp-content/uploads/2025/11/96f7-Lane-Widths-Guideline-Version-3.0.pdf
 - NACTO Transit Street Design Guide, "Designing to Move People" (read through this excerpt): https://archive.strongtowns.org/journal/2016/5/23/excerpt-from-nacto-transit-street-design-guide
 - UK DESNZ Greenhouse gas reporting conversion factors 2024: https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2024
+- OpenStreetMap contributors (streets and subway stations on the corridor map, ODbL): https://www.openstreetmap.org/copyright
 
 ## Challenges
 - Lane widths aren't in any open dataset, so today's layout is an estimate, flagged in the app.
@@ -114,7 +115,6 @@ These are the sources used in the game, also listed in the app at `/data`.
 ## What's next
 - A second corridor.
 - Sourcing the remaining constants listed on `/data`.
-- A corridor map on the level briefing.
 
 ## Built with
 typescript, react, vite, tailwindcss, three.js, node.js, express, postgresql, timescaledb, tiger-data, gemini, vultr, caddy, python

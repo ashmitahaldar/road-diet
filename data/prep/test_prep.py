@@ -34,4 +34,15 @@ ksi = pd.DataFrame({
 assert prep.ksi_summary(ksi, since="2021-10-17") == {"ksiCollisions": 2, "pedestrianInvolved": 1, "cyclistInvolved": 1}
 assert prep.ksi_summary(ksi, since="2024-06-01") == {"ksiCollisions": 1, "pedestrianInvolved": 0, "cyclistInvolved": 1}
 
+from shapely.geometry import LineString, Point
+import xml.etree.ElementTree as ET
+
+assert [prep.bike_kind(i) for i in ("Cycle Track", "Bi-Directional Cycle Track", "Bike Lane - Contraflow", "Sharrows")] == ["protected", "protected", "painted", "other"]
+assert prep.and_list(["A", "B", "C"]) == "A, B and C" and prep.and_list(["A"]) == "A"
+body, w, h = prep.render_map(LineString([(0, 0), (600, 0)]), "Test St", [LineString([(300, -500), (300, 500)])], [("protected", LineString([(0, 0), (600, 0)]))],
+                             [("Stop", Point(10, 10))], "3 fatal or serious-injury collisions (30 m, 5 years)")
+svg = ET.fromstring(f'<svg xmlns="http://www.w3.org/2000/svg">{"".join(body)}</svg>')
+assert (w, h) == (900, 300)
+assert len(svg.findall("{http://www.w3.org/2000/svg}circle")) == 1, "only stations are points; collisions stay an aggregate label"
+
 print("prep self-check passed")

@@ -19,6 +19,14 @@ Build a corridor from its config (small datastore queries plus the 11 MB KSI CSV
 python prep.py corridor corridors/bloor-christie-ossington.toml   # writes data/corridors/bloor-christie-ossington.json
 ```
 
+Then draw its map (spec 8c). This needs the corridor JSON, the 3 MB Cycling Network GeoJSON (fetched if missing) and one small Overpass query (cached in `data/raw/osm/<id>.json`):
+
+```bash
+python prep.py map corridors/bloor-christie-ossington.toml   # writes data/corridors/<id>.map.svg; adds mapSvg, mapAlt and the OSM source to the JSON
+```
+
+The map shows collisions only as the corridor's total KSI count from the JSON, never as points. Rerun `map` after `corridor`, because `corridor` rewrites the JSON without the map fields.
+
 The config pins every input: centreline segment ids, the TMC count id and peak, the KSI buffer and window, the Official Plan width, and the values marked `estimate` (copied into the JSON's `estimates` list).
 
 (With uv: `uv run --no-project --with-requirements requirements.txt python test_prep.py`.)
@@ -52,7 +60,3 @@ Small files you can fetch directly:
 ## Attribution
 
 Credit the City of Toronto, the Toronto Police Service and **OpenStreetMap contributors** (required by the ODbL) on the map and on `/data`.
-
-## Not done yet
-
-The corridor build itself is waiting until a corridor is chosen (issue #11).

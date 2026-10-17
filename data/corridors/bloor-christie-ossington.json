@@ -77,6 +77,12 @@
       "url": "https://www.toronto.ca/wp-content/uploads/2026/06/98b4-CityPlanning-Map-3-ROW-Widths-Associated-with-Existing-Major-Streets.pdf",
       "retrieved": "2026-10-17",
       "note": "Official Plan Map 3 (June 2026): Bloor St W from Ossington Ave to Bathurst St is drawn in the 20 m colour. Planned right-of-way, read from the PDF."
+    },
+    {
+      "label": "OpenStreetMap contributors",
+      "url": "https://www.openstreetmap.org/copyright",
+      "retrieved": "2026-10-17",
+      "note": "Streets and subway stations on the corridor map, from the Overpass API. The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
     }
   ],
   "estimates": [
@@ -126,5 +132,11 @@
       "Cycle Track"
     ]
   },
-  "source": "Toronto Open Data and City of Toronto Official Plan; see sources and estimates."
+  "source": "Toronto Open Data and City of Toronto Official Plan; see sources and estimates.",
+  "mapSvg": "data/corridors/bloor-christie-ossington.map.svg",
+  "mapAlt": "Map of Bloor St W (Christie St to Ossington Ave), 0.61 km, highlighted in blue. Subway stations: Christie and Ossington. Protected bike lanes (cycle tracks) on Bloor St W. Painted bike lanes on Grace St, Montrose Ave and Shaw St. Other cycling routes on Christie Pits Park Trl and Crawford St. 4 collisions where someone was killed or seriously injured happened within 30 m of this stretch in the last 5 years (a total, not individual incidents).",
+  "mapSize": [
+    880,
+    488
+  ]
 }

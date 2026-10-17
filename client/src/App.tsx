@@ -1,8 +1,10 @@
 import { PLACEHOLDER_LEVEL } from '@road-diet/shared'
+import { useState } from 'react'
 import { Editor } from './editor/Editor'
 
 export default function App() {
   const level = PLACEHOLDER_LEVEL
+  const [layout, setLayout] = useState(level.corridor.baselineLayout)
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-4 py-6">
       <header>
@@ -13,7 +15,7 @@ export default function App() {
         </p>
       </header>
       <main className="flex-1">
-        <Editor level={level} />
+        <Editor level={level} layout={layout} onChange={setLayout} />
       </main>
       <footer className="text-sm">A learning tool, not a forecast. Residents are fictional.</footer>
     </div>

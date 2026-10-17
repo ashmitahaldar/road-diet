@@ -4,6 +4,7 @@ import {
   PLACEHOLDER_LEVEL,
   addElement,
   moveElement,
+  moveElementTo,
   remainingWidth,
   removeElement,
   resizeElement,
@@ -46,6 +47,14 @@ describe('editor operations', () => {
     expect(moveElement(baseline, 0, -1)).toBe(baseline)
   })
 
+  test('moveElementTo lands the element at the target index', () => {
+    const ids = (l: Layout) => l.elements.map((e) => e.id)
+    expect(ids(moveElementTo(baseline, 0, 6))).toEqual([...ids(baseline).slice(1), 'sidewalk'])
+    expect(ids(moveElementTo(baseline, 6, 0))[0]).toBe('sidewalk')
+    expect(moveElementTo(baseline, 2, 2)).toBe(baseline)
+    expect(moveElementTo(baseline, 0, 7)).toBe(baseline)
+  })
+
   test('random edit sequences never exceed the street width', () => {
     const ids = Object.keys(ELEMENTS) as ElementId[]
     let seed = 42
@@ -57,7 +66,7 @@ describe('editor operations', () => {
       if (op === 0) l = addElement(l, level, ids[rand(ids.length)], i)
       if (op === 1) l = resizeElement(l, level, i, (rand(21) - 10) / 10)
       if (op === 2 && rand(3) === 0) l = removeElement(l, i)
-      if (op === 3) l = moveElement(l, i, rand(2) ? 1 : -1)
+      if (op === 3) l = rand(2) ? moveElement(l, i, rand(2) ? 1 : -1) : moveElementTo(l, i, rand(l.elements.length))
       expect(validateLayout(l, level).valid).toBe(true)
     }
   })

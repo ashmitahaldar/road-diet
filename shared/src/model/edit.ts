@@ -34,9 +34,13 @@ export function removeElement(layout: Layout, index: number): Layout {
 }
 
 export function moveElement(layout: Layout, index: number, direction: -1 | 1): Layout {
-  const to = index + direction
-  if (!layout.elements[index] || !layout.elements[to]) return layout
+  return moveElementTo(layout, index, index + direction)
+}
+
+/** Move the element at `from` so it ends up at index `to` (drag to reorder). */
+export function moveElementTo(layout: Layout, from: number, to: number): Layout {
+  if (from === to || !layout.elements[from] || !layout.elements[to]) return layout
   const elements = [...layout.elements]
-  ;[elements[index], elements[to]] = [elements[to], elements[index]]
+  elements.splice(to, 0, ...elements.splice(from, 1))
   return { elements }
 }

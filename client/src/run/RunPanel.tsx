@@ -26,6 +26,7 @@ export function RunPanel({ level, base, shown, running, runId, onRun, onShowScor
   const m = shown.metrics
   const { goal } = level
   const travel = mean(m.travelTimeMin)
+  const emissionsScale = Math.max(40, 2 * (goal.minEmissionsReductionPct ?? 0))
   const caption = {
     today: "Today's street. Change it, then press Run a day.",
     run: 'Your street after one day.',
@@ -60,8 +61,8 @@ export function RunPanel({ level, base, shown, running, runId, onRun, onShowScor
             color="var(--color-meter-emissions)"
             value={`${m.emissionsReductionPct.toFixed(1)}%`}
             detail={`${m.emissionsKgPerHour.toFixed(0)} kg CO₂e/h${goal.minEmissionsReductionPct ? ` · goal ${goal.minEmissionsReductionPct}%` : ''}`}
-            fill={m.emissionsReductionPct / 40}
-            mark={goal.minEmissionsReductionPct && goal.minEmissionsReductionPct / 40}
+            fill={m.emissionsReductionPct / emissionsScale}
+            mark={goal.minEmissionsReductionPct && goal.minEmissionsReductionPct / emissionsScale}
           />
           <Meter
             label="Safety"

@@ -7,7 +7,7 @@ Every dataset Road Diet uses or plans to use. Toronto Open Data URLs follow `htt
 - **Verified = no:** not confirmed.
 - **Licence = "verify":** confirm before launch. The portal metadata wording is quoted in brackets.
 
-Credit on `/data`: City of Toronto, Toronto Police Service, OpenStreetMap contributors.
+Credit on `/data` names only the publishers of data the game actually uses (checked with `package_show` on 2026-10-17): City of Toronto (`owner_division` Transportation Services for TMC, KSI and Cycling Network; Information & Technology for Toronto Centreline; City Planning for Official Plan Map 3; the Lane Widths Guideline), UK DESNZ (emission factors) and NACTO (lane capacities). The KSI dataset is owned by Transportation Services, not Toronto Police Service. OpenStreetMap is not used yet; credit OpenStreetMap contributors if it is.
 
 | Dataset | Dataset name | URL | Licence | Retrieved | What we use it for | Verified |
 |---|---|---|---|---|---|---|

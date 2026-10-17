@@ -79,6 +79,8 @@ export type Corridor = {
   freeFlowSpeedKph: number
   sources: DataSource[]
   mapSvg?: string
+  /** Inputs not taken from a verified dataset (spec 4.5); shown on the limitations panel and /data. */
+  estimates?: { field: string; note: string }[]
   source: string
 }
 
@@ -90,4 +92,17 @@ export type Level = {
   goal: { minEmissionsReductionPct?: number; minHappiness?: number; minSafety?: number }
   /** 2 stars: goal + safetyScore >= safety; 3 stars: also fairness >= fairness (spec 2.6). */
   stars: { safety: number; fairness: number }
+}
+
+/** GET /api/stats/:levelId — how other players solved a level (spec 7, #18). */
+export type LevelStats = {
+  plays: number
+  /** Seeded demo runs included in `plays`; the UI says so. */
+  demoPlays: number
+  avgStars: number | null
+  avgEmissionsReductionPct: number | null
+  /** Runs with 0, 1, 2 and 3 stars. */
+  starCounts: [number, number, number, number]
+  /** Most common element mix (element counts) over recent runs. */
+  topMix: { elements: Partial<Record<ElementId, number>>; plays: number } | null
 }

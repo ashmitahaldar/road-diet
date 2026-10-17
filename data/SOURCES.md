@@ -7,7 +7,7 @@ Every dataset Road Diet uses or plans to use. Toronto Open Data URLs follow `htt
 - **Verified = no:** not confirmed.
 - **Licence = "verify":** confirm before launch. The portal metadata wording is quoted in brackets.
 
-Credit on `/data`: City of Toronto, Toronto Police Service, OpenStreetMap contributors.
+Credit on `/data` names only the publishers of data the game actually uses (checked with `package_show` on 2026-10-17): City of Toronto (`owner_division` Transportation Services for TMC, KSI and Cycling Network; Information & Technology for Toronto Centreline; City Planning for Official Plan Map 3; the Lane Widths Guideline), UK DESNZ (emission factors) and NACTO (lane capacities). The KSI dataset is owned by Transportation Services, not Toronto Police Service. OpenStreetMap is not used yet; credit OpenStreetMap contributors if it is.
 
 | Dataset | Dataset name | URL | Licence | Retrieved | What we use it for | Verified |
 |---|---|---|---|---|---|---|
@@ -18,6 +18,9 @@ Credit on `/data`: City of Toronto, Toronto Police Service, OpenStreetMap contri
 | Official Plan Map 3: Right-of-Way Widths Associated with Existing Major Streets (June 2026) | — | https://www.toronto.ca/wp-content/uploads/2026/06/98b4-CityPlanning-Map-3-ROW-Widths-Associated-with-Existing-Major-Streets.pdf | verify | 2026-10-16 | Planned right-of-way width (hand lookup) | yes |
 | Official Plan Schedule 1: Existing Minor Streets with Right-of-Way Widths Greater Than 20 Metres | — | https://www.toronto.ca/wp-content/uploads/2017/11/908d-cp-official-plan-Schedule-1.pdf | verify | 2026-10-16 | Planned right-of-way width for minor streets | yes |
 | Toronto Centreline (TCL) | `toronto-centreline-tcl` | https://open.toronto.ca/dataset/toronto-centreline-tcl/ | verify (no licence in metadata) | 2026-10-16 | Corridor line geometry and joins; has **no width attribute** | yes |
+| City of Toronto Lane Widths Guideline v3.0 (2025) | — | https://www.toronto.ca/wp-content/uploads/2025/11/96f7-Lane-Widths-Guideline-Version-3.0.pdf | verify | 2026-10-17 | Car, bus and parking lane widths (Table 15). Defers cycling facility widths to Ontario Traffic Manual Book 18 (not yet opened) | yes |
+| NACTO Transit Street Design Guide, "Designing to Move People" | — | https://archive.strongtowns.org/journal/2016/5/23/excerpt-from-nacto-transit-street-design-guide | verify (NACTO page returned 403; read through this excerpt) | 2026-10-17 | Car lane (600-1,600 people/h) and bus lane (up to 8,000 passengers/h) capacity | yes (excerpt) |
+| UK DESNZ Greenhouse gas reporting: conversion factors 2024, condensed set | — | https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2024 | Open Government Licence (verify) | 2026-10-17 | Emission factors: "Average car" unknown fuel 0.16691 kg CO2e/km; "Average local bus" 0.10846 kg CO2e/passenger.km. UK fleet averages | yes |
 | Cycling Network | `cycling-network` | https://open.toronto.ca/dataset/cycling-network/ | verify (no licence in metadata) | 2026-10-16 | Existing bike facilities (`INFRA_HIGHORDER`) | yes |
 | Bike ways in Toronto (ArcGIS FeatureServer) | — | https://services.arcgis.com/As5CFN3ThbQpy8Ph/ArcGIS/rest/services/TorontoBikeways/FeatureServer | verify (service copyright: "City of Toronto") | 2026-10-16 | Not used; `cycling-network` is preferred | yes (fields only) |
 | City of Toronto Open Data catalogue | — | https://open.toronto.ca/ | — | 2026-10-16 | Dataset search | yes |

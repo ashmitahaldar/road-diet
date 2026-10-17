@@ -79,7 +79,7 @@ Rule: every targeted prize needs (a) a feature a judge can see in under 10 secon
 | How does the data solve it? | Every level starts from real corridor data (width, volumes, collisions, mode share) shown on the level briefing |
 | How does it benefit the user? | Scorecard + planner debrief explain trade-offs in plain language |
 | Links to all data sources | `/data` page auto-generated from each corridor JSON `sources`; also pasted into Devpost |
-| Not predicting the election / no candidate support | Footer statement on every page; no candidate or party content anywhere |
+| Not predicting the election / no candidate support | Footer statement on every page: "A learning tool, not a forecast. Residents are fictional."; no candidate or party content anywhere |
 | Responsible interpretation | Visible Limitations panel on the scorecard (not only a separate page); fictional personas labelled; no neighbourhood rankings |
 | AI integration with intention | Gemini persona reactions and debrief are computed from model output, cite the numbers used, and say what they cannot know |
 | Accessibility | Keyboard-operable editor, text labels beside colours, works at phone width |
@@ -97,7 +97,7 @@ Format fit: their listed formats include "scenario explorer"; their listed promp
 - Ask the organizers how they treat AI coding assistants and pre-event prep (keys, accounts); state in Devpost what was built during the event.
 
 **MLH: Best Use of Gemini API**
-- Two visible Gemini features: persona reactions after every run, and the end-of-level planner debrief.
+- One Gemini call per run (lean scope S1) returns persona reactions and a 2–3 sentence debrief: reactions show after every run, the debrief on the scorecard.
 - Both use structured JSON output and are grounded in computed metrics.
 - UI shows a small "Powered by Gemini" label next to those outputs; Devpost names the model used.
 
@@ -147,7 +147,7 @@ Keep a recorded backup of this exact flow.
 4. Edit the cross-section: add/remove/resize street elements within the fixed width.
 5. Press "Run a day": model computes metrics, residents' trips play out, residents react (Gemini).
 6. See the scorecard (stars), try again or continue to the next level.
-7. End: planner debrief (Gemini), data sources, limitations, "how other players solved this" (Tiger Data).
+7. End: debrief (from the same Gemini call), data sources, limitations, "how other players solved this" (Tiger Data).
 
 ### 1.9 Feature priority
 
@@ -372,13 +372,14 @@ Numbers above are structure only; fill from real data.
 - **Safe fallback:** on error or timeout (>6 s), show canned lines per persona and a generic debrief.
 
 ### 5.2 Endpoints and prompts
-**`POST /api/react`** — input: layout, metrics before/after, active event, personas. Output:
+**`POST /api/react`** — one Gemini call per run. Input: layout, metrics before/after, goal result, level facts, active event, personas. Output:
 ```json
-{ "reactions": [{ "personaId": "senior_walker", "mood": "up|flat|down", "line": "<=25 words, first person" }] }
+{ "reactions": [{ "personaId": "senior_walker", "mood": "up|flat|down", "line": "<=25 words, first person" }],
+  "debrief": "2-3 sentences, plain language, at least one limitation relevant to the design" }
 ```
-Prompt rules: stay in character; refer only to supplied numbers; one concrete reason per line; no real people or politicians.
+Prompt rules: stay in character; refer only to supplied numbers; one concrete reason per line; no real people or politicians. `reactions` is Must (M8); `debrief` is Should (S1). On failure, return canned lines and a generic debrief.
 
-**`POST /api/debrief`** — input: final layout, metrics, goal result, level facts. Output:
+**`POST /api/debrief`** *(Stretch; replaced in the lean scope by the `debrief` field of `/api/react`)* — input: final layout, metrics, goal result, level facts. Output:
 ```json
 { "summary": "<=120 words plain language",
   "tradeoffs": ["..."],
@@ -452,8 +453,8 @@ NODE_ENV=production
 |---|---|---|
 | GET | `/api/levels` | List levels |
 | GET | `/api/levels/:id` | Level + corridor data |
-| POST | `/api/react` | Persona reactions (Gemini, with fallback) |
-| POST | `/api/debrief` | Planner debrief (Gemini, with fallback) |
+| POST | `/api/react` | Persona reactions + 2–3 sentence debrief in one Gemini call (with fallback) |
+| POST | `/api/debrief` | *(Stretch)* Separate planner debrief; the lean scope uses `/api/react` |
 | POST | `/api/runs` | Save a finished run (Tiger Data) |
 | GET | `/api/stats/:levelId` | Aggregates: star distribution, most common element mix |
 | GET | `/api/health` | Health check |
@@ -501,7 +502,7 @@ Confirm extension availability on the Tiger Data instance; fall back to a plain 
 - **Scorecard:** stars, goal checklist, four meters (emissions, safety, travel time, fairness).
 - **Data & Limitations page:** sources (with links), model assumptions, every `TODO-SOURCE` constant, and plain statements such as "This is a simplified estimate, not a prediction" and "Personas are fictional".
 - **Tone:** friendly, neutral, civic. Clear, large text; keyboard accessible; sufficient colour contrast; do not rely on colour alone to carry meaning; works on laptop and phone widths.
-- **Neutrality:** no election content beyond a one-line context note. Never rank neighbourhoods against each other.
+- **Neutrality:** no election content in game copy (see 2.7). Footer: "A learning tool, not a forecast. Residents are fictional." Never rank neighbourhoods against each other.
 
 ---
 
@@ -578,7 +579,7 @@ Labels show width in metres on or directly under each block.
 
 ### Copy and tone
 - Friendly, plain language, light humour (for example "Your street went on a diet").
-- Never name candidates, parties or elections beyond one neutral context line in the footer.
+- Never name candidates, parties or elections in game copy (see 2.7). The footer line is "A learning tool, not a forecast. Residents are fictional."
 - Always say what the model cannot know.
 
 ### Accessibility checklist

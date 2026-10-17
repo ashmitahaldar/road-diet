@@ -303,15 +303,45 @@ Weights live in persona definitions. Add event modifiers when active.
 ### 4.1 Principle
 Real Toronto data is the foundation. Use a small preprocessing step to produce one static JSON per corridor so the app never depends on live data at demo time.
 
-### 4.2 Candidate datasets (verify availability and licence before use)
-Plan to confirm each after the School of Cities data workshop and the "Toronto Civic Data Starter Guide":
-- Street/centreline geometry and right-of-way width
-- Traffic volumes (City of Toronto)
-- Collision data (e.g. Toronto Police Service open data on killed or seriously injured collisions)
-- Cycling network (City of Toronto)
-- TTC routes, stops, and (if available) ridership/delay data
-- Census/neighbourhood indicators (commute mode share, demographics) from the Census and City neighbourhood profiles
-- Neighbourhood/ward boundaries
+### 4.2 Datasets
+Priority is in brackets: [core], [use], [should], [nice], [optional], [skip]. Toronto Open Data pages live at `https://open.toronto.ca/dataset/<dataset-name>/`. Metadata comes from the portal API (`https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_show?id=<dataset-name>`). **VERIFIED** means the row was checked against the API or the source document on 2026-10-16; **UNVERIFIED** means it has not been checked yet. Full details and the per-dataset licence status are in `data/SOURCES.md`.
+
+**Verified on the Toronto Open Data portal (retrieved 2026-10-16)**
+
+| Dataset | Dataset name / URL | Priority | Use | Notes and caveats | Status |
+|---|---|---|---|---|---|
+| Motor Vehicle Collisions Involving Killed or Seriously Injured Persons | `motor-vehicle-collisions-involving-killed-or-seriously-injured-persons` | [core] | Safety baseline | Owner: Transportation Services. Refreshed daily. KSI collisions since 2006, **one row per involved person**: 20,809 person rows, but only 7,638 distinct `collision_id` values. CSV, SHP, GeoJSON, GPKG (4326 and 2952). Only collisions in the City right-of-way involving a motor vehicle or streetcar; excludes private property, provincial highways and outside Toronto; dooring included from 2023. Records can lag months to over a year and can be corrected later. **MUST deduplicate by `collision_id` before counting.** Fields: `collision_id`, `accdate`, `stname1`–`stname3`, `latitude`/`longitude`, `acclass`, `injury`, `road_user`, and the collision-level flags `pedestrian`/`cyclist`, which repeat on every person row. The portal text mentions a data dictionary, but none is listed as a resource. | VERIFIED (dictionary UNVERIFIED) |
+| Traffic Volumes - Multimodal Intersection Turning Movement Counts | `traffic-volumes-at-intersections-for-all-modes` | [core] | Demand baseline | Counts since 1984 for cars, trucks, buses, bicycles and pedestrians in 15-minute bins; pedestrians are counted crossing each leg. 8 non-continuous hours before Sept 2023, 14 continuous hours from Sept 2023. Bicycle volumes were not collected in every count before 2014. Ad hoc coverage. `tmc_most_recent_summary_data` has 6,401 locations with AM/PM peaks; `tmc_summary_data` has 30,953 counts. Fields: `latest_count_id`/`count_id`, `latest_count_date`/`count_date`, `location_name`, `centreline_id`, `count_duration` (values seen: `14`, `8R`, `8S`; the 8R/8S meaning is UNVERIFIED), `total_vehicle`, `total_bike`, `total_pedestrian`, `am_peak_*`/`pm_peak_*`, and per-approach `n/e/s/w_appr_*`. Overlay with Toronto Centreline and Intersection File. | VERIFIED |
+| Traffic Collisions (Toronto Police) | `police-annual-statistical-report-traffic-collisions` | [optional, probably skip] | Only if KSI is not enough | All police-recorded collisions since 2014, 825,265 records, occurrence level (multiple offences/victims per record). Refreshed annually. 4326 GeoJSON is 493 MB, so **do not download**. Fields: `OCC_DATE`, `OCC_YEAR`, `OCC_HOUR`, `DIVISION`, `FATALITIES`, `INJURY_COLLISIONS`, `FTR_COLLISIONS`, `PD_COLLISIONS`, `LONG_WGS84`, `LAT_WGS84`, `AUTOMOBILE`, `MOTORCYCLE`, `PASSENGER`, `BICYCLE`, `PEDESTRIAN`. The linked TPS documentation has not been read. | VERIFIED (docs UNVERIFIED) |
+| Permanent Bicycle Counters | `permanent-bicycle-counters` | [optional] | Bike volumes, only if the corridor has a detector | 59 detector locations, 15-minute counts, refreshed monthly. Counts only bikes and micromobility inside the designated bike lane. Includes a readme/data-dictionary PDF. | VERIFIED |
+| Right-of-way width: Official Plan Map 3 | [Map 3 PDF](https://www.toronto.ca/wp-content/uploads/2026/06/98b4-CityPlanning-Map-3-ROW-Widths-Associated-with-Existing-Major-Streets.pdf) | [core] | Corridor width | "Right-of-Way Widths Associated with Existing Major Streets", published June 2026, includes OPAs up to OPA765. Width classes: 20, 23, 27, 30, 33, 36, 43, 45 m and over, plus "non-uniform width, to be retained as existing". Widths are shown by colour only, so look up the corridor **by hand**. These are **planned** widths: always label the value "planned right-of-way width". | VERIFIED |
+| Right-of-way width: Official Plan Schedule 1 | [Schedule 1 PDF](https://www.toronto.ca/wp-content/uploads/2017/11/908d-cp-official-plan-Schedule-1.pdf) | [core] | Width for minor streets | "Existing Minor Streets with Right-of-Way Widths Greater Than 20 Metres": a text table of street, from, to and planned right-of-way width. Label as "planned right-of-way width". | VERIFIED |
+| Toronto Centreline (TCL) | `toronto-centreline-tcl` | [use] | Corridor geometry, joins | Owner: Information & Technology. Refreshed daily. The datastore schema (Version 2) has **no width attribute**: names, address ranges, from/to intersections, feature code, jurisdiction, one-way. | VERIFIED |
+| Cycling Network | `cycling-network` | [core] | Existing bike facilities | Transportation Services, semi-annual (last refreshed 2026-09-14), 1,581 segments. `INFRA_HIGHORDER` values include `Bike Lane`, `Bike Lane - Buffered`, `Bike Lane - Contraflow`, `Cycle Track`, `Cycle Track - Contraflow`, `Bi-Directional Cycle Track`, `Sharrows*`, `Multi-Use Trail*`, `Signed Route (No Pavement Markings)` and `Park Road` (full list in `data/SOURCES.md`). Game mapping (our choice): `Bike Lane*` → painted, `*Cycle Track*` → protected. | VERIFIED |
+| Bike ways in Toronto (ArcGIS) | `https://services.arcgis.com/As5CFN3ThbQpy8Ph/ArcGIS/rest/services/TorontoBikeways/FeatureServer` | [skip, use `cycling-network`] | — | Layer `TorontoBikeways`, 7,049 features. The facility field is `CP_TYPE`: `Bike Lanes` (painted) vs `Cycle Tracks` (separated); other values are trails and routes. Uses older Centreline field names (`GEO_ID`, `LF_NAME`, `FCODE`). The portal dataset `bikeways` is marked "Will not be Refreshed" (last 2023-08-07); whether this service is the same data is UNVERIFIED. | VERIFIED (fields) |
+
+**From the School of Cities starter guide.** The guide itself has not been located. "Dataset found" means the portal search returned this dataset name; the contents have not been reviewed.
+
+| Dataset | Dataset name / URL | Priority | Use | Status |
+|---|---|---|---|---|
+| City of Toronto Open Data catalogue | https://open.toronto.ca/ | [core] | Search for everything | VERIFIED (site) |
+| TTC Routes and Schedules (GTFS) | `ttc-routes-and-schedules` | [core] | Stops, routes, trips per hour | Dataset found; GTFS contents UNVERIFIED |
+| OpenStreetMap via OSMnx or Overpass | https://www.openstreetmap.org/copyright, https://osmnx.readthedocs.io/, https://overpass-turbo.eu/ | [core, supplement] | Lane tags, sidewalks, parking, shops, amenities, persona destinations. Attribution required. Overpass Turbo for exploring/exporting GeoJSON; OSMnx in the reproducible script. | VERIFIED (pages); tag coverage UNVERIFIED |
+| 2021 Census Profile and census tract boundaries (Statistics Canada) | — | [core] | Commute mode share and demographics, joined to the corridor's tract. Mark as an approximation. | UNVERIFIED (Statistics Canada site blocked automated access) |
+| Neighbourhood Profiles | `neighbourhood-profiles` | [use] | Context | Dataset found |
+| Ward Profiles (25-Ward Model) | `ward-profiles-25-ward-model` | [use] | Context | Dataset found |
+| City Wards | `city-wards` | [use] | Boundaries | Dataset found |
+| Neighbourhoods | `neighbourhoods` | [use] | Boundaries | Dataset found |
+| TTC Bus Delay Data / TTC Streetcar Delay Data | `ttc-bus-delay-data`, `ttc-streetcar-delay-data` | [should] | Transit reliability | Dataset found |
+| Bike Share Toronto | `bike-share-toronto` | [nice] | Bike context | Dataset found |
+| Parks and Recreation Facilities | `parks-and-recreation-facilities` | [nice] | Persona destinations | Dataset found |
+| Licensed Child Care Centres | `licensed-child-care-centres` | [nice] | Persona destinations | Dataset found |
+| 311 Service Requests - Customer Initiated | `311-service-requests-customer-initiated` | [skip unless time] | Public dataset is partial and categories changed over time | Dataset found; caveat UNVERIFIED |
+
+**NOT USED:** CMHC housing data, zoning, building permits, development applications, the housing data hub, election results and campaign finance. The project must not predict elections or support candidates, and these are outside the street-space question.
+
+### 4.2b Licences and credits
+Most datasets above show "License not specified" in the portal metadata (some show none at all); Licensed Child Care Centres shows the Open Government Licence – Toronto (https://open.toronto.ca/open-data-licence/). Record the licence as **"verify"** for every dataset in `data/SOURCES.md` until it is confirmed. The `/data` page credits the City of Toronto, the Toronto Police Service and OpenStreetMap contributors (OSM attribution is required).
 
 **Corridor selection criteria:** (1) has collision, volume and transit data nearby; (2) real, defensible right-of-way width; (3) has meaningful car/bike/bus/pedestrian mix; (4) recognizable to Toronto residents; (5) one to a few blocks only.
 
@@ -336,6 +366,14 @@ Plan to confirm each after the School of Cities data workshop and the "Toronto C
 ```
 Numbers above are structure only; fill from real data.
 `mapSvg` is optional: the path to the generated corridor map SVG (see 8c).
+
+### 4.5 Fallback policy
+If an input is missing, use the documented substitute, mark it as an **estimate**, and list it on the in-app limitations panel and the `/data` page:
+- No intersection turning movement count near the corridor → census commute mode share.
+- Few KSI records → a wider buffer or a longer period.
+- No corridor-specific width → the Official Plan class width, or the City's street design standard.
+
+KSI counts for a short corridor may be small. Use a configurable buffer and period, show only aggregate counts (never individual incident details), and avoid over-precise claims.
 
 ---
 

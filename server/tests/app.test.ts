@@ -30,11 +30,15 @@ test('levels list and detail', async () => {
 })
 
 test('unknown level and unknown API paths are JSON 404s', async () => {
-  for (const path of ['/api/levels/nope', '/api/nope']) {
+  for (const path of ['/api/levels/nope', '/api/levels/constructor', '/api/levels/__proto__', '/api/nope']) {
     const res = await get(path)
     expect(res.status).toBe(404)
     expect(await res.json()).toEqual({ error: 'not-found' })
   }
+})
+
+test('missing files 404 instead of getting the game page', async () => {
+  expect((await get('/assets/index-OLDHASH.js')).status).toBe(404)
 })
 
 test('client paths fall back to the game', async () => {

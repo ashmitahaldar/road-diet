@@ -34,6 +34,8 @@ export type Metrics = {
   happiness: Record<PersonaId, number>
   /** min happiness */
   fairness: number
+  /** max - min happiness, for the debrief */
+  fairnessSpread: number
   unusedWidthM: number
 }
 

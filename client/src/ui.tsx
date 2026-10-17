@@ -10,6 +10,11 @@ export function Button({ className = '', ...props }: ButtonHTMLAttributes<HTMLBu
   )
 }
 
+/** Shown only when the text really came from Gemini (spec 1.7b, #15). */
+export function GeminiLabel() {
+  return <span className="inline-block rounded-full border-2 border-ink bg-paper px-2 text-xs font-semibold">Powered by Gemini</span>
+}
+
 /** "+1.2", "−0.4" or "±0.0", signed after rounding so a tiny change never shows as "−0". */
 export function signed(x: number, digits = 1) {
   const r = Number(x.toFixed(digits))

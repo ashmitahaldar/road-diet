@@ -1,7 +1,7 @@
-import { PERSONAS, type ElementId, type Level, type Metrics, type Mode, type Persona, type PersonaId } from '@road-diet/shared'
+import { PERSONAS, type ElementId, type Level, type Metrics, type Mode, type Persona, type PersonaId, type ReactResult, type Reaction } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { ElementIcon } from '../editor/elementVisuals'
-import { Button, signed } from '../ui'
+import { Button, GeminiLabel, signed } from '../ui'
 
 export const RUN_MS = 3200
 
@@ -14,8 +14,8 @@ const ACCENT: Record<PersonaId, string> = {
 const MODE_ICON: Record<Mode, ElementId> = { car: 'car_lane', bus: 'bus_lane', bike: 'bike_painted', walk: 'sidewalk' }
 const MODE_WORD: Record<Mode, string> = { car: 'drives', bus: 'rides the bus', bike: 'bikes', walk: 'walks' }
 
-/** Shown state: today's street before the first run, then the latest run. */
-export type Shown = { metrics: Metrics; kind: 'today' | 'run' | 'stale' }
+/** Shown state: today's street before the first run, then the latest run. `react` is null while /api/react is pending. */
+export type Shown = { metrics: Metrics; kind: 'today' | 'run' | 'stale'; react?: ReactResult | null }
 
 type Props = { level: Level; base: Metrics; shown: Shown; running: boolean; runId: number; onRun: () => void; onShowScore: () => void }
 
@@ -92,10 +92,21 @@ export function RunPanel({ level, base, shown, running, runId, onRun, onShowScor
         <h2 id="residents-title" className="font-display text-xl font-semibold">
           Residents
         </h2>
-        <p className="mb-2 text-sm">Fictional residents who use this street.</p>
+        <p className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+          Fictional residents who use this street.
+          {shown.react?.source === 'gemini' && !running && <GeminiLabel />}
+        </p>
         <ul className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 xl:mx-0 xl:flex-col xl:overflow-visible xl:px-0">
           {Object.values(PERSONAS).map((p) => (
-            <PersonaCard key={p.id} p={p} m={m} base={base} running={running} runId={runId} />
+            <PersonaCard
+              key={p.id}
+              p={p}
+              m={m}
+              base={base}
+              running={running}
+              runId={runId}
+              reaction={shown.kind === 'today' ? undefined : (shown.react?.reactions.find((r) => r.personaId === p.id) ?? 'loading')}
+            />
           ))}
         </ul>
       </section>
@@ -103,6 +114,11 @@ export function RunPanel({ level, base, shown, running, runId, onRun, onShowScor
       <p aria-live="polite" className="sr-only">
         {shown.kind === 'run' && !running
           ? `Day complete. Emissions cut ${m.emissionsReductionPct.toFixed(1)} percent, safety ${m.safetyScore.toFixed(0)}, lowest happiness ${m.fairness.toFixed(0)}.`
+          : ''}
+      </p>
+      <p aria-live="polite" className="sr-only">
+        {shown.kind === 'run' && !running && shown.react
+          ? shown.react.reactions.map((r) => `${PERSONAS[r.personaId].name} says: ${r.line}`).join(' ')
           : ''}
       </p>
     </aside>
@@ -141,7 +157,9 @@ function mood(h: number) {
   return { word: 'Unhappy', mouth: 'M10 22 Q16 17 22 22' }
 }
 
-function PersonaCard({ p, m, base, running, runId }: { p: Persona; m: Metrics; base: Metrics; running: boolean; runId: number }) {
+type CardProps = { p: Persona; m: Metrics; base: Metrics; running: boolean; runId: number; reaction?: Reaction | 'loading' }
+
+function PersonaCard({ p, m, base, running, runId, reaction }: CardProps) {
   const reduce = useReducedMotion()
   const h = m.happiness[p.id]
   const t = m.travelTimeMin[p.id]
@@ -172,6 +190,7 @@ function PersonaCard({ p, m, base, running, runId }: { p: Persona; m: Metrics; b
           </p>
         </div>
       </div>
+      {reaction && !running && <SpeechBubble key={runId} reaction={reaction} />}
       <p className="mt-2 text-sm">{p.blurb}</p>
       <p className="mt-1 text-sm tabular-nums">
         {MODE_WORD[p.trip.mode]} {p.trip.distanceKm} km · <strong>{t.toFixed(1)} min</strong>
@@ -189,5 +208,26 @@ function PersonaCard({ p, m, base, running, runId }: { p: Persona; m: Metrics; b
         </motion.div>
       </div>
     </li>
+  )
+}
+
+function SpeechBubble({ reaction }: { reaction: Reaction | 'loading' }) {
+  const reduce = useReducedMotion()
+  return (
+    <motion.div
+      initial={reduce ? false : { opacity: 0, y: 6, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      className="relative mt-3 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-sm before:absolute before:-top-2 before:left-5 before:size-3 before:rotate-45 before:border-t-2 before:border-l-2 before:border-ink before:bg-paper"
+    >
+      {reaction === 'loading' ? (
+        <span aria-label="Waiting for a reaction" className="inline-flex gap-1">
+          {[0, 1, 2].map((i) => (
+            <span key={i} className="size-1.5 animate-pulse rounded-full bg-ink motion-reduce:animate-none" style={{ animationDelay: `${i * 150}ms` }} />
+          ))}
+        </span>
+      ) : (
+        <q>{reaction.line}</q>
+      )}
+    </motion.div>
   )
 }

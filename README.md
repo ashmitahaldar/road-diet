@@ -2,7 +2,7 @@
 
 Every street has a budget. How would you spend it?
 
-A short game where you redesign a Toronto street's limited road space and see how it affects five fictional residents, plus emissions, safety and fairness. Not an election prediction. No candidates or parties.
+A short game where you redesign a Toronto street's limited road space and see how it affects four fictional residents, plus emissions, safety and fairness. A learning tool, not a forecast.
 
 ## Develop
 

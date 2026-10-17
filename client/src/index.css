@@ -53,3 +53,18 @@ body {
     transform: translateX(calc(var(--at) * 100vw)) scaleX(var(--flip, 1));
   }
 }
+
+/* Traffic strip above the editor (TrafficStrip.tsx). Same pattern as the background: transforms only, static when reduced. */
+.strip-move {
+  animation: strip-drive var(--dur) linear var(--delay) infinite;
+}
+@keyframes strip-drive {
+  from { transform: translateY(-24px); }
+  to { transform: translateY(calc(var(--h) + 24px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .strip-move {
+    animation: none;
+    transform: translateY(calc(var(--at) * var(--h)));
+  }
+}

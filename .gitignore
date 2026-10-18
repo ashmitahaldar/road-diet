@@ -7,3 +7,4 @@ data/raw/
 *.log
 .venv/
 __pycache__/
+video-out/

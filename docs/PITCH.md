@@ -32,13 +32,13 @@ The script is about 410 spoken words. At 140 words a minute, with a moment per s
 | 3:00–3:16 | Architecture (MLH prizes) |
 | 3:16–3:29 | Judging criteria |
 | 3:29–3:41 | Close |
-| Q&A only | MLH prizes, one card per prize with logos |
+| Q&A only | MLH prizes, one card per prize: Gemini, Tiger Data, Vultr, GoDaddy Registry |
 
 ### 0:00–0:09 · Cover
 > Hi, I’m [name]. This is Road Diet: an educational game about how a real Toronto street gets shared.
 
 ### 0:09–0:26 · The challenges we answer
-> It’s built for Climate Action and Sustainability first: every design is tracked in kilograms of CO₂. It also answers the School of Cities question about road space, and it uses Gemini, Tiger Data and Vultr.
+> It’s built for Climate Action and Sustainability first: every design is tracked in kilograms of CO₂. It also answers the School of Cities question about road space, and it uses Gemini, Tiger Data, Vultr and a GoDaddy Registry domain.
 
 ### 0:26–0:47 · Every street has a budget
 > Every street has a budget. Mount Pleasant Road is 20 metres wide, and four lanes go to cars. The City counted about 1,900 vehicles and 5 bikes in the evening peak hour. Every fight about bike lanes, bus lanes or parking is a fight over these metres.
@@ -82,7 +82,7 @@ Click straight through. The answers are on screen.
 > It’s all built on City of Toronto Open Data and TTC schedules, and every source is linked in the app.
 
 ### 3:00–3:16 · Architecture (MLH prizes)
-> Here’s how it fits together, all on Vultr. One TypeScript model scores every design. Gemini only gets its facts, and its numbers must match. Tiger Data stores every run and shows how others solved the street.
+> Here’s how it fits together, all on Vultr at a GoDaddy Registry .design domain. One TypeScript model scores every design. Gemini only gets its facts, and its numbers must match. Tiger Data stores every run and shows how others solved the street.
 
 ### 3:16–3:29 · Judging criteria
 > My inspiration is my own interest in urban design and planning, turned into something that teaches others. It’s original, and I built it solo, here.
@@ -132,6 +132,9 @@ City of Toronto Open Data (the centreline, intersection traffic counts, serious 
 
 **How would a teacher use it?**
 One street per lesson, in a browser, with no accounts or installs. "Why?" and the quick check give discussion prompts, and the About page lists the learning outcomes.
+
+**Why the GoDaddy Registry prize?**
+roaddiet.design is on .design, a top-level domain run by GoDaddy Registry. A game about designing streets lives at a .design address that is short and easy to type in a classroom.
 
 **What does Tiger Data do?**
 Every run is stored anonymously in a TimescaleDB hypertable. A continuous aggregate powers "How others solved this street" and the average emissions cut on the scorecard.

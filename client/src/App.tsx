@@ -1,9 +1,10 @@
-import { LEVELS, type Level } from '@road-diet/shared'
+import { LEVELS, type BadgeId, type Level } from '@road-diet/shared'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useRef, useState } from 'react'
 import { Background } from './Background'
 import { AboutPage } from './AboutPage'
 import { DataPage } from './DataPage'
+import type { Collection } from './run/Badges'
 import { Briefing } from './screens/Briefing'
 import { Game } from './screens/Game'
 import { Levels } from './screens/Levels'
@@ -13,27 +14,39 @@ import { Story } from './screens/Story'
 type Screen = 'start' | 'levels' | 'story' | 'briefing' | 'play'
 const ORDER = Object.values(LEVELS)
 const BEST = 'road-diet:best-stars'
+const EARNED = 'road-diet:badges'
 
-function readBest(): Record<string, number> {
+function read<T>(key: string): T {
   try {
-    return JSON.parse(localStorage.getItem(BEST) ?? '{}')
+    return JSON.parse(localStorage.getItem(key) ?? '{}')
   } catch {
-    return {}
+    return {} as T
+  }
+}
+function save(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // progress just isn't remembered
   }
 }
 
 export default function App() {
   const [level, setLevel] = useState<Level>(ORDER[0])
   const [screen, setScreen] = useState<Screen>('start')
-  const [best, setBest] = useState(readBest)
-  const record = (id: string, stars: number) => {
-    if (stars <= (best[id] ?? 0)) return
-    const next = { ...best, [id]: stars }
-    setBest(next)
-    try {
-      localStorage.setItem(BEST, JSON.stringify(next))
-    } catch {
-      // stars just aren't remembered
+  const [best, setBest] = useState(() => read<Record<string, number>>(BEST))
+  const [collection, setCollection] = useState(() => read<Collection>(EARNED))
+  const record = (id: string, stars: number, badges: BadgeId[]) => {
+    if (stars > (best[id] ?? 0)) {
+      const next = { ...best, [id]: stars }
+      setBest(next)
+      save(BEST, next)
+    }
+    const fresh = badges.filter((b) => !collection[b]?.includes(id))
+    if (fresh.length) {
+      const next = { ...collection, ...Object.fromEntries(fresh.map((b) => [b, [...(collection[b] ?? []), id]])) }
+      setCollection(next)
+      save(EARNED, next)
     }
   }
   const number = ORDER.indexOf(level) + 1
@@ -72,6 +85,7 @@ export default function App() {
                 <Levels
                   levels={ORDER}
                   best={best}
+                  collection={collection}
                   onBack={() => go('start')}
                   onPick={(l) => {
                     setLevel(l)
@@ -81,7 +95,7 @@ export default function App() {
               )}
               {screen === 'story' && <Story level={level} number={number} onDone={() => go('briefing')} onBack={() => go('levels')} />}
               {screen === 'briefing' && <Briefing level={level} number={number} onStart={() => go('play')} onBack={() => go('story')} />}
-              {screen === 'play' && <Game key={level.id} level={level} onStars={(s) => record(level.id, s)} onExit={() => go('levels')} />}
+              {screen === 'play' && <Game key={level.id} level={level} levels={ORDER} collection={collection} onResult={(s, b) => record(level.id, s, b)} onExit={() => go('levels')} />}
             </motion.div>
           </AnimatePresence>
         )}

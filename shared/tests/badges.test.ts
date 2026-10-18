@@ -1,18 +1,18 @@
 import { expect, test } from 'vitest'
-import { BADGES, BLOOR_LEVEL, ELEMENTS, PLACEHOLDER_LEVEL, computeMetrics, earnedBadges, listDesignChoices, resultText, scoreRun, type Metrics } from '../src'
+import { BADGES, BLOOR_LEVEL, allBadges, ELEMENTS, PLACEHOLDER_LEVEL, computeMetrics, earnedBadges, listDesignChoices, resultText, scoreRun, type Metrics } from '../src'
 
 const base = computeMetrics(PLACEHOLDER_LEVEL.corridor.baselineLayout, PLACEHOLDER_LEVEL)
-const ids = (patch: Partial<Metrics>) => earnedBadges({ ...base, ...patch }, true).map((b) => b.id)
+const ids = (patch: Partial<Metrics>) => earnedBadges({ ...base, safetyScore: 0, ...patch }, true).map((b) => b.id)
 
 test('Fair Share: lowest happiness at least 60', () => {
   expect(ids({ fairness: 60, fairnessSpread: 99, emissionsReductionPct: 0 })).toEqual(['fair_share'])
   expect(ids({ fairness: 59.9, fairnessSpread: 99, emissionsReductionPct: 0 })).toEqual([])
 })
 
-test('Low-Carbon Street: 30% cut and lowest happiness at least 40', () => {
+test('Low-Carbon Street: 10% cut and lowest happiness at least 40', () => {
   const p = { fairnessSpread: 99 }
-  expect(ids({ ...p, emissionsReductionPct: 30, fairness: 40 })).toEqual(['low_carbon'])
-  expect(ids({ ...p, emissionsReductionPct: 29.9, fairness: 40 })).toEqual([])
+  expect(ids({ ...p, emissionsReductionPct: 10, fairness: 40 })).toEqual(['low_carbon'])
+  expect(ids({ ...p, emissionsReductionPct: 9.9, fairness: 40 })).toEqual([])
   expect(ids({ ...p, emissionsReductionPct: 50, fairness: 39.9 })).toEqual([])
 })
 
@@ -24,6 +24,17 @@ test("Everyone's Second Choice: spread at most 25 and lowest at least 40", () =>
   expect(ids({ fairnessSpread: 10, fairness: 70, emissionsReductionPct: 40 })).toEqual(['fair_share', 'low_carbon', 'second_choice'])
 })
 
+test('Safe Streets: safety at least 60 and lowest happiness at least 50', () => {
+  const p = { emissionsReductionPct: 0, fairnessSpread: 99 }
+  expect(ids({ ...p, safetyScore: 60, fairness: 50 })).toEqual(['safe_streets'])
+  expect(ids({ ...p, safetyScore: 59.9, fairness: 50 })).toEqual([])
+  expect(ids({ ...p, safetyScore: 70, fairness: 49.9 })).toEqual([])
+})
+
+test('the collection lists every badge', () => {
+  expect(allBadges().map((b) => b.id)).toEqual(['fair_share', 'low_carbon', 'second_choice', 'safe_streets'])
+})
+
 test('no badges without a met goal, so leaving the street unchanged earns none', () => {
   const today = computeMetrics(BLOOR_LEVEL.corridor.baselineLayout, BLOOR_LEVEL)
   expect(earnedBadges(today, scoreRun(today, BLOOR_LEVEL).goalMet)).toEqual([])
@@ -33,7 +44,7 @@ test('no badges without a met goal, so leaving the street unchanged earns none',
 test('thresholds are configurable and listed as design choices', () => {
   const t = { ...BADGES, fair_share: { ...BADGES.fair_share, minHappiness: 80 } }
   expect(earnedBadges({ ...base, fairness: 70, fairnessSpread: 99, emissionsReductionPct: 0 }, true, t)).toEqual([])
-  expect(listDesignChoices()).toEqual(expect.arrayContaining(['badges.fair_share', 'badges.low_carbon', 'badges.second_choice']))
+  expect(listDesignChoices()).toEqual(expect.arrayContaining(['badges.fair_share', 'badges.low_carbon', 'badges.second_choice', 'badges.safe_streets']))
 })
 
 test('copy text', () => {

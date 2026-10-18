@@ -1,13 +1,19 @@
 import type { Level } from '@road-diet/shared'
+import { BadgesButton, type Collection } from '../run/Badges'
 import { Button } from '../ui'
 import { goalSentence } from './Briefing'
 
-export function Levels({ levels, best, onPick, onBack }: { levels: Level[]; best: Record<string, number>; onPick: (level: Level) => void; onBack: () => void }) {
+type Props = { levels: Level[]; best: Record<string, number>; collection: Collection; onPick: (level: Level) => void; onBack: () => void }
+
+export function Levels({ levels, best, collection, onPick, onBack }: Props) {
   return (
     <main className="mx-auto flex min-h-[70dvh] max-w-3xl flex-col justify-center gap-5">
-      <h1 tabIndex={-1} className="font-display text-4xl font-semibold outline-none sm:text-5xl">
-        Choose a street
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 tabIndex={-1} className="font-display text-4xl font-semibold outline-none sm:text-5xl">
+          Choose a street
+        </h1>
+        <BadgesButton collection={collection} levels={levels} />
+      </div>
       <ol className="flex flex-col gap-4">
         {levels.map((level, i) => (
           <li key={level.id} className="flex flex-col gap-3 rounded-3xl border-2 border-ink bg-paper p-5 shadow-[5px_5px_0_var(--color-ink)] sm:flex-row sm:items-center">

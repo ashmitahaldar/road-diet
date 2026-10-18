@@ -1,8 +1,9 @@
-import { addElement, computeMetrics, fallbackResult, lessons, moveElement, removeElement, resizeElement, scoreRun, type ElementId, type Layout, type Lesson, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { addElement, computeMetrics, earnedBadges, fallbackResult, lessons, type BadgeId, moveElement, removeElement, resizeElement, scoreRun, type ElementId, type Layout, type Lesson, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { useReducedMotion } from 'motion/react'
 import { Component, Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BudgetBar, Palette, SelectionBar } from '../editor/controls'
 import { Editor } from '../editor/Editor'
+import { BadgesButton, type Collection } from '../run/Badges'
 import { CameraBar } from '../run/CameraBar'
 import { Guide } from '../run/Guide'
 import { LessonLine } from '../run/Lesson'
@@ -111,7 +112,9 @@ async function saveAndFetchStats(level: Level, layout: Layout): Promise<Others> 
   }
 }
 
-export function Game({ level, onStars, onExit }: { level: Level; onStars: (stars: number) => void; onExit: () => void }) {
+type Props = { level: Level; levels: Level[]; collection: Collection; onResult: (stars: number, badges: BadgeId[]) => void; onExit: () => void }
+
+export function Game({ level, levels, collection, onResult, onExit }: Props) {
   const [layout, setLayout] = useState(level.corridor.baselineLayout)
   const [run, setRun] = useState<{ layout: Layout; metrics: Metrics; react: ReactResult | null; others?: Others } | null>(null)
   const [runId, setRunId] = useState(0)
@@ -142,6 +145,7 @@ export function Game({ level, onStars, onExit }: { level: Level; onStars: (stars
     return () => window.clearTimeout(t)
   }, [noticed])
   const [selected, setSelected] = useState<number | null>(null)
+  const [fresh, setFresh] = useState<BadgeId[]>([])
   const [dragging, setDragging] = useState(false)
   const camera = useRef<CameraApi | null>(null)
   const wide = useWide()
@@ -199,7 +203,9 @@ export function Game({ level, onStars, onExit }: { level: Level; onStars: (stars
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(() => {
       const score = scoreRun(metrics, level)
-      onStars(score.stars)
+      const won = earnedBadges(metrics, score.goalMet).map((b) => b.id)
+      setFresh(won.filter((id) => !collection[id]?.includes(level.id)))
+      onResult(score.stars, won)
       play(score.goalMet ? 'win' : 'done')
       setRunning(false)
       setScoreOpen(true)
@@ -273,6 +279,7 @@ export function Game({ level, onStars, onExit }: { level: Level; onStars: (stars
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={onExit}>Streets</Button>
+        <BadgesButton collection={collection} levels={levels} />
         {webgl && !reduce && <Button onClick={() => setWant3d(!in3d)}>{in3d ? 'Edit in 2D' : 'Edit in 3D'}</Button>}
         {in3d && tour === null && <Button onClick={() => setTour(0)}>Tour</Button>}
         <Button
@@ -381,6 +388,7 @@ export function Game({ level, onStars, onExit }: { level: Level; onStars: (stars
       )}
       {run && (
         <Scorecard
+          fresh={fresh}
           open={scoreOpen}
           onClose={() => setScoreOpen(false)}
           level={level}

@@ -5,6 +5,7 @@ import type { Level } from '../model/types'
 export const PLACEHOLDER_LEVEL: Level = {
   id: 'placeholder',
   blurb: 'Placeholder level for tests.',
+  learn: 'Nothing yet.',
   name: 'Placeholder St',
   corridor: {
     id: 'placeholder',

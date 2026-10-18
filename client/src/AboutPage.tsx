@@ -50,7 +50,7 @@ export function AboutPage({ levels }: { levels: Level[] }) {
         <h1 tabIndex={-1} className="font-display text-5xl font-semibold tracking-tight outline-none">
           About Road Diet
         </h1>
-        <p className="mt-3 text-lg">A short game about sharing a real Toronto street, and the ideas planners use to do it.</p>
+        <p className="mt-3 text-lg">An educational game about sharing a real Toronto street, and the ideas city planners use to do it.</p>
       </div>
 
       <Section title="Why this game">
@@ -65,6 +65,19 @@ export function AboutPage({ levels }: { levels: Level[] }) {
             find one right answer. It is to feel why every choice helps someone and costs someone else, and to learn the words planners use for it.
           </p>
         </div>
+      </Section>
+
+      <Section title="What you’ll learn">
+        <ul className="list-disc space-y-2 pl-5">
+          <li>A street has a fixed width, its right-of-way. Every metre you give one use comes from another.</li>
+          <li>Emissions fall only when some car trips switch to the bus, a bike or walking. A new layout cuts emissions only by changing how people choose to travel.</li>
+          <li>Safety comes from the layout: buffers between people and traffic, keeping bikes out of the door zone, and how many lanes of traffic people have to cross.</li>
+          <li>Every design helps some people and costs others. A fair street is one that works for its least happy resident.</li>
+          <li>Open data can tell you a lot about a street, and also leaves gaps. The game shows where its numbers come from and what it had to estimate.</li>
+        </ul>
+        <p className="mt-3">
+          Each idea appears in the game as feedback on your design, with a short explanation you can open, so you learn it at the moment it matters.
+        </p>
       </Section>
 
       <Section title="What is a road diet?">
@@ -136,9 +149,17 @@ export function AboutPage({ levels }: { levels: Level[] }) {
           <li>The open-source projects it is built on: React, Three.js, Vite, Tailwind CSS, Motion, Express and node-postgres.</li>
         </ul>
         <p className="mt-3">
-          Made solo in one weekend in October 2026.{' '}
+          Built solo for Hack The Valley 11 (2026) by{' '}
+          <a href="https://github.com/ashmitahaldar" className={link}>
+            @ashmitahaldar
+          </a>
+          . More of my work is at{' '}
+          <a href="https://ashmitahaldar.com" className={link}>
+            ashmitahaldar.com
+          </a>
+          , and the{' '}
           <a href="https://github.com/ashmitahaldar/road-diet" className={link}>
-            Source code on GitHub
+            source code is on GitHub
           </a>
           .
         </p>

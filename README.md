@@ -2,7 +2,19 @@
 
 Every street has a budget. How would you spend it?
 
-A short game where you redesign a Toronto street's limited road space and see how it affects four fictional residents, plus emissions, safety and fairness. A learning tool, not a forecast.
+An educational game where you redesign a Toronto street's limited road space and see how it affects four fictional residents, plus emissions, safety and fairness. A learning tool, not a forecast.
+
+## What players learn
+
+- **Right-of-way.** A street has a fixed width, so every metre given to one use comes from another.
+- **Mode shift.** Emissions fall only when car trips switch to the bus, a bike or walking.
+- **Safety by design.** Buffers, the door zone and lane count change how safe a street is.
+- **Fairness.** Every design helps some people and costs others; the game scores the least happy resident.
+- **Reading open data.** Every number cites its City of Toronto source, and every estimate is labelled.
+
+Each idea shows up as feedback on the player's own design, with a tooltip that explains it.
+
+Built solo for Hack The Valley 11 (2026) by [@ashmitahaldar](https://github.com/ashmitahaldar) ([ashmitahaldar.com](https://ashmitahaldar.com)).
 
 ## Develop
 

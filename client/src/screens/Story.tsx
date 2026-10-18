@@ -20,7 +20,7 @@ function script(level: Level): { who: Who; text: string }[] {
       text: 'They can’t all get everything. Space you give one of them comes from someone else. Planners call reshaping a street’s lanes like this a road diet. You can narrow lanes, swap them or add them back.',
     },
     { who: 'pip', text: `Here’s the challenge. ${goal} Emissions only fall when some car trips switch to the bus, a bike or walking.` },
-    { who: 'pip', text: 'Build a design, then run a day to see how everyone gets on. I’ll sit beside the street with ideas if you get stuck. Ready?' },
+    { who: 'pip', text: 'Build a design, then run a day to see how everyone gets on. Each time, I’ll point out the planning idea behind what happened, so you learn how real streets get shared. Ready?' },
   ]
 }
 

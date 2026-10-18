@@ -100,6 +100,8 @@ export type Level = {
   name: string
   /** One line for the level select. */
   blurb: string
+  /** What the level teaches, shown on the level select. */
+  learn: string
   /** This street's residents; roles left out use the defaults in PERSONAS. */
   cast?: Partial<Record<PersonaId, CastMember>>
   corridor: Corridor

@@ -1,10 +1,11 @@
-import { addElement, computeMetrics, fallbackResult, moveElement, removeElement, resizeElement, scoreRun, type ElementId, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { addElement, computeMetrics, fallbackResult, lessons, moveElement, removeElement, resizeElement, scoreRun, type ElementId, type Layout, type Lesson, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { useReducedMotion } from 'motion/react'
 import { Component, Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BudgetBar, Palette, SelectionBar } from '../editor/controls'
 import { Editor } from '../editor/Editor'
 import { CameraBar } from '../run/CameraBar'
 import { Guide } from '../run/Guide'
+import { LessonLine } from '../run/Lesson'
 import { MetersCard, RUN_MS, Residents, RunButton, type Shown } from '../run/RunPanel'
 import { Scorecard } from '../run/Scorecard'
 import type { CameraApi } from '../run/Street3D'
@@ -126,6 +127,19 @@ export function Game({ level }: { level: Level }) {
   // Pip's guide follows the street as it is now, not the last run.
   const now = useMemo(() => computeMetrics(layout, level), [layout, level])
   const [muted, setMutedState] = useState(isMuted)
+  // When an edit flips a concept (a buffer appears, riders enter the door zone), Pip points it out for a few seconds.
+  const learned = useMemo(() => lessons(layout, now, level), [layout, now, level])
+  const verdicts = useRef<Map<string, boolean> | null>(null)
+  const [noticed, setNoticed] = useState<Lesson[]>([])
+  useEffect(() => {
+    const before = verdicts.current
+    verdicts.current = new Map(learned.map((l) => [l.concept, l.good]))
+    const flipped = before ? learned.filter((l) => before.get(l.concept) !== l.good).slice(0, 3) : []
+    if (!flipped.length) return
+    setNoticed(flipped)
+    const t = window.setTimeout(() => setNoticed([]), 8000)
+    return () => window.clearTimeout(t)
+  }, [learned])
   const [selected, setSelected] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   const camera = useRef<CameraApi | null>(null)
@@ -277,12 +291,29 @@ export function Game({ level }: { level: Level }) {
     </header>
   )
 
-  // Top of the street: camera buttons and the tour. Both float over the 3D view only.
-  const guides = in3d && (
+  // Top of the street: camera buttons and the tour over the 3D view, and Pip pointing out a concept in either view.
+  const guides = (
     <div className="flex flex-col items-center gap-2">
       {/* On a phone an open panel needs the room more than the camera buttons do. */}
-      {(wide || !sheet) && <CameraBar camera={camera} onUse={() => reach('look')} />}
-      {tour !== null && <Tour step={tour} onNext={() => (tour + 1 < TOUR.length ? setTour(tour + 1) : endTour())} onSkip={endTour} />}
+      {in3d && (wide || !sheet) && <CameraBar camera={camera} onUse={() => reach('look')} />}
+      {in3d && tour !== null && <Tour step={tour} onNext={() => (tour + 1 < TOUR.length ? setTour(tour + 1) : endTour())} onSkip={endTour} />}
+      <div aria-live="polite" className="flex w-full justify-center">
+        {noticed.length > 0 && tour === null && (
+          <div className="pointer-events-auto flex max-w-md gap-2 rounded-2xl border-2 border-ink bg-paper p-2 text-sm shadow-[3px_3px_0_var(--color-ink)]">
+            <Pip className="size-8" />
+            <div>
+              <p className="font-display font-semibold">Pip noticed</p>
+              <ul className="flex flex-col gap-1.5">
+                {noticed.map((l) => (
+                  <li key={l.concept} className="flex gap-2">
+                    <LessonLine lesson={l} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
   const editor2d = !in3d && (

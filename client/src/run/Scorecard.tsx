@@ -1,8 +1,9 @@
-import { PERSONAS, earnedBadges, hints, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { PERSONAS, earnedBadges, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
 import { Face, Pip } from '../story/characters'
+import { LessonLine } from './Lesson'
 import { Button, GeminiLabel, signed } from '../ui'
 import { Others } from './Others'
 
@@ -39,6 +40,7 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
   const score = scoreRun(metrics, level)
   const badges = earnedBadges(metrics, score.goalMet)
   const ideas = hints(layout, metrics, level)
+  const learned = lessons(layout, metrics, level)
   const [status, setStatus] = useState('')
   useEffect(() => setStatus(''), [open, metrics])
   const emissionsDeltaKg = metrics.emissionsKgPerHour - base.emissionsKgPerHour
@@ -163,6 +165,19 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
           <p className="mt-2 text-sm">
             ★ goal · ★★ + safety {level.stars.safety} · ★★★ + everyone {level.stars.fairness} happy
           </p>
+        </section>
+
+        <section aria-labelledby="learned-title">
+          <h3 id="learned-title" className="font-display text-lg font-semibold">
+            What this street teaches
+          </h3>
+          <ul className="mt-2 flex flex-col gap-2">
+            {learned.map((l) => (
+              <li key={l.concept} className={`flex gap-3 rounded-xl border-2 border-ink px-3 py-2 ${l.good ? '' : 'border-dashed'}`}>
+                <LessonLine lesson={l} />
+              </li>
+            ))}
+          </ul>
         </section>
 
         {ideas.length > 0 && (

@@ -2,7 +2,7 @@ import { listCitedConstants, type Level } from '@road-diet/shared'
 import type { ReactNode } from 'react'
 import { LimitationsList } from './Limitations'
 
-const link = 'font-semibold text-primary underline underline-offset-2 break-words'
+export const link = 'font-semibold text-primary underline underline-offset-2 break-words'
 
 /** Citations are plain strings; turn any URL in them into a link (trailing punctuation stays text). */
 function linkify(text: string) {
@@ -17,7 +17,7 @@ function linkify(text: string) {
   )
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-2xl border-2 border-ink bg-paper p-4 sm:p-5">
       <h2 className="font-display text-2xl font-semibold">{title}</h2>

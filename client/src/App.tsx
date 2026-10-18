@@ -2,6 +2,7 @@ import { BLOOR_LEVEL } from '@road-diet/shared'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useRef, useState } from 'react'
 import { Background } from './Background'
+import { AboutPage } from './AboutPage'
 import { DataPage } from './DataPage'
 import { Briefing } from './screens/Briefing'
 import { Game } from './screens/Game'
@@ -19,8 +20,9 @@ export default function App() {
     window.scrollTo(0, 0)
   }
 
-  const dataPage = location.pathname === '/data'
-  if (dataPage) document.title = 'Data & Limitations · Road Diet'
+  const page = ({ '/data': 'data', '/about': 'about' } as const)[location.pathname]
+  const infoPage = !!page
+  if (page) document.title = `${page === 'data' ? 'Data & Limitations' : 'About'} · Road Diet`
 
   return (
     <MotionConfig reducedMotion="user">
@@ -28,9 +30,9 @@ export default function App() {
       <div
         className={`mx-auto flex min-h-dvh max-w-7xl flex-col px-4 ${screen === 'play' ? 'gap-3 pt-3 pb-24 fit:h-dvh fit:pb-3' : 'gap-6 pt-6 pb-6'}`}
       >
-        {dataPage ? (
+        {infoPage ? (
           <div className="flex-1">
-            <DataPage level={level} />
+            {page === 'data' ? <DataPage level={level} /> : <AboutPage level={level} />}
           </div>
         ) : (
           <AnimatePresence mode="wait">
@@ -51,15 +53,18 @@ export default function App() {
           </AnimatePresence>
         )}
         {/* Hideable on the game screen only: the scorecard repeats this disclaimer and the Data & Limitations link. */}
-        {!(screen === 'play' && footerHidden && !dataPage) && (
+        {!(screen === 'play' && footerHidden && !infoPage) && (
           <footer className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-sm">
             <span>A learning tool, not a forecast. Residents are fictional.</span>
             <span className="flex flex-wrap items-center gap-x-4">
               <span>Hosted on Vultr</span>
-              <a href="/data" target={dataPage ? undefined : '_blank'} className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
+              <a href="/about" target={infoPage ? undefined : '_blank'} className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
+                About
+              </a>
+              <a href="/data" target={infoPage ? undefined : '_blank'} className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
                 Data & Limitations
               </a>
-              {screen === 'play' && !dataPage && (
+              {screen === 'play' && !infoPage && (
                 <button
                   type="button"
                   aria-label="Hide this bar"

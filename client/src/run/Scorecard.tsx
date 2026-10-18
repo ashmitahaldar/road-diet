@@ -2,6 +2,7 @@ import { PERSONAS, earnedBadges, hints, resultText, scoreRun, type GoalCheck, ty
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
+import { Face, Pip } from '../story/characters'
 import { Button, GeminiLabel, signed } from '../ui'
 import { Others } from './Others'
 
@@ -115,6 +116,29 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
           </div>
         </div>
 
+        <section aria-labelledby="said-title" aria-busy={!react}>
+          <h3 id="said-title" className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            What residents said {react?.reactions.every((r) => r.source === 'gemini') && <GeminiLabel />}
+          </h3>
+          {react ? (
+            <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+              {react.reactions.map((r) => (
+                <li key={r.personaId} className="flex gap-3 rounded-xl border-2 border-ink px-3 py-2">
+                  <Face id={r.personaId} happiness={metrics.happiness[r.personaId]} />
+                  <span>
+                    <span className="font-semibold">
+                      {PERSONAS[r.personaId].name} · <span className="tabular-nums">{metrics.happiness[r.personaId].toFixed(0)}/100</span>
+                    </span>
+                    <q className="mt-0.5 block font-medium">{r.line}</q>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div aria-label="Waiting for reactions" className="mt-2 h-16 animate-pulse rounded-xl bg-grid motion-reduce:animate-none" />
+          )}
+        </section>
+
         <section aria-labelledby="goals-title">
           <h3 id="goals-title" className="font-display text-lg font-semibold">
             Goal checklist
@@ -143,8 +167,9 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
 
         {ideas.length > 0 && (
           <section aria-labelledby="ideas-title" className="rounded-2xl border-2 border-ink bg-loading/20 p-4">
-            <h3 id="ideas-title" className="font-display text-lg font-semibold">
-              {score.goalMet ? 'Ideas for more stars' : 'Ideas to try'}
+            <h3 id="ideas-title" className="flex items-center gap-2 font-display text-lg font-semibold">
+              <Pip className="size-10" />
+              {score.goalMet ? 'Pip’s ideas for more stars' : 'Pip’s ideas to try'}
             </h3>
             <ul className="mt-2 flex list-disc flex-col gap-1.5 pl-5">
               {ideas.map((h) => (
@@ -153,26 +178,6 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
             </ul>
           </section>
         )}
-
-        <section aria-labelledby="said-title" aria-busy={!react}>
-          <h3 id="said-title" className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
-            What residents said {react?.reactions.every((r) => r.source === 'gemini') && <GeminiLabel />}
-          </h3>
-          {react ? (
-            <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-              {react.reactions.map((r) => (
-                <li key={r.personaId} className="rounded-xl border-2 border-ink px-3 py-2">
-                  <span className="font-semibold">
-                    {PERSONAS[r.personaId].name} · <span className="tabular-nums">{metrics.happiness[r.personaId].toFixed(0)}/100</span>
-                  </span>
-                  <q className="mt-0.5 block text-sm">{r.line}</q>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div aria-label="Waiting for reactions" className="mt-2 h-16 animate-pulse rounded-xl bg-grid motion-reduce:animate-none" />
-          )}
-        </section>
 
         {badges.length > 0 && (
           <section aria-labelledby="badges-title">

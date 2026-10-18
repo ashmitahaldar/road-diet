@@ -7,8 +7,9 @@ import { DataPage } from './DataPage'
 import { Briefing } from './screens/Briefing'
 import { Game } from './screens/Game'
 import { Start } from './screens/Start'
+import { Story } from './screens/Story'
 
-type Screen = 'start' | 'briefing' | 'play'
+type Screen = 'start' | 'story' | 'briefing' | 'play'
 
 export default function App() {
   const level = BLOOR_LEVEL
@@ -46,8 +47,9 @@ export default function App() {
               transition={{ duration: 0.25 }}
               onAnimationComplete={() => view.current?.querySelector('h1')?.focus({ preventScroll: true })}
             >
-              {screen === 'start' && <Start onPlay={() => go('briefing')} />}
-              {screen === 'briefing' && <Briefing level={level} onStart={() => go('play')} onBack={() => go('start')} />}
+              {screen === 'start' && <Start onPlay={() => go('story')} />}
+              {screen === 'story' && <Story level={level} onDone={() => go('briefing')} onBack={() => go('start')} />}
+              {screen === 'briefing' && <Briefing level={level} onStart={() => go('play')} onBack={() => go('story')} />}
               {screen === 'play' && <Game level={level} />}
             </motion.div>
           </AnimatePresence>

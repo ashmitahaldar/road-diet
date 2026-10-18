@@ -14,9 +14,9 @@ export function CameraBar({ camera, onUse }: { camera: RefObject<CameraApi | nul
     if (camera.current) f(camera.current)
     onUse()
   }
-  const small = 'min-h-9 min-w-9 px-2 text-sm'
+  const small = 'min-h-8 min-w-8 px-2 text-sm'
   return (
-    <div role="toolbar" aria-label="Camera" className="pointer-events-auto flex items-center justify-center gap-1 rounded-2xl border-2 border-ink bg-paper p-1 shadow-[3px_3px_0_var(--color-ink)]">
+    <div role="toolbar" aria-label="Camera" className="pointer-events-auto flex items-center justify-center gap-1 rounded-xl border-2 border-ink bg-paper p-1 shadow-[2px_2px_0_var(--color-ink)]">
       {VIEWS.map(([v, label]) => (
         <Button key={v} className={small} onClick={act((c) => c.view(v))}>
           {label}

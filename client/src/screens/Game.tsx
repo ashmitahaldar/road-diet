@@ -131,7 +131,8 @@ export function Game({ level }: { level: Level }) {
   const camera = useRef<CameraApi | null>(null)
   const wide = useWide()
   // Wide screens float every panel at once; phones show one at a time above a tab bar.
-  const [open, setOpen] = useState<Record<PanelId, boolean>>({ build: true, meters: true, pip: true, residents: true })
+  // Meters start folded: Pip already shows live goal progress, and the meters matter most after a run.
+  const [open, setOpen] = useState<Record<PanelId, boolean>>({ build: true, meters: false, pip: true, residents: true })
   const [sheet, setSheet] = useState<PanelId | null>(null)
   const isOpen = (id: PanelId) => (wide ? open[id] : sheet === id)
   const toggle = (id: PanelId) => (wide ? setOpen({ ...open, [id]: !open[id] }) : setSheet(sheet === id ? null : id))
@@ -188,6 +189,7 @@ export function Game({ level }: { level: Level }) {
       play(scoreRun(metrics, level).goalMet ? 'win' : 'done')
       setRunning(false)
       setScoreOpen(true)
+      setOpen((o) => ({ ...o, meters: true }))
     }, reduce ? 0 : RUN_MS)
   }
 
@@ -236,9 +238,9 @@ export function Game({ level }: { level: Level }) {
   )
 
   const header = (
-    <header className="pointer-events-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl border-2 border-ink bg-paper px-3 py-1.5 shadow-[4px_4px_0_var(--color-ink)]">
+    <header className="pointer-events-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl border-2 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]">
       <div className="min-w-0">
-        <h1 tabIndex={-1} className="font-display text-lg font-semibold outline-none lg:text-2xl">
+        <h1 tabIndex={-1} className="font-display text-lg font-semibold outline-none lg:text-xl">
           {level.name}
         </h1>
         <p className="text-sm">
@@ -303,18 +305,18 @@ export function Game({ level }: { level: Level }) {
       )}
       {/* The panels float over the street; empty space lets drags through to it. */}
       {wide ? (
-        <div className="pointer-events-none absolute inset-0 grid grid-cols-[17rem_minmax(0,1fr)_19rem] grid-rows-[auto_minmax(0,1fr)] gap-3 p-3">
+        <div className="pointer-events-none absolute inset-0 grid grid-cols-[15rem_minmax(0,1fr)_16rem] grid-rows-[auto_minmax(0,1fr)] gap-2 p-2">
           <div className="col-span-3">{header}</div>
-          <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1 pb-1">
+          <div className="flex min-h-0 flex-col gap-2 overflow-y-auto pr-1 pb-1">
             {panel('meters')}
             {panel('pip')}
           </div>
-          <main className="flex min-h-0 flex-col justify-between gap-3">
+          <main className="flex min-h-0 flex-col justify-between gap-2">
             {guides}
             {editor2d}
-            {in3d && panel('build', 'max-h-[50%] self-center w-full max-w-3xl')}
+            {in3d && panel('build', 'max-h-[45%] self-center w-full max-w-2xl')}
           </main>
-          <div className="flex min-h-0 flex-col gap-3 pb-1">
+          <div className="flex min-h-0 flex-col gap-2 pb-1">
             <div className="pointer-events-auto">
               <RunButton running={running} kind={shown.kind} onRun={runDay} />
             </div>

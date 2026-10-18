@@ -6,8 +6,6 @@ import { ElementIcon, VISUALS } from './elementVisuals'
 // Controls shared by the 2D editor and the 3D editor, so both edit through the same buttons and ops.
 
 export const STEP_M = 0.1
-/** The 3D canvas (and its loading placeholder) fills the free height of the one-screen layout, and a fixed share of a phone screen. */
-export const CANVAS_SIZE = 'h-[min(55dvh,30rem)] min-h-64 fit:h-auto fit:min-h-48 fit:flex-1'
 
 export function BudgetBar({ layout, level, announce }: { layout: Layout; level: Level; announce: boolean }) {
   const W = level.corridor.widthM
@@ -78,18 +76,18 @@ export function Palette({
               aria-disabled={!fits}
               onPointerDown={fits ? startAdd?.(id) : undefined}
               onClick={() => fits && onAdd(id)}
-              className={`relative flex min-h-11 shrink-0 items-center gap-2 rounded-xl border-2 border-ink py-1 pr-3 pl-1 text-left fit:min-h-9 fit:py-0.5 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+              className={`relative flex min-h-11 shrink-0 items-center gap-2 rounded-xl border-2 border-ink py-1 pr-3 pl-1 text-left lg:min-h-9 lg:py-0.5 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                 fits ? `${startAdd ? 'cursor-grab' : 'cursor-pointer'} bg-paper shadow-[3px_3px_0_var(--color-ink)] hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none` : 'cursor-not-allowed border-dashed bg-grid'
               }`}
             >
-              <span aria-hidden data-drag-handle className="grid size-9 shrink-0 touch-none place-items-center rounded-lg border-2 border-ink fit:size-7" style={{ background: VISUALS[id].color }}>
-                <span className="grid size-7 place-items-center rounded-full bg-paper fit:size-5">
+              <span aria-hidden data-drag-handle className="grid size-9 shrink-0 touch-none place-items-center rounded-lg border-2 border-ink lg:size-7" style={{ background: VISUALS[id].color }}>
+                <span className="grid size-7 place-items-center rounded-full bg-paper lg:size-5">
                   <ElementIcon id={id} size={18} />
                 </span>
               </span>
               <span className="flex flex-col leading-tight">
-                <span className="font-semibold fit:text-sm"><span className="sr-only">Add </span>{def.label}</span>
-                <span className="text-sm tabular-nums fit:sr-only">{fits ? `${def.defaultW} m` : `Needs ${def.minW} m`}</span>
+                <span className="font-semibold lg:text-sm"><span className="sr-only">Add </span>{def.label}</span>
+                <span className="text-sm tabular-nums lg:sr-only">{fits ? `${def.defaultW} m` : `Needs ${def.minW} m`}</span>
               </span>
             </button>
           )

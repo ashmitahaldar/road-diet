@@ -15,16 +15,16 @@ export const TOUR_KEY = 'road-diet:tour-done'
 export function Tour({ step, onNext, onSkip }: { step: number; onNext: () => void; onSkip: () => void }) {
   const last = step === TOUR.length - 1
   return (
-    <section aria-labelledby="tour-title" className="pointer-events-auto flex max-w-xl gap-3 rounded-2xl border-2 border-ink bg-paper p-2 sm:p-3 shadow-[4px_4px_0_var(--color-ink)]">
-      <Pip key={step} className="size-10 sm:size-12" talking />
+    <section aria-labelledby="tour-title" className="pointer-events-auto flex max-w-md gap-2 rounded-2xl border-2 border-ink bg-paper p-2 shadow-[3px_3px_0_var(--color-ink)]">
+      <Pip key={step} className="size-10" talking />
       <div className="flex-1">
-        <h2 id="tour-title" className="font-display font-semibold">
+        <h2 id="tour-title" className="font-display text-sm font-semibold">
           Pip’s tour · {step + 1} of {TOUR.length}
         </h2>
-        <p aria-live="polite" className="text-sm sm:text-base">
+        <p aria-live="polite" className="text-sm">
           {TOUR[step].text}
         </p>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-1.5 flex flex-wrap gap-2">
           <Button onClick={onNext} className="min-h-9 text-sm">
             {last ? 'Got it' : 'Next'}
           </Button>

@@ -24,15 +24,15 @@ export function signed(x: number, digits = 1) {
 /** A floating card whose body folds away under its title. The title is a real heading with a toggle inside it. */
 export function Panel({ id, title, open, onToggle, children, className = '' }: { id: string; title: ReactNode; open: boolean; onToggle: () => void; children: ReactNode; className?: string }) {
   return (
-    <section aria-labelledby={`${id}-title`} className={`pointer-events-auto flex min-h-0 flex-col rounded-2xl border-2 border-ink bg-paper shadow-[4px_4px_0_var(--color-ink)] ${className}`}>
-      <h2 className="font-display text-lg font-semibold">
+    <section aria-labelledby={`${id}-title`} className={`pointer-events-auto flex min-h-0 flex-col rounded-2xl border-2 border-ink bg-paper shadow-[3px_3px_0_var(--color-ink)] ${className}`}>
+      <h2 className="font-display font-semibold">
         <button
           type="button"
           id={`${id}-title`}
           aria-expanded={open}
           aria-controls={`${id}-body`}
           onClick={onToggle}
-          className="flex min-h-11 w-full items-center gap-2 rounded-2xl px-3 text-left hover:bg-grid focus-visible:outline-4 focus-visible:outline-primary"
+          className="flex min-h-10 w-full items-center gap-2 rounded-2xl px-3 text-left hover:bg-grid focus-visible:outline-4 focus-visible:outline-primary"
         >
           <span className="flex flex-1 items-center gap-2">{title}</span>
           <span aria-hidden className={`text-base transition-transform motion-reduce:transition-none ${open ? '' : '-rotate-90'}`}>
@@ -42,10 +42,32 @@ export function Panel({ id, title, open, onToggle, children, className = '' }: {
       </h2>
       {open && (
         // Focusable so keyboard users can scroll a long panel.
-        <div id={`${id}-body`} tabIndex={0} className="min-h-0 overflow-y-auto rounded-b-2xl px-3 pb-3 focus-visible:outline-4 focus-visible:outline-primary">
+        <div id={`${id}-body`} tabIndex={0} className="min-h-0 overflow-y-auto rounded-b-2xl px-3 pb-3 text-sm focus-visible:outline-4 focus-visible:outline-primary">
           {children}
         </div>
       )}
     </section>
+  )
+}
+
+/** Back, progress dots and Next for screens that go one step at a time. */
+export function StepNav({ step, count, onBack, onNext, last }: { step: number; count: number; onBack: () => void; onNext: () => void; last: string }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <Button onClick={onBack} className="min-h-14 px-6">
+        Back
+      </Button>
+      <span aria-hidden className="flex gap-1.5">
+        {Array.from({ length: count }, (_, n) => (
+          <span key={n} className={`size-2.5 rounded-full border-2 border-ink ${n <= step ? 'bg-ink' : ''}`} />
+        ))}
+      </span>
+      <span className="sr-only">
+        Step {step + 1} of {count}
+      </span>
+      <Button onClick={onNext} className="min-h-14 bg-primary px-8 text-xl text-paper shadow-[4px_4px_0_var(--color-ink)] hover:bg-primary hover:brightness-110">
+        {step === count - 1 ? last : 'Next'}
+      </Button>
+    </div>
   )
 }

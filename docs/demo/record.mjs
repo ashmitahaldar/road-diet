@@ -27,11 +27,11 @@ for (let i = 0; i < 4; i++) {
 }
 await page.getByRole('button', { name: 'Skip story' }).click()
 mark('2b real corridor and sources')
-await pause(5)
-await page.mouse.wheel(0, 500)
-await pause(5)
-await page.mouse.wheel(0, 500)
-await pause(4)
+for (let i = 0; i < 2; i++) {
+  await pause(4)
+  await page.getByRole('button', { name: 'Next' }).click()
+}
+await pause(6)
 
 await page.getByRole('button', { name: 'Start editing' }).click()
 mark('3 change the layout and run a day')

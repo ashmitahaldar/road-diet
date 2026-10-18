@@ -2,7 +2,7 @@ import { PERSONAS, type Level, type PersonaId } from '@road-diet/shared'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { Face, Pip } from '../story/characters'
-import { Button } from '../ui'
+import { Button, StepNav } from '../ui'
 import { goalSentence } from './Briefing'
 
 type Who = 'pip' | PersonaId
@@ -35,8 +35,8 @@ export function Story({ level, onDone, onBack }: { level: Level; onDone: () => v
 
   return (
     <main className="mx-auto flex min-h-[70dvh] max-w-3xl flex-col justify-center gap-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0 flex-1 basis-72">
           <p className="font-display text-lg font-semibold text-primary">Level 1</p>
           <h1 tabIndex={-1} className="font-display text-4xl font-semibold outline-none sm:text-5xl">
             {level.name}
@@ -76,25 +76,7 @@ export function Story({ level, onDone, onBack }: { level: Level; onDone: () => v
         </AnimatePresence>
       </section>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button onClick={() => (i === 0 ? onBack() : setI(i - 1))} className="min-h-14 px-6">
-          Back
-        </Button>
-        <span aria-hidden className="flex gap-1.5">
-          {lines.map((_, n) => (
-            <span key={n} className={`size-2.5 rounded-full border-2 border-ink ${n <= i ? 'bg-ink' : ''}`} />
-          ))}
-        </span>
-        <span className="sr-only">
-          Line {i + 1} of {lines.length}
-        </span>
-        <Button
-          onClick={() => (last ? onDone() : setI(i + 1))}
-          className="min-h-14 bg-primary px-8 text-xl text-paper shadow-[4px_4px_0_var(--color-ink)] hover:bg-primary hover:brightness-110"
-        >
-          {last ? 'Let’s go' : 'Next'}
-        </Button>
-      </div>
+      <StepNav step={i} count={lines.length} onBack={() => (i === 0 ? onBack() : setI(i - 1))} onNext={() => (last ? onDone() : setI(i + 1))} last="Let’s go" />
     </main>
   )
 }

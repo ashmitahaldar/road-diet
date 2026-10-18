@@ -68,7 +68,8 @@ async function callGemini(prompt: { system: string; user: string }, cfg: Require
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: prompt.system }] },
       contents: [{ role: 'user', parts: [{ text: prompt.user }] }],
-      generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
+      // Thinking pushed the full prompt past the timeout; short in-character lines don't need it.
+      generationConfig: { responseMimeType: 'application/json', temperature: 0.7, thinkingConfig: { thinkingBudget: 0 } },
     }),
     signal: AbortSignal.timeout(cfg.timeoutMs),
   })
@@ -85,7 +86,7 @@ const acceptable = (line: string) => !OFF_LIMITS.test(line) && line.trim().split
 export async function react(facts: RunFacts, config: GeminiConfig): Promise<ReactResult> {
   const fallback = fallbackResult(facts.metrics)
   if (!config.apiKey || !config.model) return fallback
-  const cfg = { fetch, timeoutMs: 6000, ...config } as Required<GeminiConfig>
+  const cfg = { fetch, timeoutMs: 7000, ...config } as Required<GeminiConfig>
   try {
     const out = await callGemini(buildPrompt(facts), cfg)
     const reactions = fallback.reactions.map((fb) => {

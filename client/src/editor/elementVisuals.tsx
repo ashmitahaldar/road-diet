@@ -49,9 +49,7 @@ const ICONS: Record<ElementId, ReactNode> = {
     </g>
   ),
   parking: (
-    <text x={16} y={17} textAnchor="middle" dominantBaseline="central" fontSize={24} fontWeight={800} fill="var(--color-ink)" fontFamily="var(--font-sans)">
-      P
-    </text>
+    <path d="M11.5 27 V6.5 H17.5 A6 6 0 0 1 17.5 18.5 H11.5" fill="none" stroke="var(--color-ink)" strokeWidth={3.6} strokeLinecap="round" strokeLinejoin="round" />
   ),
   loading: (
     <g {...stroke}>

@@ -1,17 +1,7 @@
-import type { Level } from '@road-diet/shared'
+import { CONCEPTS, type ConceptId, type Level } from '@road-diet/shared'
 import { Section, link } from './DataPage'
 
 const n = (x: number) => x.toLocaleString('en-CA')
-
-/** Ideas the game uses, each defined the way the model (shared/src/model) treats it. */
-const IDEAS: [string, string][] = [
-  ['Right-of-way', 'The full width of a street, from property line to property line. Everything (sidewalks, lanes, parking, trees) has to fit inside it, so giving a metre to one use takes it from another.'],
-  ['Mode shift', 'When a street changes, some people change how they travel: a better bus lane or bike lane draws some drivers out of their cars, and a slower drive does too. In the game, emissions fall only through mode shift, and the shift is capped.'],
-  ['Door zone', 'The strip beside parked cars where an opening door can hit someone riding past. A painted bike lane next to parking puts riders in it.'],
-  ['Buffer', 'Something between people walking and moving traffic, such as trees or a row of parked cars. Buffers make walking feel and be safer.'],
-  ['Curb access', 'Space at the curb to stop, load and unload. Deliveries, shops and people who can’t walk far depend on it.'],
-  ['Fairness', 'In the game, a street is only as fair as its least happy resident. A design that delights three people and fails one is not a fair design.'],
-]
 
 export function AboutPage({ level }: { level: Level }) {
   const { corridor } = level
@@ -63,10 +53,10 @@ export function AboutPage({ level }: { level: Level }) {
 
       <Section title="Ideas you’ll meet">
         <dl className="grid gap-3 sm:grid-cols-2">
-          {IDEAS.map(([term, text]) => (
-            <div key={term} className="rounded-xl border-2 border-ink p-3">
-              <dt className="font-display text-lg font-semibold">{term}</dt>
-              <dd className="mt-1">{text}</dd>
+          {(Object.keys(CONCEPTS) as ConceptId[]).map((id) => (
+            <div key={id} id={id} className="scroll-mt-4 rounded-xl border-2 border-ink p-3 target:bg-loading/30">
+              <dt className="font-display text-lg font-semibold">{CONCEPTS[id].name}</dt>
+              <dd className="mt-1">{CONCEPTS[id].definition}</dd>
             </div>
           ))}
         </dl>

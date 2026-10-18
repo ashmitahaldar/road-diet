@@ -1,7 +1,6 @@
 import { Pip } from '../story/characters'
 import { Button } from '../ui'
 
-/** The guided first visit to the 3D editor. Each step ends when the player does the thing it asks for. */
 export const TOUR = [
   { id: 'look', text: 'Welcome to the block! Drag on the street to look around, and scroll or pinch to zoom. The camera buttons do the same.' },
   { id: 'select', text: 'Tap any piece of the street to pick it. Its name tag turns blue.' },

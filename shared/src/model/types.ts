@@ -61,7 +61,6 @@ export type Persona = {
   blurb: string
   /** Their request in the story, in their own words. Talks about trips, never lane types (spec 2.7). */
   ask: string
-  /** What they care about, in a few words, for their card. */
   wants: string
   trip: { mode: Mode; distanceKm: number }
   /** Relative weights over normalized 0-1 metrics (spec 3.7). */
@@ -87,7 +86,6 @@ export type Corridor = {
   mapAlt?: string
   /** Inputs not taken from a verified dataset (spec 4.5); shown on the limitations panel and /data. */
   estimates?: { field: string; note: string }[]
-  /** The raw count behind baselineDemand (prep.py corridor), shown on the About page. */
   observed?: { count: { location_name: string; latest_count_date: string; count_duration: string; total_vehicle: number; total_bike: number; total_pedestrian: number } }
   source: string
 }

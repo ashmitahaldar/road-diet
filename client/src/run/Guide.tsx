@@ -38,10 +38,7 @@ const GOAL: Record<GoalCheck['kind'], (g: GoalCheck) => string> = {
   safety: (g) => `Safety ${g.value.toFixed(0)} / ${g.target}`,
 }
 
-/**
- * Pip, beside the street: live progress on the goal for the street as it is now, then ideas. Ideas for what this
- * street misses (shared hints) come first, then general tips, skipping any that repeat a hint.
- */
+/** Hints for what this street misses come first, then general tips that don't repeat one. */
 export function Guide({ level, layout, metrics }: { level: Level; layout: Layout; metrics: Metrics }) {
   const [n, setN] = useState(0)
   const score = scoreRun(metrics, level)

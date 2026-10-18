@@ -13,17 +13,19 @@ export function emissionsKgPerHour(traffic: Traffic, corridor: Corridor): number
   return MODES.reduce((kg, m) => kg + traffic.demand[m] * corridor.lengthKm * ef[m], 0)
 }
 
+export const inDoorZone = (layout: Layout) =>
+  bikeFacility(layout) === 'painted' && layout.elements.some((e, i) => e.id === 'bike_painted' && neighbours(layout, i).includes('parking'))
+
+export const hasBuffer = (layout: Layout) =>
+  layout.elements.some((e, i) => e.id === 'sidewalk' && neighbours(layout, i).some((n) => n === 'planter' || n === 'parking'))
+
 /** Simplified 0-100 index (higher is safer), not a prediction of collisions (spec 3.6). */
 export function safetyBreakdown(layout: Layout) {
   // ponytail: corridor collision data (baselineSafety) does not scale risk yet; wire in with real data (#11/#13).
   const speedRisk = 1 + MODEL.carLaneRisk.value * count(layout, 'car_lane')
   const facility = bikeFacility(layout)
-  const doorZone =
-    facility === 'painted' &&
-    layout.elements.some((e, i) => e.id === 'bike_painted' && neighbours(layout, i).includes('parking'))
-  const buffered = layout.elements.some(
-    (e, i) => e.id === 'sidewalk' && neighbours(layout, i).some((n) => n === 'planter' || n === 'parking'),
-  )
+  const doorZone = inDoorZone(layout)
+  const buffered = hasBuffer(layout)
   const cyclistRisk = MODEL.bikeFacilityRisk.value[facility] * speedRisk * (doorZone ? MODEL.doorZoneRisk.value : 1)
   const pedestrianRisk = speedRisk * (buffered ? MODEL.bufferRisk.value : 1)
   const cyclist = 100 / (1 + cyclistRisk)

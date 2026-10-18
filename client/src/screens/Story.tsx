@@ -9,7 +9,6 @@ type Who = 'pip' | PersonaId
 const CAST: Who[] = ['pip', ...(Object.keys(PERSONAS) as PersonaId[])]
 const nameOf = (who: Who) => (who === 'pip' ? 'Pip' : PERSONAS[who].name)
 
-/** The opening conversation: Pip introduces the street, each resident asks for help, Pip sets the goal. */
 function script(level: Level): { who: Who; text: string }[] {
   const { corridor } = level
   const goal = goalSentence(level)
@@ -47,7 +46,6 @@ export function Story({ level, onDone, onBack }: { level: Level; onDone: () => v
         </Button>
       </div>
 
-      {/* Everyone in the story; whoever is talking steps forward. */}
       <ul aria-label="Who you’ll meet" className="flex flex-wrap items-end justify-center gap-3 sm:gap-5">
         {CAST.map((who) => {
           const on = who === line.who

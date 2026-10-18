@@ -135,7 +135,11 @@ export function SelectionBar({
           <Button aria-label="Move right" disabled={moveElement(layout, selected, 1) === layout} onClick={() => move(selected, 1)}>
             ▶
           </Button>
-          <Button onClick={() => remove(selected)}>Remove</Button>
+          <Button aria-label="Remove" onClick={() => remove(selected)} className="border-ink bg-bus text-paper hover:bg-bus hover:brightness-110">
+            <svg aria-hidden viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+            </svg>
+          </Button>
         </>
       ) : (
         <span>{empty}</span>

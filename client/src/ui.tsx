@@ -21,7 +21,6 @@ export function signed(x: number, digits = 1) {
   return `${r > 0 ? '+' : r < 0 ? '−' : '±'}${Math.abs(r).toFixed(digits)}`
 }
 
-/** A floating card whose body folds away under its title. The title is a real heading with a toggle inside it. */
 export function Panel({ id, title, open, onToggle, children, className = '' }: { id: string; title: ReactNode; open: boolean; onToggle: () => void; children: ReactNode; className?: string }) {
   return (
     <section aria-labelledby={`${id}-title`} className={`pointer-events-auto flex min-h-0 flex-col rounded-2xl border-2 border-ink bg-paper shadow-[3px_3px_0_var(--color-ink)] ${className}`}>
@@ -50,7 +49,6 @@ export function Panel({ id, title, open, onToggle, children, className = '' }: {
   )
 }
 
-/** Back, progress dots and Next for screens that go one step at a time. */
 export function StepNav({ step, count, onBack, onNext, last }: { step: number; count: number; onBack: () => void; onNext: () => void; last: string }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">

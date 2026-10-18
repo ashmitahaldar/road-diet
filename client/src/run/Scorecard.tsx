@@ -1,8 +1,9 @@
-import { PERSONAS, earnedBadges, hints, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { PERSONAS, earnedBadges, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
 import { Face, Pip } from '../story/characters'
+import { LessonLine } from './Lesson'
 import { Button, GeminiLabel, signed } from '../ui'
 import { Others } from './Others'
 
@@ -39,6 +40,7 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
   const score = scoreRun(metrics, level)
   const badges = earnedBadges(metrics, score.goalMet)
   const ideas = hints(layout, metrics, level)
+  const learned = lessons(layout, metrics, level)
   const [status, setStatus] = useState('')
   useEffect(() => setStatus(''), [open, metrics])
   const emissionsDeltaKg = metrics.emissionsKgPerHour - base.emissionsKgPerHour
@@ -80,8 +82,18 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
       aria-labelledby="score-title"
       className="m-auto max-h-[90dvh] w-[min(40rem,calc(100%-2rem))] rounded-3xl border-2 border-ink bg-paper p-0 text-ink shadow-[6px_6px_0_var(--color-ink)] backdrop:bg-ink/50"
     >
+      <div className="sticky top-0 z-30 flex h-0 justify-end">
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          className="mt-3 mr-3 grid size-11 shrink-0 place-items-center rounded-full border-2 border-ink bg-paper text-lg shadow-[2px_2px_0_var(--color-ink)] hover:bg-grid focus-visible:outline-4 focus-visible:outline-primary"
+        >
+          <span aria-hidden>✕</span>
+        </button>
+      </div>
       <div className="flex flex-col gap-5 p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4 pr-12">
           <div>
             <h2 id="score-title" ref={title} tabIndex={-1} className="font-display text-3xl font-semibold outline-none">
               {score.goalMet ? 'Goal met!' : 'Not there yet'}
@@ -165,6 +177,19 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
           </p>
         </section>
 
+        <section aria-labelledby="learned-title">
+          <h3 id="learned-title" className="font-display text-lg font-semibold">
+            What this street teaches
+          </h3>
+          <ul className="mt-2 flex flex-col gap-2">
+            {learned.map((l) => (
+              <li key={l.concept} className={`relative flex gap-3 rounded-xl border-2 border-ink px-3 py-2 ${l.good ? '' : 'border-dashed'}`}>
+                <LessonLine lesson={l} />
+              </li>
+            ))}
+          </ul>
+        </section>
+
         {ideas.length > 0 && (
           <section aria-labelledby="ideas-title" className="rounded-2xl border-2 border-ink bg-loading/20 p-4">
             <h3 id="ideas-title" className="flex items-center gap-2 font-display text-lg font-semibold">
@@ -229,7 +254,6 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
             Limitations
           </h3>
           <p className="mt-1">This is a simplified estimate, not a prediction.</p>
-          {/* The heading and the key caveat always show; the full list folds away to keep the scorecard short. */}
           <details className="group mt-2">
             <summary className="inline-flex min-h-11 cursor-pointer items-center gap-1 font-semibold focus-visible:outline-4 focus-visible:outline-primary">
               <span aria-hidden className="transition-transform group-open:rotate-90 motion-reduce:transition-none">

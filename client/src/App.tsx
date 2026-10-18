@@ -27,7 +27,6 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <Background subtle={screen === 'play'} />
-      {/* The game screen is the whole window: the street fills it and the panels float on top. */}
       <div className={screen === 'play' && !infoPage ? 'flex h-dvh flex-col' : 'mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 py-6'}>
         {infoPage ? (
           <div className="flex-1">
@@ -52,7 +51,6 @@ export default function App() {
             </motion.div>
           </AnimatePresence>
         )}
-        {/* The game screen carries this line in its header; the scorecard repeats it too. */}
         {!(screen === 'play' && !infoPage) && (
           <footer className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-sm">
             <span>A learning tool, not a forecast. Residents are fictional.</span>

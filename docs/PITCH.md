@@ -28,9 +28,10 @@ The script is about 460 spoken words, about 3:40 at 130 words a minute, which le
 | 2:32–2:50 | School of Cities: the brief, line by line |
 | 2:50–2:55 | School of Cities: the four questions |
 | 2:55–3:05 | Data sources |
-| 3:05–3:27 | MLH prizes |
+| 3:05–3:27 | Architecture (MLH prizes) |
 | 3:27–3:40 | Judging criteria |
 | 3:40–3:55 | Close |
+| Q&A only | MLH prizes, one card per prize with logos |
 
 ### 0:00–0:08 · Cover
 > Hi, I’m [name]. This is Road Diet: an educational game about how a real Toronto street gets shared.
@@ -74,8 +75,9 @@ The script is about 460 spoken words, about 3:40 at 130 words a minute, which le
 ### 2:55–3:05 · Data sources
 > It’s all built on City of Toronto Open Data and TTC schedules, and every source is linked in the app.
 
-### 3:05–3:27 · MLH prizes
-> For MLH: Gemini voices the residents and Pip, but never decides a result. It only sees our model’s facts, and its numbers must match. Tiger Data stores every run in a hypertable, with a continuous aggregate for how others solved the street. And it’s live on Vultr.
+### 3:05–3:27 · Architecture (MLH prizes)
+Point at each box as you name it.
+> Here’s how it fits together, all running on Vultr. Our TypeScript model scores every design, in the browser and on the server. Gemini only gets that model’s facts, and any number it writes must match them. Tiger Data stores every run, and a continuous aggregate shows how others solved the same street.
 
 ### 3:27–3:40 · Judging criteria
 > So: it’s live and tested, built for anyone, teaches the carbon cost of street design, and explains every number. [Inspiration: one line on what got you thinking about Toronto streets.] And I built it solo, here.

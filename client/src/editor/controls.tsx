@@ -6,6 +6,8 @@ import { ElementIcon, VISUALS } from './elementVisuals'
 // Controls shared by the 2D editor and the 3D editor, so both edit through the same buttons and ops.
 
 export const STEP_M = 0.1
+/** The 3D canvas (and its loading placeholder) fills the free height of the one-screen layout, and a fixed share of a phone screen. */
+export const CANVAS_SIZE = 'h-[min(55dvh,30rem)] min-h-64 fit:h-auto fit:min-h-48 fit:flex-1'
 
 export function BudgetBar({ layout, level, announce }: { layout: Layout; level: Level; announce: boolean }) {
   const W = level.corridor.widthM
@@ -54,16 +56,18 @@ export function Palette({
   const free = remainingWidth(layout, level)
   const where = selected === null ? 'at the end' : 'after the selected block'
   return (
-    <div className="sm:order-1">
-      <h3 className="font-display text-lg font-semibold">Add to the street</h3>
-      <p className="mb-3 text-sm">
-        {free === 0
-          ? 'The street is full. Make a block narrower or remove one to make room.'
-          : startAdd
-            ? `${free.toFixed(1)} m free. Drag a card by its icon to a spot on the street, or press it to add ${where}.`
-            : `${free.toFixed(1)} m free. Press a card to add it ${where}.`}
-      </p>
-      <div role="group" aria-label="Street elements" className="-mx-4 flex gap-3 overflow-x-auto px-4 pt-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-0">
+    <div>
+      <div className="mb-2 flex flex-wrap items-baseline gap-x-3">
+        <h3 className="font-display text-lg font-semibold">Add to the street</h3>
+        <p className="text-sm">
+          {free === 0
+            ? 'Street full. Shrink or remove a piece first.'
+            : startAdd
+              ? `${free.toFixed(1)} m free. Press a card or drag it in.`
+              : `${free.toFixed(1)} m free. Press a card to add it ${where}.`}
+        </p>
+      </div>
+      <div role="group" aria-label="Street elements" className="-mx-4 flex gap-2 overflow-x-auto px-4 pt-1 pb-2 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:p-0">
         {level.allowedElements.map((id) => {
           const def = ELEMENTS[id]
           const fits = addElement(layout, level, id) !== layout
@@ -74,24 +78,19 @@ export function Palette({
               aria-disabled={!fits}
               onPointerDown={fits ? startAdd?.(id) : undefined}
               onClick={() => fits && onAdd(id)}
-              className={`relative flex min-h-11 w-32 min-w-0 shrink-0 flex-col items-start gap-1 rounded-2xl border-2 border-ink p-2 text-left sm:w-auto sm:p-3 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+              className={`relative flex min-h-11 shrink-0 items-center gap-2 rounded-xl border-2 border-ink py-1 pr-3 pl-1 text-left fit:min-h-9 fit:py-0.5 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary ${
                 fits ? `${startAdd ? 'cursor-grab' : 'cursor-pointer'} bg-paper shadow-[3px_3px_0_var(--color-ink)] hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none` : 'cursor-not-allowed border-dashed bg-grid'
               }`}
             >
-              <span className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center">
-                <span aria-hidden data-drag-handle className="grid size-10 shrink-0 touch-none place-items-center rounded-xl border-2 border-ink" style={{ background: VISUALS[id].color }}>
-                  <span className="grid size-8 place-items-center rounded-full bg-paper">
-                    <ElementIcon id={id} size={24} />
-                  </span>
+              <span aria-hidden data-drag-handle className="grid size-9 shrink-0 touch-none place-items-center rounded-lg border-2 border-ink fit:size-7" style={{ background: VISUALS[id].color }}>
+                <span className="grid size-7 place-items-center rounded-full bg-paper fit:size-5">
+                  <ElementIcon id={id} size={18} />
                 </span>
-                <span className="min-w-0 font-semibold leading-tight break-words"><span className="sr-only">Add </span>{def.label}</span>
               </span>
-              <span className="hidden text-sm tabular-nums sm:inline">
-                {def.defaultW} m · {def.minW}–{def.maxW} m
+              <span className="flex flex-col leading-tight">
+                <span className="font-semibold fit:text-sm"><span className="sr-only">Add </span>{def.label}</span>
+                <span className="text-sm tabular-nums fit:sr-only">{fits ? `${def.defaultW} m` : `Needs ${def.minW} m`}</span>
               </span>
-              {!fits && (
-                <span className="text-sm font-medium tabular-nums">Needs {def.minW} m</span>
-              )}
             </button>
           )
         })}
@@ -108,7 +107,7 @@ export function SelectionBar({
   resize,
   move,
   remove,
-  empty = 'Select a block to resize, move or remove it.',
+  empty = 'Select a piece to edit it.',
 }: {
   level: Level
   layout: Layout

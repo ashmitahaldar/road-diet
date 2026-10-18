@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* The game fits one screen (street in the middle, info at the sides) when the window is wide and tall enough; smaller windows stack and scroll. */
+@custom-variant fit (@media (min-width: 80rem) and (min-height: 40rem));
+
 /* Design tokens: spec 8b. Do not add colours or fonts outside this list without asking. */
 @theme {
   --color-paper: #faf6ee;
@@ -54,7 +57,7 @@ body {
   }
 }
 
-/* Traffic strip above the editor (TrafficStrip.tsx). Same pattern as the background: transforms only, static when reduced. */
+/* Moving traffic in the 2D editor (traffic.tsx). Same pattern as the background: transforms only, static when reduced. */
 .strip-move {
   animation: strip-drive var(--dur) linear var(--delay) infinite;
 }

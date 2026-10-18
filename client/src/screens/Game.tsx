@@ -1,16 +1,19 @@
 import { computeMetrics, fallbackResult, scoreRun, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { useReducedMotion } from 'motion/react'
 import { Component, Suspense, lazy, useMemo, useRef, useState, type ReactNode } from 'react'
-import { flushSync } from 'react-dom'
+import { CANVAS_SIZE } from '../editor/controls'
 import { Editor } from '../editor/Editor'
-import { RUN_MS, RunPanel, type Shown } from '../run/RunPanel'
+import { MetersCard, RUN_MS, Residents, RunButton, type Shown } from '../run/RunPanel'
 import { Scorecard } from '../run/Scorecard'
+import { Tips } from '../run/Tips'
 import { isMuted, play, setMuted } from '../sound'
 import { Button } from '../ui'
 import { goalSentence } from './Briefing'
 
 const Street3D = lazy(() => import('../run/Street3D'))
 const NO_3D = 'road-diet:no-3d'
+/** A side column: scrolls on its own when the game fits one screen. The padding keeps the card shadows inside the scroll box. */
+const SIDE = 'relative flex flex-col gap-3 fit:row-start-1 fit:min-h-0 fit:overflow-y-auto fit:pr-1 fit:pb-1'
 
 /** WebGL present and the 3D view hasn't failed earlier this session. */
 function can3d() {
@@ -84,10 +87,14 @@ export function Game({ level }: { level: Level }) {
   const [running, setRunning] = useState(false)
   const [scoreOpen, setScoreOpen] = useState(false)
   const [webgl, setWebgl] = useState(can3d)
-  const [stage, setStage] = useState(false)
+  // 3D is the default editor; the 2D one is the keyboard path and the fallback without WebGL or with reduced motion.
+  const [want3d, setWant3d] = useState(true)
   const timer = useRef<number>(undefined)
   const reduce = useReducedMotion()
+  const in3d = want3d && webgl && !reduce
   const base = useMemo(() => computeMetrics(level.corridor.baselineLayout, level), [level])
+  // Tips follow the street as it is now, not the last run.
+  const now = useMemo(() => computeMetrics(layout, level), [layout, level])
   const [muted, setMutedState] = useState(isMuted)
 
   // Every edit, 2D or 3D, comes through here. Resizes and moves keep the count and stay silent.
@@ -107,7 +114,6 @@ export function Game({ level }: { level: Level }) {
     fetchReactions(level, layout, metrics).then((react) => setRun((cur) => (cur?.layout === layout ? { ...cur, react } : cur)))
     saveAndFetchStats(level, layout).then((others) => setRun((cur) => (cur?.layout === layout ? { ...cur, others } : cur)))
     setRunId((n) => n + 1)
-    setStage(webgl && !reduce)
     setRunning(true)
     if (!reduce) play('run')
     window.clearTimeout(timer.current)
@@ -119,11 +125,11 @@ export function Game({ level }: { level: Level }) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 rounded-2xl border-2 border-ink bg-paper px-4 py-3 shadow-[4px_4px_0_var(--color-ink)]">
+    <div className="flex flex-col gap-3 fit:h-full">
+      <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 rounded-2xl border-2 border-ink bg-paper px-4 py-2 shadow-[4px_4px_0_var(--color-ink)]">
         <div>
           <p className="font-display text-lg font-semibold text-primary">Road Diet</p>
-          <h1 tabIndex={-1} className="font-display text-3xl font-semibold outline-none">{level.name}</h1>
+          <h1 tabIndex={-1} className="font-display text-2xl font-semibold outline-none sm:text-3xl">{level.name}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <p className="max-w-md">
@@ -144,49 +150,33 @@ export function Game({ level }: { level: Level }) {
           </Button>
         </div>
       </header>
-      <main className="grid flex-1 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        {stage && webgl && !reduce ? (
-          <section aria-labelledby="stage-title" className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 id="stage-title" tabIndex={-1} className="font-display text-2xl font-semibold outline-none">
-                Your street in 3D
-              </h2>
-              <Button
-                onClick={() => {
-                  flushSync(() => setStage(false))
-                  document.getElementById('editor-title')?.focus()
-                }}
-              >
-                Edit in 2D
-              </Button>
-            </div>
-            <Fallback
-              onError={() => {
-                setWebgl(false)
-                setStage(false)
-              }}
-            >
-              <Suspense fallback={<div className="h-[min(60dvh,34rem)] min-h-72 animate-pulse rounded-2xl border-2 border-ink bg-grid motion-reduce:animate-none" />}>
+      {/* Stacked on small screens (street, meters, tips, residents); on one screen the info sits either side of the street. */}
+      <main className="grid grid-cols-[minmax(0,1fr)] gap-4 fit:min-h-0 fit:flex-1 fit:grid-cols-[16rem_minmax(0,1fr)_19rem] fit:grid-rows-[minmax(0,1fr)]">
+        <section aria-labelledby="street-title" className="relative flex flex-col gap-3 fit:col-start-2 fit:row-start-1 fit:min-h-0 fit:overflow-y-auto fit:pr-1 fit:pb-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 id="street-title" className="font-display text-2xl font-semibold">
+              {in3d ? 'Your street in 3D' : 'Your street from above'}
+            </h2>
+            {webgl && !reduce && <Button onClick={() => setWant3d(!in3d)}>{in3d ? 'Edit in 2D' : 'Edit in 3D'}</Button>}
+          </div>
+          {in3d ? (
+            <Fallback onError={() => setWebgl(false)}>
+              <Suspense fallback={<div className={`${CANVAS_SIZE} animate-pulse rounded-2xl border-2 border-ink bg-grid motion-reduce:animate-none`} />}>
                 <Street3D level={level} layout={layout} onChange={edit} />
               </Suspense>
             </Fallback>
-          </section>
-        ) : (
-          <Editor
-            level={level}
-            layout={layout}
-            onChange={edit}
-            onOpen3d={
-              webgl && !reduce
-                ? () => {
-                    flushSync(() => setStage(true))
-                    document.getElementById('stage-title')?.focus()
-                  }
-                : undefined
-            }
-          />
-        )}
-        <RunPanel level={level} base={base} shown={shown} running={running} runId={runId} onRun={runDay} onShowScore={() => setScoreOpen(true)} />
+          ) : (
+            <Editor level={level} layout={layout} onChange={edit} />
+          )}
+        </section>
+        <div className={`${SIDE} fit:col-start-1`}>
+          <MetersCard level={level} base={base} shown={shown} running={running} onShowScore={() => setScoreOpen(true)} />
+          <Tips layout={layout} metrics={now} />
+        </div>
+        <div className={`${SIDE} fit:col-start-3`}>
+          <RunButton running={running} kind={shown.kind} onRun={runDay} />
+          <Residents base={base} shown={shown} running={running} runId={runId} />
+        </div>
       </main>
       {run && (
         <Scorecard
@@ -199,7 +189,7 @@ export function Game({ level }: { level: Level }) {
           react={run.react}
           stats={run.others?.stats}
           fairnessBeatsPct={run.others?.beats ?? null}
-          closeLabel={stage ? 'See it in 3D' : undefined}
+          closeLabel={in3d ? 'See it in 3D' : undefined}
         />
       )}
     </div>

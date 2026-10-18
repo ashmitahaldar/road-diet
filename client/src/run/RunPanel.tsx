@@ -17,112 +17,103 @@ const MODE_WORD: Record<Mode, string> = { car: 'drives', bus: 'rides the bus', b
 /** Shown state: today's street before the first run, then the latest run. `react` is null while /api/react is pending. */
 export type Shown = { metrics: Metrics; kind: 'today' | 'run' | 'stale'; react?: ReactResult | null }
 
-type Props = { level: Level; base: Metrics; shown: Shown; running: boolean; runId: number; onRun: () => void; onShowScore: () => void }
-
 const mean = (r: Record<PersonaId, number>) => Object.values(r).reduce((a, b) => a + b, 0) / Object.keys(r).length
 
-export function RunPanel({ level, base, shown, running, runId, onRun, onShowScore }: Props) {
+export function RunButton({ running, kind, onRun }: { running: boolean; kind: Shown['kind']; onRun: () => void }) {
+  return (
+    <Button
+      onClick={running ? undefined : onRun}
+      // aria-disabled, not disabled: a disabled button drops keyboard focus, and the scorecard would hand it back to <body>.
+      aria-disabled={running}
+      className="fixed inset-x-4 bottom-3 z-10 min-h-14 bg-primary text-xl text-paper shadow-[4px_4px_0_var(--color-ink)] hover:bg-primary hover:brightness-110 aria-disabled:cursor-wait aria-disabled:opacity-70 fit:static"
+    >
+      {running ? 'Running…' : kind === 'today' ? 'Run a day' : 'Run another day'}
+    </Button>
+  )
+}
+
+export function MetersCard({ level, base, shown, running, onShowScore }: { level: Level; base: Metrics; shown: Shown; running: boolean; onShowScore: () => void }) {
   const m = shown.metrics
   const { goal } = level
   const travel = mean(m.travelTimeMin)
   const emissionsScale = Math.max(40, 2 * (goal.minEmissionsReductionPct ?? 0))
-  const caption = {
-    today: "Today's street. Change it, then press Run a day.",
-    run: 'Your street after one day.',
-    stale: 'You changed the street. Run a day again to update.',
-  }[shown.kind]
+  const caption = { today: "Today's street.", run: 'After one day.', stale: 'Street changed. Run again to update.' }[shown.kind]
 
   return (
-    <aside aria-labelledby="run-title" className="flex flex-col gap-4">
-      <Button
-        onClick={running ? undefined : onRun}
-        // aria-disabled, not disabled: a disabled button drops keyboard focus, and the scorecard would hand it back to <body>.
-        aria-disabled={running}
-        className="fixed inset-x-4 bottom-3 z-10 min-h-14 bg-primary text-xl text-paper shadow-[4px_4px_0_var(--color-ink)] hover:bg-primary hover:brightness-110 aria-disabled:cursor-wait aria-disabled:opacity-70 xl:static"
-      >
-        {running ? 'Running…' : shown.kind === 'today' ? 'Run a day' : 'Run another day'}
-      </Button>
-
-      <section className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
-        <h2 id="run-title" className="font-display text-xl font-semibold">
-          Meters
-        </h2>
-        <p className={`mb-3 text-sm ${shown.kind === 'stale' ? 'font-semibold' : ''}`}>
-          {caption}{' '}
-          {shown.kind === 'run' && !running && (
-            <button type="button" onClick={onShowScore} className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
-              See scorecard
-            </button>
-          )}
-        </p>
-        <div className={`flex flex-col gap-3 transition-opacity ${shown.kind === 'stale' ? 'opacity-60' : ''}`}>
-          <Meter
-            label="Emissions cut"
-            color="var(--color-meter-emissions)"
-            value={`${m.emissionsReductionPct.toFixed(1)}%`}
-            detail={`${m.emissionsKgPerHour.toFixed(0)} kg CO₂e/h${goal.minEmissionsReductionPct ? ` · goal ${goal.minEmissionsReductionPct}%` : ''}`}
-            fill={m.emissionsReductionPct / emissionsScale}
-            mark={goal.minEmissionsReductionPct && goal.minEmissionsReductionPct / emissionsScale}
-          />
-          <Meter
-            label="Safety"
-            color="var(--color-meter-safety)"
-            value={`${m.safetyScore.toFixed(0)}/100`}
-            detail={`${signed(m.safetyScore - base.safetyScore, 0)} vs today`}
-            fill={m.safetyScore / 100}
-            mark={goal.minSafety && goal.minSafety / 100}
-          />
-          <Meter
-            label="Travel time"
-            color="var(--color-meter-travel)"
-            value={`${travel.toFixed(1)} min`}
-            detail={`average trip · ${signed(travel - mean(base.travelTimeMin))} min vs today`}
-          />
-          <Meter
-            label="Fairness"
-            color="var(--color-meter-fairness)"
-            value={`${m.fairness.toFixed(0)}/100`}
-            detail={`lowest resident happiness${goal.minHappiness ? ` · goal ${goal.minHappiness}` : ''}`}
-            fill={m.fairness / 100}
-            mark={goal.minHappiness && goal.minHappiness / 100}
-          />
-        </div>
-      </section>
-
-      <section aria-labelledby="residents-title">
-        <h2 id="residents-title" className="font-display text-xl font-semibold">
-          Residents
-        </h2>
-        <p className="mb-2 flex flex-wrap items-center gap-2 text-sm">
-          Fictional residents who use this street.
-          {shown.react?.reactions.every((r) => r.source === 'gemini') && !running && <GeminiLabel />}
-        </p>
-        <ul tabIndex={0} aria-labelledby="residents-title" className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 xl:mx-0 xl:flex-col xl:overflow-visible xl:px-0 focus-visible:outline-4 focus-visible:outline-primary">
-          {Object.values(PERSONAS).map((p) => (
-            <PersonaCard
-              key={p.id}
-              p={p}
-              m={m}
-              base={base}
-              running={running}
-              runId={runId}
-              reaction={shown.kind === 'today' ? undefined : (shown.react?.reactions.find((r) => r.personaId === p.id) ?? 'loading')}
-            />
-          ))}
-        </ul>
-      </section>
-
+    <section aria-labelledby="run-title" className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+      <h2 id="run-title" className="font-display text-xl font-semibold">
+        Meters
+      </h2>
+      <p className={`mb-2 text-sm ${shown.kind === 'stale' ? 'font-semibold' : ''}`}>
+        {caption}{' '}
+        {shown.kind === 'run' && !running && (
+          <button type="button" onClick={onShowScore} className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
+            See scorecard
+          </button>
+        )}
+      </p>
+      <div className={`flex flex-col gap-3 transition-opacity ${shown.kind === 'stale' ? 'opacity-60' : ''}`}>
+        <Meter
+          label="Emissions cut"
+          color="var(--color-meter-emissions)"
+          value={`${m.emissionsReductionPct.toFixed(1)}%`}
+          detail={goal.minEmissionsReductionPct ? `goal ${goal.minEmissionsReductionPct}%` : `${m.emissionsKgPerHour.toFixed(0)} kg CO₂e/h`}
+          fill={m.emissionsReductionPct / emissionsScale}
+          mark={goal.minEmissionsReductionPct && goal.minEmissionsReductionPct / emissionsScale}
+        />
+        <Meter
+          label="Safety"
+          color="var(--color-meter-safety)"
+          value={`${m.safetyScore.toFixed(0)}/100`}
+          detail={`${signed(m.safetyScore - base.safetyScore, 0)} vs today`}
+          fill={m.safetyScore / 100}
+          mark={goal.minSafety && goal.minSafety / 100}
+        />
+        <Meter label="Average trip" color="var(--color-meter-travel)" value={`${travel.toFixed(1)} min`} detail={`${signed(travel - mean(base.travelTimeMin))} min vs today`} />
+        <Meter
+          label="Fairness"
+          color="var(--color-meter-fairness)"
+          value={`${m.fairness.toFixed(0)}/100`}
+          detail={`least happy resident${goal.minHappiness ? ` · goal ${goal.minHappiness}` : ''}`}
+          fill={m.fairness / 100}
+          mark={goal.minHappiness && goal.minHappiness / 100}
+        />
+      </div>
       <p aria-live="polite" className="sr-only">
         {shown.kind === 'run' && !running
           ? `Day complete. Emissions cut ${m.emissionsReductionPct.toFixed(1)} percent, safety ${m.safetyScore.toFixed(0)}, lowest happiness ${m.fairness.toFixed(0)}.`
           : ''}
       </p>
+    </section>
+  )
+}
+
+export function Residents({ base, shown, running, runId }: { base: Metrics; shown: Shown; running: boolean; runId: number }) {
+  return (
+    <section aria-labelledby="residents-title">
+      <h2 id="residents-title" className="mb-2 flex flex-wrap items-center gap-2 font-display text-xl font-semibold">
+        Residents
+        {shown.react?.reactions.every((r) => r.source === 'gemini') && !running && <GeminiLabel />}
+      </h2>
+      <ul tabIndex={0} aria-labelledby="residents-title" className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 fit:mx-0 fit:flex-col fit:overflow-visible fit:px-0 focus-visible:outline-4 focus-visible:outline-primary">
+        {Object.values(PERSONAS).map((p) => (
+          <PersonaCard
+            key={p.id}
+            p={p}
+            m={shown.metrics}
+            base={base}
+            running={running}
+            runId={runId}
+            reaction={shown.kind === 'today' ? undefined : (shown.react?.reactions.find((r) => r.personaId === p.id) ?? 'loading')}
+          />
+        ))}
+      </ul>
       <p aria-live="polite" className="sr-only">
         {shown.kind === 'run' && !running && shown.react
           ? shown.react.reactions.map((r) => `${PERSONAS[r.personaId].name} says: ${r.line}`).join(' ')
           : ''}
       </p>
-    </aside>
+    </section>
   )
 }
 
@@ -167,7 +158,7 @@ function PersonaCard({ p, m, base, running, runId, reaction }: CardProps) {
   const { word, mouth } = mood(h)
   const tripMs = (RUN_MS - 400) * Math.min(1, t / Math.max(...Object.values(m.travelTimeMin)))
   return (
-    <li className="relative w-64 shrink-0 snap-start rounded-2xl border-2 border-ink bg-paper p-3 xl:w-auto">
+    <li className="relative w-64 shrink-0 snap-start rounded-2xl border-2 border-ink bg-paper p-3 fit:w-auto">
       <div className="flex items-center gap-3">
         <motion.svg
           key={`${runId}-${word}`}
@@ -191,18 +182,18 @@ function PersonaCard({ p, m, base, running, runId, reaction }: CardProps) {
           </p>
         </div>
       </div>
-      {reaction && !running && <SpeechBubble key={runId} reaction={reaction} />}
-      <p className="mt-2 text-sm">{p.blurb}</p>
+      {/* After a run the speech bubble takes the blurb's place, so the reaction is what the player reads. */}
+      {reaction && !running ? <SpeechBubble key={runId} reaction={reaction} /> : <p className="mt-2 text-sm">{p.blurb}</p>}
       <p className="mt-1 text-sm tabular-nums">
         {MODE_WORD[p.trip.mode]} {p.trip.distanceKm} km · <strong>{t.toFixed(1)} min</strong>
         {Math.abs(t - base.travelTimeMin[p.id]) >= 0.05 && ` (${signed(t - base.travelTimeMin[p.id])})`}
       </p>
-      <div aria-hidden className="relative mt-2 h-8 rounded-full border-2 border-ink bg-grid">
+      <div aria-hidden className="relative mt-2 h-7 rounded-full border-2 border-ink bg-grid">
         <motion.div
           key={runId}
-          className="absolute top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full border-2 border-ink bg-paper"
-          initial={{ left: runId === 0 || reduce ? 'calc(100% - 1.75rem)' : '0%' }}
-          animate={{ left: 'calc(100% - 1.75rem)' }}
+          className="absolute top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full border-2 border-ink bg-paper"
+          initial={{ left: runId === 0 || reduce ? 'calc(100% - 1.5rem)' : '0%' }}
+          animate={{ left: 'calc(100% - 1.5rem)' }}
           transition={{ duration: running && !reduce ? tripMs / 1000 : 0, ease: 'easeInOut' }}
         >
           <ElementIcon id={MODE_ICON[p.trip.mode]} size={18} />

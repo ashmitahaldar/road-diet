@@ -1,4 +1,4 @@
-import { earnedBadges, residentsOf, type BadgeId, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { PANELS, earnedBadges, residentsOf, type BadgeId, type DayStory, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
@@ -8,7 +8,7 @@ import { LessonLine } from './Lesson'
 import { Button, GeminiLabel, signed } from '../ui'
 import { Others } from './Others'
 
-type Props = { fresh?: BadgeId[]; open: boolean; onClose: () => void; level: Level; layout: Layout; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; fairnessBeatsPct?: number | null; closeLabel?: string }
+type Props = { fresh?: BadgeId[]; story?: DayStory | null; postcard?: string | null; open: boolean; onClose: () => void; level: Level; layout: Layout; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; fairnessBeatsPct?: number | null; closeLabel?: string }
 
 const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> = {
   emissions: (g) => [`Cut emissions by at least ${g.target}%`, `${g.value.toFixed(1)}%`],
@@ -34,7 +34,7 @@ async function copy(text: string) {
   }
 }
 
-export function Scorecard({ fresh = [], open, onClose, level, layout, metrics, base, react, stats, fairnessBeatsPct = null, closeLabel = 'Keep editing' }: Props) {
+export function Scorecard({ fresh = [], story = null, postcard, open, onClose, level, layout, metrics, base, react, stats, fairnessBeatsPct = null, closeLabel = 'Keep editing' }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
@@ -67,6 +67,17 @@ export function Scorecard({ fresh = [], open, onClose, level, layout, metrics, b
     card.current = import('./shareCard').then(async (m) => ({ png: await m.drawCard(data), share: m.shareCard }))
     card.current.catch(() => {})
   }, [open, metrics, base, layout, level])
+
+  // Without a generated postcard, show the drawn card of the design instead.
+  const [drawn, setDrawn] = useState<string | null>(null)
+  useEffect(() => {
+    if (!open || postcard !== null) return
+    let url: string | null = null
+    card.current?.then(({ png }) => setDrawn((url = URL.createObjectURL(png)))).catch(() => {})
+    return () => {
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [open, postcard, metrics])
 
   useEffect(() => {
     const d = ref.current
@@ -150,6 +161,58 @@ export function Scorecard({ fresh = [], open, onClose, level, layout, metrics, b
             </ul>
           ) : (
             <div aria-label="Waiting for reactions" className="mt-2 h-16 animate-pulse rounded-xl bg-grid motion-reduce:animate-none" />
+          )}
+        </section>
+
+        <section aria-labelledby="day-title" aria-busy={!story}>
+          <h3 id="day-title" className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            A day on your street {story?.days.every((d) => d.source === 'gemini') && <GeminiLabel />}
+          </h3>
+          {story ? (
+            <>
+              <p className="mt-1 font-display text-2xl font-semibold">
+                “{story.name}”{story.nameSource === 'gemini' && <span className="sr-only"> (name by Gemini)</span>}
+              </p>
+              <ul className="mt-2 flex flex-col gap-3">
+                {story.days.map((d) => (
+                  <li key={d.personaId} className="flex gap-3">
+                    <Face id={d.personaId} look={who[d.personaId].look} happiness={metrics.happiness[d.personaId]} className="size-10" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold">{who[d.personaId].name}</p>
+                      <ol className="mt-1 grid gap-2 sm:grid-cols-3">
+                        {d.panels.map((text, i) => (
+                          <li key={i} className="rounded-xl border-2 border-ink bg-paper px-2.5 py-2 text-sm shadow-[2px_2px_0_var(--color-ink)]">
+                            <span className="block text-xs font-semibold tracking-wide uppercase">{PANELS[i]}</span>
+                            {text}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs">A story, not a prediction: the moments are made up; trip times and moods come from the model.</p>
+            </>
+          ) : (
+            <div aria-label="Writing the story" className="mt-2 h-24 animate-pulse rounded-xl bg-grid motion-reduce:animate-none" />
+          )}
+        </section>
+
+        <section aria-labelledby="postcard-title" aria-busy={postcard === undefined}>
+          <h3 id="postcard-title" className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            Postcard {postcard && <GeminiLabel />}
+          </h3>
+          {postcard || drawn ? (
+            <figure className="mt-2">
+              <img
+                src={postcard ?? drawn!}
+                alt={postcard ? 'Illustration of your street design, generated by Gemini.' : 'Your street design drawn as a cross-section, with your stars and emissions change.'}
+                className="w-full rounded-xl border-2 border-ink"
+              />
+              <figcaption className="mt-1 text-xs">{postcard ? 'Generated illustration: not to scale and not a real place.' : 'Drawn from your design.'}</figcaption>
+            </figure>
+          ) : (
+            <div aria-label="Making the postcard" className="mt-2 aspect-video animate-pulse rounded-xl bg-grid motion-reduce:animate-none" />
           )}
         </section>
 

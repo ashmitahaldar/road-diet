@@ -21,8 +21,8 @@ export const FALLBACK_LINES: Record<PersonaId, Record<Mood, string>> = {
     down: 'My route takes longer or loading got harder, and that adds up over a day.',
   },
   student_cyclist: {
-    up: 'Getting to campus feels safer and calmer now.',
-    flat: 'My ride to campus feels about the same.',
+    up: 'Getting to class feels safer and calmer now.',
+    flat: 'My ride to class feels about the same.',
     down: 'My ride feels less safe or slower than it used to.',
   },
   senior_walker: {

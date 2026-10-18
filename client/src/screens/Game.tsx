@@ -1,4 +1,4 @@
-import { addElement, computeMetrics, earnedBadges, fallbackResult, lessons, type BadgeId, moveElement, removeElement, resizeElement, scoreRun, type ElementId, type Layout, type Lesson, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { addElement, computeMetrics, earnedBadges, fallbackResult, fallbackStory, type DayStory, lessons, type BadgeId, moveElement, removeElement, resizeElement, scoreRun, type ElementId, type Layout, type Lesson, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { useReducedMotion } from 'motion/react'
 import { Component, Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BudgetBar, Palette, SelectionBar } from '../editor/controls'
@@ -90,6 +90,39 @@ async function fetchReactions(level: Level, layout: Layout, metrics: Metrics): P
   return fallbackResult(metrics)
 }
 
+/** Design name and residents' days; any failure gives the story built from the numbers. */
+async function fetchStory(level: Level, layout: Layout, metrics: Metrics, base: Metrics): Promise<DayStory> {
+  try {
+    const res = await fetch('/api/story', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ levelId: level.id, layout }),
+      signal: AbortSignal.timeout(11000),
+    })
+    const body = (await res.json()) as Partial<DayStory>
+    if (res.ok && typeof body.name === 'string' && Array.isArray(body.days)) return body as DayStory
+  } catch {
+    // fall through to the built-in story
+  }
+  return fallbackStory(level, metrics, base)
+}
+
+/** A generated illustration, or null: the scorecard then shows the drawn card of the design. */
+async function fetchPostcard(level: Level, layout: Layout): Promise<string | null> {
+  try {
+    const res = await fetch('/api/postcard', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ levelId: level.id, layout }),
+      signal: AbortSignal.timeout(35000),
+    })
+    const body = (await res.json()) as { image?: unknown }
+    return res.ok && typeof body.image === 'string' && body.image.startsWith('data:image/') ? body.image : null
+  } catch {
+    return null
+  }
+}
+
 type Others = { stats: LevelStats | null; beats: number | null }
 
 /** Save the run, then read stats, so the player's own run is counted. Null stats hide the section (no database). */
@@ -116,7 +149,8 @@ type Props = { level: Level; levels: Level[]; collection: Collection; onResult: 
 
 export function Game({ level, levels, collection, onResult, onExit }: Props) {
   const [layout, setLayout] = useState(level.corridor.baselineLayout)
-  const [run, setRun] = useState<{ layout: Layout; metrics: Metrics; react: ReactResult | null; others?: Others } | null>(null)
+  // story: null while loading; postcard: undefined while loading, null when there is no generated image.
+  const [run, setRun] = useState<{ layout: Layout; metrics: Metrics; react: ReactResult | null; others?: Others; story: DayStory | null; postcard?: string | null } | null>(null)
   const [runId, setRunId] = useState(0)
   const [running, setRunning] = useState(false)
   const [scoreOpen, setScoreOpen] = useState(false)
@@ -193,10 +227,12 @@ export function Game({ level, levels, collection, onResult, onExit }: Props) {
   const runDay = () => {
     reach('run')
     const metrics = computeMetrics(layout, level)
-    setRun({ layout, metrics, react: null })
+    setRun({ layout, metrics, react: null, story: null })
     // A slow reply for an older run must not overwrite a newer one.
     fetchReactions(level, layout, metrics).then((react) => setRun((cur) => (cur?.layout === layout ? { ...cur, react } : cur)))
     saveAndFetchStats(level, layout).then((others) => setRun((cur) => (cur?.layout === layout ? { ...cur, others } : cur)))
+    fetchStory(level, layout, metrics, base).then((story) => setRun((cur) => (cur?.layout === layout ? { ...cur, story } : cur)))
+    fetchPostcard(level, layout).then((postcard) => setRun((cur) => (cur?.layout === layout ? { ...cur, postcard } : cur)))
     setRunId((n) => n + 1)
     setRunning(true)
     if (!reduce) play('run')
@@ -396,6 +432,8 @@ export function Game({ level, levels, collection, onResult, onExit }: Props) {
           metrics={run.metrics}
           base={base}
           react={run.react}
+          story={run.story}
+          postcard={run.postcard}
           stats={run.others?.stats}
           fairnessBeatsPct={run.others?.beats ?? null}
           closeLabel={in3d ? 'See it in 3D' : undefined}

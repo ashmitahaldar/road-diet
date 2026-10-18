@@ -1,8 +1,11 @@
 import {
   MODE_SHIFT_LIMITATION,
   residentsOf,
+  describeLayout,
   fallbackResult,
+  fallbackStory,
   moodFor,
+  type DayStory,
   type Layout,
   type Level,
   type Metrics,
@@ -52,6 +55,7 @@ export function buildPrompt({ level, layout, metrics, base, score }: RunFacts) {
   const system = [
     'You write short reactions for a street-design learning game set in Toronto.',
     'Each resident is fictional. Speak in first person, in character, at most 25 words, with one concrete reason taken from their numbers.',
+    'Say how the trip feels; mention at most one number (trip minutes are best) and never quote happiness or mood scores.',
     'Use only the facts given. Do not invent numbers, places or people. Never mention real people, politicians, parties, elections or voting.',
     'Do not praise or criticise lane types as such; talk about the trip, safety, comfort or access the resident experiences.',
     'Also write "debrief": 2-3 plain-language sentences on the trade-offs of this design, including at least one limitation from modelLimitations.',
@@ -60,9 +64,21 @@ export function buildPrompt({ level, layout, metrics, base, score }: RunFacts) {
   return { system, user: JSON.stringify(facts) }
 }
 
-async function callGemini(prompt: { system: string; user: string }, cfg: Required<GeminiConfig>) {
+async function callGemini<T>(prompt: { system: string; user: string }, cfg: Required<GeminiConfig>, schema: z.ZodType<T>) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(cfg.model)}:generateContent`
-  const res = await cfg.fetch(url, {
+  const started = Date.now()
+  let res = await post(url, prompt, cfg)
+  // Gemini answers "overloaded" (5xx) quickly; one retry fits in the time budget when the first try failed fast.
+  if (res.status >= 500 && Date.now() - started < 2500) res = await post(url, prompt, cfg)
+  if (!res.ok) throw new Error(`gemini status ${res.status}`)
+  const body = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
+  const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('')
+  if (!text) throw new Error('gemini empty response')
+  return schema.parse(JSON.parse(text))
+}
+
+function post(url: string, prompt: { system: string; user: string }, cfg: Required<GeminiConfig>) {
+  return cfg.fetch(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': cfg.apiKey },
     body: JSON.stringify({
@@ -73,11 +89,6 @@ async function callGemini(prompt: { system: string; user: string }, cfg: Require
     }),
     signal: AbortSignal.timeout(cfg.timeoutMs),
   })
-  if (!res.ok) throw new Error(`gemini status ${res.status}`)
-  const body = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
-  const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('')
-  if (!text) throw new Error('gemini empty response')
-  return Output.parse(JSON.parse(text))
 }
 
 const acceptable = (line: string) => !OFF_LIMITS.test(line) && line.trim().split(/\s+/).length <= MAX_WORDS
@@ -88,7 +99,7 @@ export async function react(facts: RunFacts, config: GeminiConfig): Promise<Reac
   if (!config.apiKey || !config.model) return fallback
   const cfg = { fetch, timeoutMs: 7000, ...config } as Required<GeminiConfig>
   try {
-    const out = await callGemini(buildPrompt(facts), cfg)
+    const out = await callGemini(buildPrompt(facts), cfg, Output)
     const reactions = fallback.reactions.map((fb) => {
       const line = out.reactions.find((r) => r.personaId === fb.personaId)?.line.trim()
       return line && acceptable(line) ? { ...fb, line, source: 'gemini' as const } : fb
@@ -103,5 +114,78 @@ export async function react(facts: RunFacts, config: GeminiConfig): Promise<Reac
   } catch (err) {
     console.warn(`react: using fallback (${err instanceof Error ? err.name + ': ' + err.message : 'unknown error'})`)
     return fallback
+  }
+}
+
+const StoryOutput = z.object({
+  name: z.string().min(1).max(60),
+  days: z.array(z.object({ personaId: z.string(), panels: z.array(z.string().min(1).max(240)).length(3) })),
+})
+const MAX_NAME_WORDS = 5
+const MAX_PANEL_WORDS = 28
+
+/** The same grounded facts as the reactions, asked for a design name and a three-panel day per resident. */
+export function buildStoryPrompt(facts: RunFacts) {
+  const { user } = buildPrompt(facts)
+  const system = [
+    'You write a tiny comic-strip story for a street-design learning game set in Toronto.',
+    'For each fictional resident, write their day on the redesigned street in exactly 3 panels: morning, midday, evening. Each panel is one or two sentences, at most 25 words, in third person.',
+    'Ground each day in that resident\'s numbers (trip minutes, happiness, mood). Show feelings rather than quoting scores: never write happiness or mood numbers, and use at most one number per resident: tripMinutes.new is the whole trip ("a 16-minute ride"), not a change.',
+    'You may add small everyday details (coffee, rain, a neighbour waving) but never invent numbers, places, businesses or real people.',
+    'Refer to each resident by name, not by he or she. Do not name lanes or other street pieces; describe what the resident sees and feels.',
+    'Also give the design a short, warm, playful name of at most 4 words. No real business names.',
+    'Never mention politicians, parties, elections or voting. Do not praise or criticise lane types as such; describe what the resident experiences.',
+    'Reply with JSON only: {"name":"...","days":[{"personaId":"...","panels":["...","...","..."]}]}',
+  ].join('\n')
+  return { system, user }
+}
+
+const words = (s: string) => s.trim().split(/\s+/).length
+
+/** Design name and residents' days. Each day, and the name, falls back on its own; never an error. */
+export async function story(facts: RunFacts, config: GeminiConfig): Promise<DayStory> {
+  const fallback = fallbackStory(facts.level, facts.metrics, facts.base)
+  if (!config.apiKey || !config.model) return fallback
+  const cfg = { fetch, timeoutMs: 9000, ...config } as Required<GeminiConfig>
+  try {
+    const out = await callGemini(buildStoryPrompt(facts), cfg, StoryOutput)
+    const name = out.name.trim().replace(/^["“]|["”]$/g, '')
+    const nameOk = !OFF_LIMITS.test(name) && words(name) <= MAX_NAME_WORDS
+    const days = fallback.days.map((fb) => {
+      const panels = out.days.find((d) => d.personaId === fb.personaId)?.panels.map((p) => p.trim())
+      return panels && panels.every((p) => !OFF_LIMITS.test(p) && words(p) <= MAX_PANEL_WORDS)
+        ? { ...fb, panels: panels as [string, string, string], source: 'gemini' as const }
+        : fb
+    })
+    return { name: nameOk ? name : fallback.name, nameSource: nameOk ? 'gemini' : 'fallback', days }
+  } catch (err) {
+    console.warn(`story: using fallback (${err instanceof Error ? err.name + ': ' + err.message : 'unknown error'})`)
+    return fallback
+  }
+}
+
+/** A generated illustration of the design, or null when no image model is set up or it fails (the client draws its own). */
+export async function postcard(layout: Layout, config: GeminiConfig & { imageModel?: string }): Promise<string | null> {
+  if (!config.apiKey || !config.imageModel) return null
+  const prompt = [
+    'Flat vector postcard illustration on a warm cream background with thick dark outlines and soft muted colours. No text, letters, signs, logos or real people.',
+    `A generic city main street seen from the sidewalk, with these pieces from one side to the other: ${describeLayout(layout)}.`,
+    'A few small, friendly figures walking, biking and driving. Calm and uncluttered.',
+  ].join(' ')
+  try {
+    const res = await (config.fetch ?? fetch)(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.imageModel)}:generateContent`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': config.apiKey },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '16:9' } } }),
+      signal: AbortSignal.timeout(config.timeoutMs ?? 30000),
+    })
+    if (!res.ok) throw new Error(`gemini image status ${res.status}`)
+    const body = (await res.json()) as { candidates?: { content?: { parts?: { inlineData?: { mimeType: string; data: string } }[] } }[] }
+    const img = body.candidates?.[0]?.content?.parts?.find((p) => p.inlineData)?.inlineData
+    if (!img || !/^image\/(png|jpeg|webp)$/.test(img.mimeType)) throw new Error('gemini image missing')
+    return `data:${img.mimeType};base64,${img.data}`
+  } catch (err) {
+    console.warn(`postcard: none (${err instanceof Error ? err.message : 'unknown error'})`)
+    return null
   }
 }

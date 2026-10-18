@@ -2,6 +2,31 @@
 
 Paste each section into Devpost. **UNVERIFIED** marks anything not confirmed yet. Fill it in before submitting.
 
+## Initial submission (save a draft now, finish later)
+Devpost lets you edit until the deadline, so save a draft with what is ready today:
+
+| Devpost field | What to paste |
+|---|---|
+| Project name | Road Diet |
+| Elevator pitch | The tagline below |
+| About the project | "Inspiration" through "What's next", below |
+| Built with | The "Built with" list below |
+| Try it out | The repo link now; add the live game after the deploy (#10) |
+| Image gallery | The 7 images in `docs/devpost/`, in order, with the captions below |
+| Video demo | Add after #26 |
+
+Fill in later: the live link, the video, the Gemini model, the Tiger Data and Vultr details, the domain and the Solo-hack declaration (all marked UNVERIFIED).
+
+## Image gallery
+Taken at 1440×960 from the current build, with no API server, so reactions are the built-in fallback text and no "Powered by Gemini" label shows. Retake 5 and 6 on the live site once Gemini is connected.
+1. `1-start.png`: Road Diet. Every street has a budget.
+2. `2-briefing.png`: Three steps and one goal. Then the real street, drawn from City of Toronto data.
+3. `3-editor-3d.png`: Edit Bloor St W in 3D. Tap a piece and drag its handles; traffic follows the lanes you build.
+4. `4-editor-2d-traffic.png`: The same street from above, with keyboard controls and a design tip.
+5. `5-scorecard.png`: Goal met. Stars, badges, what residents said and the emissions change.
+6. `6-residents-react.png`: Residents keep their reactions on screen while you try another design.
+7. `7-data-sources.png`: Every source and every limitation, listed in the app.
+
 ## Tagline
 Every street has a budget. How would you spend it?
 
@@ -13,7 +38,11 @@ The UofT School of Cities challenge asks: *"What would changing how we use road 
 ## What it does
 You redesign a real Toronto street, Bloor St W from Christie St to Ossington Ave (20 m wide, 0.61 km long), within its fixed width:
 - add, remove, resize and reorder sidewalks, car lanes, a bus lane, painted or protected bike lanes, parking and trees
+- edit in 3D (tap a piece, drag its handles) while cars, buses, bikes and people move along the lanes you build, or switch to a 2D view from above that also works by keyboard
+- read design tips drawn from the model's own rules, such as "a painted bike lane beside parking puts riders in the door zone"
 - press **Run a day**
+
+Everything fits on one screen: meters and tips on the left, the street in the middle, the residents on the right.
 
 A transparent model then estimates:
 - emissions (kg CO₂e and % change against today's street)
@@ -21,11 +50,12 @@ A transparent model then estimates:
 - travel times
 - how happy four fictional residents are with their trips: a delivery driver, a student who bikes, a senior who walks and a shop owner
 
-Each resident reacts in their own words. The scorecard checks the level goal: cut emissions by at least 25% while keeping every resident at least 50 happy. It then shows:
+Each resident reacts in their own words, and the reaction stays on their card while you try another design. The scorecard checks the level goal: cut emissions by at least 25% while keeping every resident at least 50 happy. It then shows:
 - stars and badges
 - a plain-language debrief
 - a visible Limitations panel
 - a chart of how other players solved the same street
+- a share image of your result
 
 ## School of Cities questions
 - **Who is the user?** Toronto residents, journalists, community groups and students who want an explorable, shareable way to understand what changing street space does.
@@ -89,8 +119,17 @@ Each resident reacts in their own words. The scorecard checks the level goal: cu
 - Everything in the repo was built during the event, from the first commit on 2026-10-16 at 22:32 (UTC−4). Pre-event preparation: **UNVERIFIED** (say what, if anything, was set up before the event).
 - Built with an AI coding assistant (Claude Code). (UNVERIFIED: check how the organizers want AI assistance and pre-event preparation declared.)
 
+## Generative AI question
+*Did you implement a generative AI model or API in your hack this weekend? If so, how and why?*
+
+Yes, two ways: the Google Gemini API inside the game, and Claude Code as a coding assistant while building it.
+
+**Gemini, in the game.** After each "Run a day", our server makes one Gemini `generateContent` call in JSON mode. It returns a first-person reaction (25 words or fewer) from each of four fictional residents and a 2–3 sentence debrief of the design's trade-offs. Gemini never decides the results: our own tested TypeScript model computes emissions, safety, travel times and happiness, and Gemini gets only those numbers. Replies are schema-checked. Lines that are too long or mention politics are swapped for pre-written text, and the debrief must name a model limitation. If Gemini fails, the game uses built-in reactions. The key stays on the server, and a "Powered by Gemini" label shows only when the text really came from Gemini. *Why:* numbers alone feel abstract; hearing "my walk feels safer" from a resident makes a result personal, and generated lines respond to the player's actual design.
+
+**Claude Code, to build it.** I built Road Diet solo with Claude Code (Anthropic's AI coding assistant) as a pair programmer. I set the product direction, data rules and neutrality rules, and reviewed every change through a branch and pull request. Claude Code wrote and refactored much of the React, Three.js, Express and TypeScript code, wrote unit tests, and ran browser checks with Playwright (screenshots at phone and desktop sizes, keyboard and accessibility checks). It also helped draft docs, including this submission. *Why:* as a solo builder with one weekend, it let me ship a 3D editor, a tested model, a database-backed scorecard and accessibility work that I couldn't have finished alone, while I spent my time on design decisions and checking the data.
+
 ## How we built it
-- **Client:** React 19, Vite, Tailwind CSS v4, Motion, and Three.js for the read-only 3D view.
+- **Client:** React 19, Vite, Tailwind CSS v4, Motion, and Three.js for the editable 3D street (procedural models, no asset files), and Web Audio for short synthesized sounds.
 - **Server:** Express 5 and zod, plus `pg` for Tiger Data / TimescaleDB.
 - **Model:** pure TypeScript functions shared by the client and server, with vitest tests. Every constant is tagged with its source or marked as a design choice.
 - **Data prep:** a Python script that pulls only corridor-sized extracts from Toronto Open Data, and draws the briefing's corridor map as a static SVG (no map tiles or API keys at demo time).

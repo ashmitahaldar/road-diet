@@ -1,7 +1,8 @@
-import { ELEMENTS, PERSONAS, TODO_SOURCE, type Level } from '@road-diet/shared'
+import { ELEMENTS, TODO_SOURCE, type Level } from '@road-diet/shared'
+import { AnimatePresence, motion } from 'motion/react'
+import { useState, type ReactNode } from 'react'
 import { ElementIcon, VISUALS } from '../editor/elementVisuals'
-import { Face } from '../story/characters'
-import { Button } from '../ui'
+import { Button, StepNav } from '../ui'
 
 const MAPS = import.meta.glob<string>('../../../data/corridors/*.map.svg', { query: '?url', import: 'default', eager: true })
 const MAP_SOURCES = /Centreline|Cycling|Killed|OpenStreetMap/
@@ -20,11 +21,8 @@ function CorridorMap({ corridor }: { corridor: Level['corridor'] }) {
   const src = corridor.mapSvg && MAPS[`../../../${corridor.mapSvg}`]
   if (!src) return null
   return (
-    <section aria-labelledby="map-title" className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
-      <h2 id="map-title" className="font-display text-2xl font-semibold">
-        Where it is
-      </h2>
-      <img src={src} alt={corridor.mapAlt ?? ''} loading="lazy" decoding="async" className="mt-3 w-full rounded-xl border-2 border-ink" />
+    <>
+      <img src={src} alt={corridor.mapAlt ?? ''} decoding="async" className="w-full rounded-xl border-2 border-ink" />
       <ul aria-label="Map legend" className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
         {LEGEND.map(([label, line]) => (
           <li key={label} className="flex items-center gap-2">
@@ -55,7 +53,7 @@ function CorridorMap({ corridor }: { corridor: Level['corridor'] }) {
             </span>
           ))}
       </p>
-    </section>
+    </>
   )
 }
 
@@ -72,95 +70,92 @@ export function goalSentence(level: Level) {
 
 export function Briefing({ level, onStart, onBack }: { level: Level; onStart: () => void; onBack: () => void }) {
   const { corridor } = level
-  const steps: [string, string][] = [
-    ['Build', `Fit sidewalks, lanes, parking and trees into ${corridor.widthM} m. Add, resize, move or remove pieces.`],
-    ['Run a day', 'See emissions, safety, trip times and how four residents feel.'],
-    ['Earn stars', `★ meet the goal · ★★ + safety ${level.stars.safety} · ★★★ + everyone ${level.stars.fairness} happy`],
+  const [step, setStep] = useState(0)
+  const play: [string, string][] = [
+    ['Build', `Fit sidewalks, lanes, parking and trees into ${corridor.widthM} m.`],
+    ['Run a day', 'See emissions, safety and trip times, and hear from the residents.'],
+    ['Earn stars', `★ goal · ★★ + safety ${level.stars.safety} · ★★★ + everyone ${level.stars.fairness} happy`],
   ]
-  return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5">
-      <div>
-        <p className="font-display text-lg font-semibold text-primary">Level 1</p>
-        <h1 tabIndex={-1} className="font-display text-4xl font-semibold outline-none sm:text-5xl">
-          {level.name}
-        </h1>
-      </div>
-
-      <section aria-labelledby="how-title">
-        <h2 id="how-title" className="font-display text-2xl font-semibold">
-          How to play
-        </h2>
-        <ol className="mt-2 grid gap-3 sm:grid-cols-3">
-          {steps.map(([title, text], i) => (
-            <li key={title} className="flex gap-3 rounded-2xl border-2 border-ink bg-paper p-3 shadow-[4px_4px_0_var(--color-ink)] sm:flex-col sm:gap-1">
-              <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-primary font-display text-lg font-semibold text-paper">
+  const steps: { title: string; body: ReactNode }[] = [
+    {
+      title: 'How to play',
+      body: (
+        <ol className="flex flex-col gap-3">
+          {play.map(([title, text], i) => (
+            <li key={title} className="flex items-center gap-3">
+              <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-full bg-primary font-display text-lg font-semibold text-paper">
                 {i + 1}
               </span>
               <span>
-                <strong className="font-display text-lg">{title}</strong>
-                <span className="block text-sm">{text}</span>
+                <strong className="font-display text-xl">{title}</strong>
+                <span className="block">{text}</span>
               </span>
             </li>
           ))}
         </ol>
-      </section>
+      ),
+    },
+    {
+      title: 'The street today',
+      body: (
+        <>
+          <div aria-label="Today's street" role="img" className="flex h-20 overflow-hidden rounded-2xl border-2 border-ink bg-paper">
+            {corridor.baselineLayout.elements.map((el, i) => (
+              <div
+                key={i}
+                title={`${ELEMENTS[el.id].label}, ${el.widthM} m`}
+                className="flex flex-col items-center justify-center gap-0.5 border-r-2 border-ink last:border-r-0"
+                style={{ flexBasis: `${(el.widthM / corridor.widthM) * 100}%`, background: VISUALS[el.id].color }}
+              >
+                <span className="grid size-9 place-items-center rounded-full border-2 border-ink bg-paper">
+                  <ElementIcon id={el.id} size={24} />
+                </span>
+                <span className="rounded bg-paper px-1 text-xs font-semibold tabular-nums">{el.widthM}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-lg">
+            {corridor.widthM} m wide and {corridor.lengthKm} km long. Every metre already has a job, so anything new has to fit inside.
+          </p>
+          <p className="mt-1 text-sm">{corridor.baselineLayout.elements.map((el) => `${VISUALS[el.id].short} ${el.widthM} m`).join(' · ')}</p>
+          {corridor.source === TODO_SOURCE && <p className="mt-1 text-sm">Placeholder numbers until the real Toronto data is added.</p>}
+        </>
+      ),
+    },
+    ...(corridor.mapSvg ? [{ title: 'Where it is', body: <CorridorMap corridor={corridor} /> }] : []),
+  ]
+  const last = step === steps.length - 1
 
-      <section className="rounded-2xl border-2 border-ink bg-loading/30 p-4">
-        <h2 className="font-display text-xl font-semibold">Your goal</h2>
-        <p className="text-lg">{goalSentence(level)}</p>
-      </section>
-
-      <section aria-labelledby="today-title">
-        <h2 id="today-title" className="font-display text-xl font-semibold">
-          The street today
-        </h2>
-        <div aria-label="Today's street" role="img" className="mt-2 flex h-16 overflow-hidden rounded-2xl border-2 border-ink bg-paper">
-          {corridor.baselineLayout.elements.map((el, i) => (
-            <div
-              key={i}
-              title={`${ELEMENTS[el.id].label}, ${el.widthM} m`}
-              className="grid place-items-center border-r-2 border-ink last:border-r-0"
-              style={{ flexBasis: `${(el.widthM / corridor.widthM) * 100}%`, background: VISUALS[el.id].color }}
-            >
-              <span className="grid size-9 place-items-center rounded-full border-2 border-ink bg-paper">
-                <ElementIcon id={el.id} size={24} />
-              </span>
-            </div>
-          ))}
+  return (
+    <main className="mx-auto flex min-h-[70dvh] max-w-3xl flex-col justify-center gap-5">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0 flex-1 basis-72">
+          <p className="font-display text-lg font-semibold text-primary">Level 1</p>
+          <h1 tabIndex={-1} className="font-display text-3xl font-semibold outline-none sm:text-4xl">
+            {level.name}
+          </h1>
         </div>
-        <p className="mt-1 text-sm">
-          {corridor.widthM} m wide, {corridor.lengthKm} km long: {corridor.baselineLayout.elements.map((el) => `${VISUALS[el.id].short} ${el.widthM} m`).join(' · ')}
-        </p>
-        {corridor.source === TODO_SOURCE && <p className="mt-1 text-sm">Placeholder numbers until the real Toronto data is added.</p>}
-      </section>
-
-      <div className="flex flex-wrap gap-3">
-        <Button onClick={onStart} className="min-h-14 bg-primary px-8 text-xl text-paper shadow-[4px_4px_0_var(--color-ink)] hover:bg-primary hover:brightness-110">
-          Start editing
-        </Button>
-        <Button onClick={onBack} className="min-h-14 px-6">
-          Back
+        <Button onClick={onStart} className="shrink-0">
+          Skip to the street
         </Button>
       </div>
 
-      <CorridorMap corridor={corridor} />
+      <p className="rounded-2xl border-2 border-ink bg-loading/30 px-4 py-3 text-lg">
+        <strong>Your goal:</strong> {goalSentence(level)}
+      </p>
 
-      <section>
-        <h2 className="font-display text-2xl font-semibold">Who uses this street</h2>
-        <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-          {Object.values(PERSONAS).map((p) => (
-            <li key={p.id} className="flex gap-3 rounded-xl border-2 border-ink bg-paper px-3 py-2">
-              <Face id={p.id} happiness={50} />
-              <span>
-                <strong>{p.name}</strong>. {p.blurb}
-                <span className="mt-0.5 block text-sm">
-                  <strong>Wants</strong> {p.wants}.
-                </span>
-              </span>
-            </li>
-          ))}
-        </ul>
+      <section aria-labelledby="step-title" className="rounded-3xl border-2 border-ink bg-paper p-5 shadow-[6px_6px_0_var(--color-ink)] sm:p-6">
+        <AnimatePresence mode="wait">
+          <motion.div key={step} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18 }}>
+            <h2 id="step-title" className="mb-3 font-display text-2xl font-semibold">
+              {steps[step].title}
+            </h2>
+            {steps[step].body}
+          </motion.div>
+        </AnimatePresence>
       </section>
-    </div>
+
+      <StepNav step={step} count={steps.length} onBack={() => (step === 0 ? onBack() : setStep(step - 1))} onNext={() => (last ? onStart() : setStep(step + 1))} last="Start editing" />
+    </main>
   )
 }

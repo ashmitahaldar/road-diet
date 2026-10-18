@@ -25,6 +25,12 @@
   --color-meter-travel: #2b8fd6;
   --color-meter-fairness: #a24cb8;
 
+  /* Resident portraits only (characters.tsx): skin tones, added with the detailed faces. */
+  --color-skin-1: #f3cfae;
+  --color-skin-2: #d9a06a;
+  --color-skin-3: #a86f42;
+  --color-skin-4: #6e4529;
+
   --font-display: "Fredoka", ui-rounded, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }

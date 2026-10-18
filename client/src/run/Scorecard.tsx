@@ -228,10 +228,20 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
           <h3 id="limits-title" className="font-display text-lg font-semibold">
             Limitations
           </h3>
-          <div className="mt-2">
-            <LimitationsList level={level} />
-          </div>
-          <a href="/data" target="_blank" className="mt-3 inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
+          <p className="mt-1">This is a simplified estimate, not a prediction.</p>
+          {/* The heading and the key caveat always show; the full list folds away to keep the scorecard short. */}
+          <details className="group mt-2">
+            <summary className="inline-flex min-h-11 cursor-pointer items-center gap-1 font-semibold focus-visible:outline-4 focus-visible:outline-primary">
+              <span aria-hidden className="transition-transform group-open:rotate-90 motion-reduce:transition-none">
+                ▸
+              </span>
+              What the model can’t know
+            </summary>
+            <div className="mt-1">
+              <LimitationsList level={level} />
+            </div>
+          </details>
+          <a href="/data" target="_blank" className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
             Data & Limitations
           </a>
         </section>

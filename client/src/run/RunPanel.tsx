@@ -20,7 +20,7 @@ export function RunButton({ running, kind, onRun }: { running: boolean; kind: Sh
       onClick={running ? undefined : onRun}
       // aria-disabled, not disabled: a disabled button drops keyboard focus, and the scorecard would hand it back to <body>.
       aria-disabled={running}
-      className="min-h-14 w-full bg-primary text-xl text-paper shadow-[4px_4px_0_var(--color-ink)] hover:bg-primary hover:brightness-110 aria-disabled:cursor-wait aria-disabled:opacity-70"
+      className="min-h-12 w-full bg-primary text-lg text-paper shadow-[4px_4px_0_var(--color-ink)] hover:bg-primary hover:brightness-110 aria-disabled:cursor-wait aria-disabled:opacity-70"
     >
       {running ? 'Running…' : kind === 'today' ? 'Run a day' : 'Run another day'}
     </Button>
@@ -44,7 +44,7 @@ export function MetersCard({ level, base, shown, running, onShowScore }: { level
           </button>
         )}
       </p>
-      <div className={`flex flex-col gap-3 transition-opacity ${shown.kind === 'stale' ? 'opacity-60' : ''}`}>
+      <div className={`flex flex-col gap-2 transition-opacity ${shown.kind === 'stale' ? 'opacity-60' : ''}`}>
         <Meter
           label="Emissions cut"
           color="var(--color-meter-emissions)"
@@ -84,7 +84,7 @@ export function Residents({ base, shown, running, runId }: { base: Metrics; show
   return (
     <div>
       {shown.react?.reactions.every((r) => r.source === 'gemini') && !running && <GeminiLabel />}
-      <ul aria-labelledby="residents-title" className="mt-1 flex flex-col gap-3">
+      <ul aria-labelledby="residents-title" className="mt-1 flex flex-col gap-2">
         {Object.values(PERSONAS).map((p) => (
           <PersonaCard
             key={p.id}
@@ -112,11 +112,11 @@ function Meter({ label, color, value, detail, fill, mark }: { label: string; col
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-semibold">{label}</span>
-        <span className="font-display text-lg font-semibold tabular-nums">{value}</span>
+        <span className="text-sm font-semibold">{label}</span>
+        <span className="font-display font-semibold tabular-nums">{value}</span>
       </div>
       {fill !== undefined && (
-      <div className="relative h-4 overflow-hidden rounded-full border-2 border-ink bg-grid">
+      <div className="relative h-3 overflow-hidden rounded-full border-2 border-ink bg-grid">
         <motion.div
           className="h-full rounded-r-full"
           style={{ background: color }}
@@ -127,7 +127,7 @@ function Meter({ label, color, value, detail, fill, mark }: { label: string; col
         {mark !== undefined && mark > 0 && <div aria-hidden className="absolute inset-y-0 w-0.5 bg-ink" style={{ left: pct(mark) }} />}
       </div>
       )}
-      <p className="mt-0.5 text-sm tabular-nums">{detail}</p>
+      <p className="text-xs tabular-nums">{detail}</p>
     </div>
   )
 }
@@ -141,42 +141,41 @@ function PersonaCard({ p, m, base, running, runId, reaction }: CardProps) {
   const { word } = mood(h)
   const tripMs = (RUN_MS - 400) * Math.min(1, t / Math.max(...Object.values(m.travelTimeMin)))
   return (
-    <li className="relative rounded-2xl border-2 border-ink bg-paper p-3">
-      <div className="flex items-center gap-3">
+    <li className="relative rounded-xl border-2 border-ink bg-paper p-2">
+      <div className="flex items-center gap-2">
         <motion.div
           key={`${runId}-${word}`}
           initial={reduce || runId === 0 ? false : { scale: 0.6 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 500, damping: 12, delay: reduce ? 0 : RUN_MS / 1000 - 0.3 }}
         >
-          <Face id={p.id} happiness={h} />
+          <Face id={p.id} happiness={h} className="size-10" />
         </motion.div>
         <div className="min-w-0">
-          <p className="font-semibold">{p.name}</p>
-          <p className="text-sm tabular-nums">
+          <p className="text-sm font-semibold">{p.name}</p>
+          <p className="text-xs tabular-nums">
             {word} · {h.toFixed(0)}/100 <span className="sr-only">happiness</span>
             {h.toFixed(0) !== base.happiness[p.id].toFixed(0) && ` (${signed(h - base.happiness[p.id], 0)})`}
           </p>
         </div>
       </div>
-      <p className="mt-2 text-sm">
+      <p className="mt-1 text-xs">
         <strong>Wants</strong> {p.wants}.
       </p>
-      {/* After a run the speech bubble takes the blurb's place, so the reaction is what the player reads. */}
-      {reaction && !running ? <SpeechBubble key={runId} reaction={reaction} /> : <p className="mt-1 text-sm">{p.blurb}</p>}
-      <p className="mt-1 text-sm tabular-nums">
+      {reaction && !running && <SpeechBubble key={runId} reaction={reaction} />}
+      <p className="mt-1 text-xs tabular-nums">
         {MODE_WORD[p.trip.mode]} {p.trip.distanceKm} km · <strong>{t.toFixed(1)} min</strong>
         {Math.abs(t - base.travelTimeMin[p.id]) >= 0.05 && ` (${signed(t - base.travelTimeMin[p.id])})`}
       </p>
-      <div aria-hidden className="relative mt-2 h-7 rounded-full border-2 border-ink bg-grid">
+      <div aria-hidden className="relative mt-1 h-5 rounded-full border-2 border-ink bg-grid">
         <motion.div
           key={runId}
-          className="absolute top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full border-2 border-ink bg-paper"
-          initial={{ left: runId === 0 || reduce ? 'calc(100% - 1.5rem)' : '0%' }}
-          animate={{ left: 'calc(100% - 1.5rem)' }}
+          className="absolute top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded-full border-2 border-ink bg-paper"
+          initial={{ left: runId === 0 || reduce ? 'calc(100% - 1.25rem)' : '0%' }}
+          animate={{ left: 'calc(100% - 1.25rem)' }}
           transition={{ duration: running && !reduce ? tripMs / 1000 : 0, ease: 'easeInOut' }}
         >
-          <ElementIcon id={MODE_ICON[p.trip.mode]} size={18} />
+          <ElementIcon id={MODE_ICON[p.trip.mode]} size={13} />
         </motion.div>
       </div>
     </li>
@@ -189,7 +188,7 @@ function SpeechBubble({ reaction }: { reaction: Reaction | 'loading' }) {
     <motion.div
       initial={reduce ? false : { opacity: 0, y: 6, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      className="relative mt-3 rounded-xl border-2 border-ink bg-paper px-3 py-2 font-medium shadow-[3px_3px_0_var(--color-ink)] before:absolute before:-top-2 before:left-5 before:size-3 before:rotate-45 before:border-t-2 before:border-l-2 before:border-ink before:bg-paper"
+      className="relative mt-2.5 rounded-xl border-2 border-ink bg-paper px-2.5 py-1.5 text-sm font-medium shadow-[2px_2px_0_var(--color-ink)] before:absolute before:-top-2 before:left-5 before:size-3 before:rotate-45 before:border-t-2 before:border-l-2 before:border-ink before:bg-paper"
     >
       {reaction === 'loading' ? (
         <span aria-label="Waiting for a reaction" className="inline-flex gap-1">

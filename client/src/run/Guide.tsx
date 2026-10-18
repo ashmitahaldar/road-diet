@@ -33,9 +33,9 @@ const TIPS: { text: (m: Metrics) => string; applies?: (layout: Layout, m: Metric
 ]
 
 const GOAL: Record<GoalCheck['kind'], (g: GoalCheck) => string> = {
-  emissions: (g) => `Emissions cut ${g.value.toFixed(1)}% of ${g.target}%`,
-  happiness: (g) => `Least happy resident ${g.value.toFixed(0)} of ${g.target}`,
-  safety: (g) => `Safety ${g.value.toFixed(0)} of ${g.target}`,
+  emissions: (g) => `Emissions cut ${g.value.toFixed(1)}% / ${g.target}%`,
+  happiness: (g) => `Least happy ${g.value.toFixed(0)} / ${g.target}`,
+  safety: (g) => `Safety ${g.value.toFixed(0)} / ${g.target}`,
 }
 
 /**
@@ -58,8 +58,7 @@ export function Guide({ level, layout, metrics }: { level: Level; layout: Layout
       : 'This meets the goal! Run a day, or try for more stars:'
   return (
     <div>
-      <p className="text-sm">Live, as you edit:</p>
-      <ul className="mt-1 flex flex-col gap-1 text-sm tabular-nums">
+      <ul className="flex flex-col gap-1 text-sm tabular-nums">
         {score.goals.map((g) => (
           <li key={g.kind} className="flex items-center gap-2">
             <span aria-hidden className={`grid size-5 shrink-0 place-items-center rounded-full border-2 border-ink text-xs font-bold ${g.met ? 'bg-ink text-paper' : 'border-dashed'}`}>
@@ -70,13 +69,15 @@ export function Guide({ level, layout, metrics }: { level: Level; layout: Layout
           </li>
         ))}
       </ul>
-      <div aria-live="polite" className="relative mt-3 rounded-xl border-2 border-ink bg-loading/20 px-3 py-2">
+      <div aria-live="polite" className="relative mt-2 rounded-xl border-2 border-ink bg-loading/20 px-2.5 py-2 text-sm">
         <p className="font-semibold">{status}</p>
-        {more && <p className="mt-1 min-h-12">{all[i]}</p>}
+        {more && <p className="mt-1">{all[i]}</p>}
       </div>
       {more && (
         <div className="mt-2 flex items-center justify-between gap-2">
-          <Button onClick={() => setN(i + 1)}>Another idea</Button>
+          <Button onClick={() => setN(i + 1)} className="min-h-9 text-sm">
+            Another idea
+          </Button>
           <span className="text-sm tabular-nums">
             {i + 1}/{all.length}
           </span>

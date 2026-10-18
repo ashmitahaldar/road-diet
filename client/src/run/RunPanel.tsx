@@ -1,8 +1,10 @@
-import { residentsOf, type ElementId, type Level, type Metrics, type Mode, type Persona, type PersonaId, type ReactResult, type Reaction } from '@road-diet/shared'
+import { residentsOf, type ElementId, type Layout, type Level, type Topic, type Metrics, type Mode, type Persona, type PersonaId, type ReactResult, type Reaction } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
+import type { ReactNode } from 'react'
 import { ElementIcon } from '../editor/elementVisuals'
 import { Face, mood } from '../story/characters'
 import { Button, GeminiLabel, signed } from '../ui'
+import { WhyButton } from './Why'
 
 export const RUN_MS = 3200
 
@@ -10,7 +12,7 @@ const MODE_ICON: Record<Mode, ElementId> = { car: 'car_lane', bus: 'bus_lane', b
 const MODE_WORD: Record<Mode, string> = { car: 'drives', bus: 'rides the bus', bike: 'bikes', walk: 'walks' }
 
 /** Shown state: today's street before the first run, then the latest run. `react` is null while /api/react is pending. */
-export type Shown = { metrics: Metrics; kind: 'today' | 'run' | 'stale'; react?: ReactResult | null }
+export type Shown = { metrics: Metrics; layout: Layout; kind: 'today' | 'run' | 'stale'; react?: ReactResult | null }
 
 const mean = (r: Record<PersonaId, number>) => Object.values(r).reduce((a, b) => a + b, 0) / Object.keys(r).length
 
@@ -33,6 +35,7 @@ export function MetersCard({ level, base, shown, running, onShowScore }: { level
   const travel = mean(m.travelTimeMin)
   const emissionsScale = Math.max(40, 2 * (goal.minEmissionsReductionPct ?? 0))
   const caption = { today: "Today's street.", run: 'After one day.', stale: 'Street changed. Run again to update.' }[shown.kind]
+  const why = (topic: Topic, label: string) => shown.kind === 'run' && !running && <WhyButton level={level} layout={shown.layout} topic={topic} label={label} />
 
   return (
     <div>
@@ -52,6 +55,7 @@ export function MetersCard({ level, base, shown, running, onShowScore }: { level
           detail={goal.minEmissionsReductionPct ? `goal ${goal.minEmissionsReductionPct}%` : `${m.emissionsKgPerHour.toFixed(0)} kg CO₂e/h`}
           fill={m.emissionsReductionPct / emissionsScale}
           mark={goal.minEmissionsReductionPct && goal.minEmissionsReductionPct / emissionsScale}
+          why={why('emissions', 'Emissions cut')}
         />
         <Meter
           label="Safety"
@@ -60,8 +64,9 @@ export function MetersCard({ level, base, shown, running, onShowScore }: { level
           detail={`${signed(m.safetyScore - base.safetyScore, 0)} vs today`}
           fill={m.safetyScore / 100}
           mark={goal.minSafety && goal.minSafety / 100}
+          why={why('safety', 'Safety')}
         />
-        <Meter label="Average trip" color="var(--color-meter-travel)" value={`${travel.toFixed(1)} min`} detail={`${signed(travel - mean(base.travelTimeMin))} min vs today`} />
+        <Meter label="Average trip" color="var(--color-meter-travel)" value={`${travel.toFixed(1)} min`} detail={`${signed(travel - mean(base.travelTimeMin))} min vs today`} why={why('travel', 'Average trip')} />
         <Meter
           label="Fairness"
           color="var(--color-meter-fairness)"
@@ -69,6 +74,7 @@ export function MetersCard({ level, base, shown, running, onShowScore }: { level
           detail={`least happy resident${goal.minHappiness ? ` · goal ${goal.minHappiness}` : ''}`}
           fill={m.fairness / 100}
           mark={goal.minHappiness && goal.minHappiness / 100}
+          why={why('fairness', 'Fairness')}
         />
       </div>
       <p aria-live="polite" className="sr-only">
@@ -95,6 +101,7 @@ export function Residents({ level, base, shown, running, runId }: { level: Level
             running={running}
             runId={runId}
             reaction={shown.kind === 'today' ? undefined : (shown.react?.reactions.find((r) => r.personaId === p.id) ?? 'loading')}
+            why={shown.kind === 'run' && !running && <WhyButton level={level} layout={shown.layout} topic={p.id} label={p.name} />}
           />
         ))}
       </ul>
@@ -107,7 +114,7 @@ export function Residents({ level, base, shown, running, runId }: { level: Level
   )
 }
 
-function Meter({ label, color, value, detail, fill, mark }: { label: string; color: string; value: string; detail: string; fill?: number; mark?: number }) {
+function Meter({ label, color, value, detail, fill, mark, why }: { label: string; color: string; value: string; detail: string; fill?: number; mark?: number; why?: ReactNode }) {
   const reduce = useReducedMotion()
   const pct = (x: number) => `${Math.max(0, Math.min(1, x)) * 100}%`
   return (
@@ -128,14 +135,17 @@ function Meter({ label, color, value, detail, fill, mark }: { label: string; col
         {mark !== undefined && mark > 0 && <div aria-hidden className="absolute inset-y-0 w-0.5 bg-ink" style={{ left: pct(mark) }} />}
       </div>
       )}
-      <p className="text-xs tabular-nums">{detail}</p>
+      <div className="mt-0.5 flex flex-wrap items-center justify-between gap-x-2">
+        <p className="text-xs tabular-nums">{detail}</p>
+        {why}
+      </div>
     </div>
   )
 }
 
-type CardProps = { p: Persona; m: Metrics; base: Metrics; running: boolean; runId: number; reaction?: Reaction | 'loading' }
+type CardProps = { p: Persona; m: Metrics; base: Metrics; running: boolean; runId: number; reaction?: Reaction | 'loading'; why?: ReactNode }
 
-function PersonaCard({ p, m, base, running, runId, reaction }: CardProps) {
+function PersonaCard({ p, m, base, running, runId, reaction, why }: CardProps) {
   const reduce = useReducedMotion()
   const h = m.happiness[p.id]
   const t = m.travelTimeMin[p.id]
@@ -179,6 +189,7 @@ function PersonaCard({ p, m, base, running, runId, reaction }: CardProps) {
           <ElementIcon id={MODE_ICON[p.trip.mode]} size={13} />
         </motion.div>
       </div>
+      {why && <div className="mt-1.5 flex flex-wrap justify-end">{why}</div>}
     </li>
   )
 }

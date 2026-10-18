@@ -1,11 +1,11 @@
-import { ELEMENTS, LEVELS, computeMetrics, fallbackResult, fallbackStory, scoreRun, validateLayout, type ElementId } from '@road-diet/shared'
+import { ELEMENTS, LEVELS, TOPICS, computeMetrics, fallbackQuiz, fallbackResult, fallbackStory, fallbackWhy, quizCandidates, scoreRun, validateLayout, whyFacts, type ElementId } from '@road-diet/shared'
 import express from 'express'
 import { existsSync } from 'node:fs'
 import { extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
 import { connect, type Db } from './db'
-import { postcard, react, story, type GeminiConfig } from './gemini'
+import { explain, postcard, quiz, react, story, type GeminiConfig } from './gemini'
 import { fairnessBeatsPct, getStats, insertRun } from './runs'
 
 const CLIENT_DIST = fileURLToPath(new URL('../../client/dist', import.meta.url))
@@ -63,6 +63,8 @@ export function createApp({
   const statsLimited = rateLimiter(statsPerMinute)
   const storyLimited = rateLimiter(reactPerMinute)
   const postcardLimited = rateLimiter(5)
+  const explainLimited = rateLimiter(30)
+  const quizLimited = rateLimiter(reactPerMinute)
   app.set('trust proxy', 'loopback')
   app.use(express.json({ limit: '16kb' }))
 
@@ -96,6 +98,23 @@ export function createApp({
     const base = computeMetrics(level.corridor.baselineLayout, level)
     const facts = { level, layout, metrics, base, score: scoreRun(metrics, level) }
     res.json(storyLimited(req.ip) ? fallbackStory(level, metrics, base) : await story(facts, gemini))
+  })
+
+  // Pip's "Why?" on a meter or a resident: facts from the model, worded by Gemini.
+  app.post('/api/explain', async (req, res) => {
+    const run = parseRun(req.body)
+    if (!run.ok) return void res.status(run.status).json(run.body)
+    const topic = z.enum(TOPICS as [string, ...string[]]).safeParse((req.body as { topic?: unknown }).topic)
+    if (!topic.success) return void res.status(400).json({ error: 'invalid-request' })
+    const facts = whyFacts(run.layout, run.level, topic.data as (typeof TOPICS)[number])
+    res.json(explainLimited(req.ip) ? fallbackWhy(facts) : await explain(facts, run.level, gemini))
+  })
+
+  app.post('/api/quiz', async (req, res) => {
+    const run = parseRun(req.body)
+    if (!run.ok) return void res.status(run.status).json(run.body)
+    const candidates = quizCandidates(run.layout, run.level)
+    res.json(quizLimited(req.ip) ? fallbackQuiz(candidates[0]) : await quiz(candidates, run.level, gemini))
   })
 
   app.post('/api/postcard', async (req, res) => {

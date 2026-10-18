@@ -1,4 +1,4 @@
-import { addElement, computeMetrics, earnedBadges, fallbackResult, fallbackStory, type DayStory, lessons, type BadgeId, moveElement, removeElement, resizeElement, scoreRun, type ElementId, type Layout, type Lesson, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { addElement, computeMetrics, earnedBadges, fallbackQuiz, fallbackResult, fallbackStory, quizCandidates, type DayStory, type Quiz, lessons, type BadgeId, moveElement, removeElement, resizeElement, scoreRun, type ElementId, type Layout, type Lesson, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { useReducedMotion } from 'motion/react'
 import { Component, Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BudgetBar, Palette, SelectionBar } from '../editor/controls'
@@ -106,6 +106,23 @@ async function fetchStory(level: Level, layout: Layout, metrics: Metrics, base: 
   return fallbackStory(level, metrics, base)
 }
 
+/** One quick-check question about this design; offline, the first question the model can answer. */
+async function fetchQuiz(level: Level, layout: Layout): Promise<Quiz> {
+  try {
+    const res = await fetch('/api/quiz', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ levelId: level.id, layout }),
+      signal: AbortSignal.timeout(10000),
+    })
+    const body = (await res.json()) as Partial<Quiz>
+    if (res.ok && typeof body.question === 'string' && Array.isArray(body.options) && typeof body.answer === 'number') return body as Quiz
+  } catch {
+    // fall through to the built-in question
+  }
+  return fallbackQuiz(quizCandidates(layout, level)[0])
+}
+
 /** A generated illustration, or null: the scorecard then shows the drawn card of the design. */
 async function fetchPostcard(level: Level, layout: Layout): Promise<string | null> {
   try {
@@ -148,8 +165,8 @@ type Props = { level: Level; levels: Level[]; collection: Collection; onResult: 
 
 export function Game({ level, levels, collection, onResult, onExit }: Props) {
   const [layout, setLayout] = useState(level.corridor.baselineLayout)
-  // story: null while loading; postcard: undefined while loading, null when there is no generated image.
-  const [run, setRun] = useState<{ layout: Layout; metrics: Metrics; react: ReactResult | null; others?: Others; story: DayStory | null; postcard?: string | null } | null>(null)
+  // story and quiz: null while loading; postcard: undefined while loading, null when there is no generated image.
+  const [run, setRun] = useState<{ layout: Layout; metrics: Metrics; react: ReactResult | null; others?: Others; story: DayStory | null; quiz: Quiz | null; postcard?: string | null } | null>(null)
   const [runId, setRunId] = useState(0)
   const [running, setRunning] = useState(false)
   const [scoreOpen, setScoreOpen] = useState(false)
@@ -220,17 +237,18 @@ export function Game({ level, levels, collection, onResult, onExit }: Props) {
   const sel = selected !== null && selected < layout.elements.length ? selected : null
 
   const shown: Shown = !run
-    ? { metrics: base, kind: 'today' }
-    : { metrics: run.metrics, react: run.react, kind: JSON.stringify(run.layout) === JSON.stringify(layout) ? 'run' : 'stale' }
+    ? { metrics: base, layout: level.corridor.baselineLayout, kind: 'today' }
+    : { metrics: run.metrics, layout: run.layout, react: run.react, kind: JSON.stringify(run.layout) === JSON.stringify(layout) ? 'run' : 'stale' }
 
   const runDay = () => {
     reach('run')
     const metrics = computeMetrics(layout, level)
-    setRun({ layout, metrics, react: null, story: null })
+    setRun({ layout, metrics, react: null, story: null, quiz: null })
     // A slow reply for an older run must not overwrite a newer one.
     fetchReactions(level, layout, metrics).then((react) => setRun((cur) => (cur?.layout === layout ? { ...cur, react } : cur)))
     saveAndFetchStats(level, layout).then((others) => setRun((cur) => (cur?.layout === layout ? { ...cur, others } : cur)))
     fetchStory(level, layout, metrics, base).then((story) => setRun((cur) => (cur?.layout === layout ? { ...cur, story } : cur)))
+    fetchQuiz(level, layout).then((quiz) => setRun((cur) => (cur?.layout === layout ? { ...cur, quiz } : cur)))
     fetchPostcard(level, layout).then((postcard) => setRun((cur) => (cur?.layout === layout ? { ...cur, postcard } : cur)))
     setRunId((n) => n + 1)
     setRunning(true)
@@ -426,6 +444,7 @@ export function Game({ level, levels, collection, onResult, onExit }: Props) {
           base={base}
           react={run.react}
           story={run.story}
+          quiz={run.quiz}
           postcard={run.postcard}
           stats={run.others?.stats}
           fairnessBeatsPct={run.others?.beats ?? null}

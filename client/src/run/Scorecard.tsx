@@ -1,4 +1,4 @@
-import { PANELS, earnedBadges, residentsOf, type BadgeId, type DayStory, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { PANELS, earnedBadges, residentsOf, type BadgeId, type DayStory, type Quiz, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
@@ -7,8 +7,9 @@ import { BadgeArt } from './Badges'
 import { LessonLine } from './Lesson'
 import { Button, GeminiLabel, signed } from '../ui'
 import { Others } from './Others'
+import { QuickCheck } from './QuickCheck'
 
-type Props = { fresh?: BadgeId[]; story?: DayStory | null; postcard?: string | null; open: boolean; onClose: () => void; level: Level; layout: Layout; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; fairnessBeatsPct?: number | null; closeLabel?: string }
+type Props = { fresh?: BadgeId[]; story?: DayStory | null; quiz?: Quiz | null; postcard?: string | null; open: boolean; onClose: () => void; level: Level; layout: Layout; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; fairnessBeatsPct?: number | null; closeLabel?: string }
 
 const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> = {
   emissions: (g) => [`Cut emissions by at least ${g.target}%`, `${g.value.toFixed(1)}%`],
@@ -34,7 +35,7 @@ async function copy(text: string) {
   }
 }
 
-export function Scorecard({ fresh = [], story = null, postcard, open, onClose, level, layout, metrics, base, react, stats, fairnessBeatsPct = null, closeLabel = 'Keep editing' }: Props) {
+export function Scorecard({ fresh = [], story = null, quiz = null, postcard, open, onClose, level, layout, metrics, base, react, stats, fairnessBeatsPct = null, closeLabel = 'Keep editing' }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
@@ -209,6 +210,8 @@ export function Scorecard({ fresh = [], story = null, postcard, open, onClose, l
             ))}
           </ul>
         </section>
+
+        <QuickCheck key={quiz ? `${quiz.id}-${quiz.question}` : 'loading'} quiz={quiz} />
 
         <section aria-labelledby="goals-title">
           <h3 id="goals-title" className="font-display text-lg font-semibold">

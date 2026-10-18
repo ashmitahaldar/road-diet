@@ -25,8 +25,8 @@ export const MOUNT_PLEASANT_LEVEL: Level = {
     },
     senior_walker: {
       name: 'Mrs. Rossi',
-      blurb: 'Retired teacher who walks to the bank and the shops (fictional resident).',
-      ask: 'I walk to the bank and the shops most days. The cars go fast. I’d like room to walk and a spot where my son can drop me off.',
+      blurb: 'Retired teacher who walks to the pharmacy and the shops (fictional resident).',
+      ask: 'I walk to the pharmacy and the shops most days. The cars go fast. I’d like room to walk and a spot where my son can drop me off.',
       wants: 'a calmer walk and a drop-off spot',
       look: 'rossi',
     },

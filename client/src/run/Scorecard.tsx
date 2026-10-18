@@ -1,13 +1,14 @@
-import { earnedBadges, residentsOf, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { earnedBadges, residentsOf, type BadgeId, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
 import { Face, Pip } from '../story/characters'
+import { BadgeArt } from './Badges'
 import { LessonLine } from './Lesson'
 import { Button, GeminiLabel, signed } from '../ui'
 import { Others } from './Others'
 
-type Props = { open: boolean; onClose: () => void; level: Level; layout: Layout; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; fairnessBeatsPct?: number | null; closeLabel?: string }
+type Props = { fresh?: BadgeId[]; open: boolean; onClose: () => void; level: Level; layout: Layout; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; fairnessBeatsPct?: number | null; closeLabel?: string }
 
 const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> = {
   emissions: (g) => [`Cut emissions by at least ${g.target}%`, `${g.value.toFixed(1)}%`],
@@ -33,7 +34,7 @@ async function copy(text: string) {
   }
 }
 
-export function Scorecard({ open, onClose, level, layout, metrics, base, react, stats, fairnessBeatsPct = null, closeLabel = 'Keep editing' }: Props) {
+export function Scorecard({ fresh = [], open, onClose, level, layout, metrics, base, react, stats, fairnessBeatsPct = null, closeLabel = 'Keep editing' }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
@@ -210,11 +211,15 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
             <h3 id="badges-title" className="font-display text-lg font-semibold">
               Badges
             </h3>
-            <ul className="mt-2 flex flex-wrap gap-2">
+            <ul className="mt-2 grid gap-2 sm:grid-cols-2">
               {badges.map((b) => (
-                <li key={b.id} className="rounded-xl border-2 border-ink bg-loading/40 px-3 py-1.5">
-                  <strong className="font-semibold">{b.name}</strong>
-                  <span className="block text-sm">{b.description}</span>
+                <li key={b.id} className="flex items-center gap-3 rounded-xl border-2 border-ink bg-loading/30 px-3 py-2">
+                  <BadgeArt id={b.id} className="size-14" />
+                  <span>
+                    <strong className="font-display font-semibold">{b.name}</strong>
+                    {fresh.includes(b.id) && <span className="ml-2 rounded-full bg-ink px-2 py-0.5 text-xs font-semibold text-paper">New!</span>}
+                    <span className="block text-sm">{b.description}</span>
+                  </span>
                 </li>
               ))}
             </ul>

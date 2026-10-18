@@ -3,8 +3,16 @@ import {
   residentsOf,
   describeLayout,
   fallbackResult,
+  fallbackQuiz,
   fallbackStory,
+  fallbackWhy,
+  grounded,
   moodFor,
+  toQuiz,
+  type Quiz,
+  type QuizCandidate,
+  type Why,
+  type WhyFacts,
   type DayStory,
   type Layout,
   type Level,
@@ -187,5 +195,75 @@ export async function postcard(layout: Layout, config: GeminiConfig & { imageMod
   } catch (err) {
     console.warn(`postcard: none (${err instanceof Error ? err.message : 'unknown error'})`)
     return null
+  }
+}
+
+const WhyOutput = z.object({ text: z.string().min(1).max(500) })
+const MAX_WHY_WORDS = 45
+
+/** Pip explains one result in plain words, using only the facts the model produced. */
+export function buildWhyPrompt(f: WhyFacts, level: Level) {
+  const system = [
+    'You are Pip, a friendly pigeon who helps players of a street-design learning game set in Toronto understand their results.',
+    'Answer the question in 2 short sentences, at most 40 words, for a curious teenager. Explain the cause, not just the result.',
+    'Use only the facts given. Copy any number exactly as written in the facts, and use at most two numbers. Do not invent numbers, places or people.',
+    'Do not praise or criticise lane types as such; explain what changed for people. Never mention politicians, parties, elections or voting.',
+    'Refer to residents by name, not by he or she. Do not repeat the street name.',
+    'Reply with JSON only: {"text":"..."}',
+  ].join('\n')
+  return { system, user: JSON.stringify({ street: level.name, question: f.question, facts: f.facts }) }
+}
+
+export async function explain(f: WhyFacts, level: Level, config: GeminiConfig): Promise<Why> {
+  const fallback = fallbackWhy(f)
+  if (!config.apiKey || !config.model) return fallback
+  const cfg = { fetch, timeoutMs: 6000, ...config } as Required<GeminiConfig>
+  try {
+    const text = (await callGemini(buildWhyPrompt(f, level), cfg, WhyOutput)).text.trim()
+    if (OFF_LIMITS.test(text) || words(text) > MAX_WHY_WORDS || !grounded(text, f.facts)) throw new Error('why failed the checks')
+    return { text, source: 'gemini' }
+  } catch (err) {
+    console.warn(`explain: using fallback (${err instanceof Error ? err.message : 'unknown error'})`)
+    return fallback
+  }
+}
+
+const QuizOutput = z.object({ id: z.string(), question: z.string().min(1).max(200), why: z.string().min(1).max(500) })
+
+/** Gemini picks the most useful question and words it; the answer options always come from the model. */
+export function buildQuizPrompt(candidates: QuizCandidate[], level: Level) {
+  const system = [
+    'You write one quick-check question for a street-design learning game set in Toronto, about the design the player just tested.',
+    'Pick the candidate whose idea would teach this player the most. Reword its question to be friendly and clear, at most 20 words, without giving away the answer.',
+    'Then write "why": 1-2 sentences, at most 40 words, explaining the correct answer using only that candidate\'s facts. Copy any number exactly as written.',
+    'Do not praise or criticise lane types as such. Never mention politicians, parties, elections or voting. Refer to residents by name.',
+    'Reply with JSON only: {"id":"<candidate id>","question":"...","why":"..."}',
+  ].join('\n')
+  const user = JSON.stringify({ street: level.name, candidates: candidates.map((c) => ({ id: c.id, question: c.question, correctAnswer: c.correct, facts: [c.explain, ...c.facts] })) })
+  return { system, user }
+}
+
+export async function quiz(candidates: QuizCandidate[], level: Level, config: GeminiConfig): Promise<Quiz> {
+  const fallback = fallbackQuiz(candidates[0])
+  if (!config.apiKey || !config.model) return fallback
+  const cfg = { fetch, timeoutMs: 7000, ...config } as Required<GeminiConfig>
+  try {
+    const out = await callGemini(buildQuizPrompt(candidates, level), cfg, QuizOutput)
+    const c = candidates.find((x) => x.id === out.id)
+    if (!c) throw new Error('quiz picked an unknown question')
+    const question = out.question.trim()
+    const why = out.why.trim()
+    const facts = [c.explain, ...c.facts]
+    const ok =
+      !OFF_LIMITS.test(question + ' ' + why) &&
+      words(question) <= 24 &&
+      words(why) <= MAX_WHY_WORDS &&
+      !question.toLowerCase().includes(c.correct.toLowerCase()) &&
+      grounded(question, facts) &&
+      grounded(why, facts)
+    return ok ? toQuiz(c, question, why, 'gemini') : fallbackQuiz(c)
+  } catch (err) {
+    console.warn(`quiz: using fallback (${err instanceof Error ? err.message : 'unknown error'})`)
+    return fallback
   }
 }

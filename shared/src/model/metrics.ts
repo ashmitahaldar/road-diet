@@ -64,22 +64,43 @@ function personaMetrics(p: Persona, e: Evaluation, base: Evaluation) {
   }
 }
 
+export type Factor = keyof ReturnType<typeof personaMetrics>
+
+/** Happiness points each factor added (or took away) vs today, before the empty-space penalty and the 0-100 clamp. */
+function factorPoints(p: Persona, cur: Evaluation, base: Evaluation): Record<Factor, number> {
+  const m = personaMetrics(p, cur, base)
+  const m0 = personaMetrics(p, base, base)
+  const weights = Object.entries(p.weights) as [Factor, number][]
+  const totalW = weights.reduce((s, [, w]) => s + w, 0)
+  const out = { travelTime: 0, safety: 0, comfort: 0, access: 0 }
+  for (const [k, w] of weights) out[k] = (100 * w * (m[k] - m0[k])) / totalW
+  return out
+}
+
+export function happinessFactors(layout: Layout, level: Level): Record<PersonaId, Record<Factor, number>> {
+  const base = evaluate(level.corridor.baselineLayout, level.corridor)
+  const cur = evaluate(layout, level.corridor)
+  return Object.fromEntries(Object.values(PERSONAS).map((p) => [p.id, factorPoints(p, cur, base)])) as Record<PersonaId, Record<Factor, number>>
+}
+
+/** Happiness lost to width left empty beyond today's, per resident. */
+export function emptySpacePenalty(layout: Layout, level: Level) {
+  const extra = validateLayout(layout, level).unusedWidthM - validateLayout(level.corridor.baselineLayout, level).unusedWidthM
+  return MODEL.unusedPenaltyPerM.value * extra
+}
+
 /** Single entry point: full Metrics for a layout on a level. Assumes the layout passed validateLayout. */
 export function computeMetrics(layout: Layout, level: Level): Metrics {
   const { corridor } = level
   const base = evaluate(corridor.baselineLayout, corridor)
   const cur = evaluate(layout, corridor)
   const unusedWidthM = validateLayout(layout, level).unusedWidthM
-  const extraUnused = unusedWidthM - validateLayout(corridor.baselineLayout, level).unusedWidthM
+  const penalty = emptySpacePenalty(layout, level)
 
   const happiness = {} as Record<PersonaId, number>
   for (const p of Object.values(PERSONAS)) {
-    const m = personaMetrics(p, cur, base)
-    const m0 = personaMetrics(p, base, base)
-    const weights = Object.entries(p.weights) as [keyof typeof m, number][]
-    const totalW = weights.reduce((s, [, w]) => s + w, 0)
-    const change = weights.reduce((s, [k, w]) => s + w * (m[k] - m0[k]), 0) / totalW
-    happiness[p.id] = clamp(p.baselineHappiness + 100 * change - MODEL.unusedPenaltyPerM.value * extraUnused, 0, 100)
+    const points = Object.values(factorPoints(p, cur, base)).reduce((a, b) => a + b, 0)
+    happiness[p.id] = clamp(p.baselineHappiness + points - penalty, 0, 100)
   }
   const values = Object.values(happiness)
 

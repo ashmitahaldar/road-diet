@@ -69,3 +69,35 @@ export function StepNav({ step, count, onBack, onNext, last }: { step: number; c
     </div>
   )
 }
+
+const infoLink = 'inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2'
+
+/** An "i" button that opens the disclaimer and info links in a native popover (Escape and outside clicks close it). */
+export function InfoButton({ id, newTab = false, square = false, panelClassName = '', children }: { id: string; newTab?: boolean; square?: boolean; panelClassName?: string; children?: ReactNode }) {
+  const target = newTab ? '_blank' : undefined
+  return (
+    <>
+      <button
+        type="button"
+        popoverTarget={id}
+        aria-label="About this game"
+        className={`grid size-11 shrink-0 place-items-center border-2 border-ink bg-paper font-display text-xl font-semibold hover:bg-grid focus-visible:outline-4 focus-visible:outline-primary ${square ? 'rounded-xl' : 'rounded-full shadow-[2px_2px_0_var(--color-ink)]'}`}
+      >
+        i
+      </button>
+      <div id={id} popover="auto" className={`inset-auto m-0 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border-2 border-ink bg-paper p-4 text-sm text-ink shadow-[4px_4px_0_var(--color-ink)] ${panelClassName}`}>
+        <p>A learning tool, not a forecast. Residents are fictional.</p>
+        <p className="mt-1">Hosted on Vultr.</p>
+        <p className="flex gap-4">
+          <a href="/about" target={target} className={infoLink}>
+            About
+          </a>
+          <a href="/data" target={target} className={infoLink}>
+            Data & Limitations
+          </a>
+        </p>
+        {children}
+      </div>
+    </>
+  )
+}

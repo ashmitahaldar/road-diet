@@ -13,7 +13,7 @@ import type { CameraApi } from '../run/Street3D'
 import { TOUR, TOUR_KEY, Tour, type TourStep } from '../run/Tour'
 import { Pip } from '../story/characters'
 import { isMuted, play, setMuted } from '../sound'
-import { Button, Panel } from '../ui'
+import { Button, InfoButton, Panel } from '../ui'
 import { goalSentence } from './Briefing'
 
 const Street3D = lazy(() => import('../run/Street3D'))
@@ -26,7 +26,6 @@ const TABS: [PanelId, string][] = [
   ['pip', 'Pip'],
   ['residents', 'Residents'],
 ]
-const link = 'font-semibold text-primary underline underline-offset-2'
 
 function useWide() {
   const [wide, setWide] = useState(() => matchMedia(WIDE).matches)
@@ -302,19 +301,13 @@ export function Game({ level, levels, collection, onResult, onExit }: Props) {
         <p className="text-sm">
           <strong>Goal:</strong> {goalSentence(level)}
         </p>
-        <p className="text-xs">
-          A learning tool, not a forecast. Residents are fictional. Hosted on Vultr.{' '}
-          <a href="/about" target="_blank" className={link}>
-            About
-          </a>{' '}
-          ·{' '}
-          <a href="/data" target="_blank" className={link}>
-            Data & Limitations
-          </a>
-        </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={onExit}>Streets</Button>
+        <a href="/about" target="_blank" className="inline-flex min-h-11 items-center rounded-xl border-2 border-ink bg-paper px-3 font-medium hover:bg-grid focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          About
+        </a>
+        <InfoButton id="game-info" newTab square panelClassName="top-16 right-4" />
         <BadgesButton collection={collection} levels={levels} />
         {webgl && !reduce && <Button onClick={() => setWant3d(!in3d)}>{in3d ? 'Edit in 2D' : 'Edit in 3D'}</Button>}
         {in3d && tour === null && <Button onClick={() => setTour(0)}>Tour</Button>}

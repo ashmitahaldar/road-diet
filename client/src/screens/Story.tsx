@@ -60,6 +60,7 @@ export function Story({ level, number, onDone, onBack }: { level: Level; number:
           )
         })}
       </ul>
+      <p className="-mt-3 text-center text-sm">Everyone you’ll meet here is fictional.</p>
 
       <section aria-label="Story" className="relative min-h-44 rounded-3xl border-2 border-ink bg-paper p-5 shadow-[6px_6px_0_var(--color-ink)] sm:p-6">
         <AnimatePresence mode="wait">

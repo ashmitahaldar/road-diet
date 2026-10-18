@@ -2,6 +2,7 @@ import { LEVELS, type BadgeId, type Level } from '@road-diet/shared'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { useRef, useState } from 'react'
 import { Background } from './Background'
+import { InfoButton } from './ui'
 import { AboutPage } from './AboutPage'
 import { DataPage } from './DataPage'
 import type { Collection } from './run/Badges'
@@ -15,6 +16,7 @@ type Screen = 'start' | 'levels' | 'story' | 'briefing' | 'play'
 const ORDER = Object.values(LEVELS)
 const BEST = 'road-diet:best-stars'
 const EARNED = 'road-diet:badges'
+const FOOTER = 'road-diet:footer'
 
 function read<T>(key: string): T {
   try {
@@ -36,6 +38,11 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('start')
   const [best, setBest] = useState(() => read<Record<string, number>>(BEST))
   const [collection, setCollection] = useState(() => read<Collection>(EARNED))
+  const [footer, setFooter] = useState(() => read<{ hidden?: boolean }>(FOOTER).hidden !== true)
+  const toggleFooter = (show: boolean) => {
+    setFooter(show)
+    save(FOOTER, { hidden: !show })
+  }
   const record = (id: string, stars: number, badges: BadgeId[]) => {
     if (stars > (best[id] ?? 0)) {
       const next = { ...best, [id]: stars }
@@ -99,7 +106,16 @@ export default function App() {
             </motion.div>
           </AnimatePresence>
         )}
-        {!(screen === 'play' && !infoPage) && (
+        {!(screen === 'play' && !infoPage) && !footer && (
+          <div className="fixed right-4 bottom-4 z-40">
+            <InfoButton id="page-info" newTab={!infoPage} panelClassName="right-4 bottom-18">
+              <button type="button" onClick={() => toggleFooter(true)} className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2">
+                Keep this on screen
+              </button>
+            </InfoButton>
+          </div>
+        )}
+        {!(screen === 'play' && !infoPage) && footer && (
           <footer className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-sm">
             <span>A learning tool, not a forecast. Residents are fictional.</span>
             <span className="flex flex-wrap items-center gap-x-4">
@@ -110,6 +126,14 @@ export default function App() {
               <a href="/data" target={infoPage ? undefined : '_blank'} className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
                 Data & Limitations
               </a>
+              <button
+                type="button"
+                aria-label="Hide footer"
+                onClick={() => toggleFooter(false)}
+                className="grid size-11 place-items-center rounded-full hover:bg-grid focus-visible:outline-4 focus-visible:outline-primary"
+              >
+                <span aria-hidden>✕</span>
+              </button>
             </span>
           </footer>
         )}

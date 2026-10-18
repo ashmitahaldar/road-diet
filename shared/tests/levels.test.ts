@@ -46,3 +46,10 @@ test('each street has its own residents in the same four roles', () => {
   expect(names(MOUNT_PLEASANT_LEVEL)).toEqual(['Dev', 'Maya', 'Mrs. Rossi', 'Omar'])
   expect(residentsOf(MOUNT_PLEASANT_LEVEL).student_cyclist.trip).toEqual(residentsOf(BLOOR_LEVEL).student_cyclist.trip)
 })
+
+test('a score that reads as meeting a star earns it (54.6 safety shows as 55)', () => {
+  const l = S(['sidewalk', 3.4], ['bike_protected', 2], ['parking', 2.4], ['car_lane', 3.3], ['car_lane', 3.3], ['sidewalk', 3.4])
+  const m = computeMetrics(l, MOUNT_PLEASANT_LEVEL)
+  expect(m.safetyScore).toBe(MOUNT_PLEASANT_LEVEL.stars.safety)
+  expect(stars(l, MOUNT_PLEASANT_LEVEL)).toBeGreaterThanOrEqual(2)
+})

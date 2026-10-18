@@ -100,14 +100,15 @@ export function computeMetrics(layout: Layout, level: Level): Metrics {
   const happiness = {} as Record<PersonaId, number>
   for (const p of Object.values(PERSONAS)) {
     const points = Object.values(factorPoints(p, cur, base)).reduce((a, b) => a + b, 0)
-    happiness[p.id] = clamp(p.baselineHappiness + points - penalty, 0, 100)
+    happiness[p.id] = Math.round(clamp(p.baselineHappiness + points - penalty, 0, 100))
   }
   const values = Object.values(happiness)
 
+  // Scores are rounded to the precision the game shows, so a goal or star never fails on a value that reads as met.
   return {
     emissionsKgPerHour: cur.emissions,
-    emissionsReductionPct: base.emissions > 0 ? (100 * (base.emissions - cur.emissions)) / base.emissions : 0,
-    safetyScore: cur.safety.overall,
+    emissionsReductionPct: base.emissions > 0 ? Math.round((1000 * (base.emissions - cur.emissions)) / base.emissions) / 10 : 0,
+    safetyScore: Math.round(cur.safety.overall),
     travelTimeMin: cur.traffic.travelTimeMin,
     happiness,
     fairness: Math.min(...values),

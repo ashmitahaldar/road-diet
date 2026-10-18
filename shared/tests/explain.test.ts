@@ -27,7 +27,7 @@ test('happiness factors add up to the change in happiness', () => {
   const f = happinessFactors(bikeLanes, MP)
   for (const p of Object.values(residentsOf(MP))) {
     const sum = Object.values(f[p.id]).reduce((a, b) => a + b, 0)
-    expect(Math.min(100, Math.max(0, p.baselineHappiness + sum))).toBeCloseTo(m.happiness[p.id], 6)
+    expect(Math.round(Math.min(100, Math.max(0, p.baselineHappiness + sum)))).toBe(m.happiness[p.id])
   }
 })
 

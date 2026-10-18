@@ -179,6 +179,7 @@ export function Game({ level, levels, collection, onResult, onExit }: Props) {
   const base = useMemo(() => computeMetrics(level.corridor.baselineLayout, level), [level])
   const now = useMemo(() => computeMetrics(layout, level), [layout, level])
   const [muted, setMutedState] = useState(isMuted)
+  const [menu, setMenu] = useState(false)
   const learned = useMemo(() => lessons(layout, now, level), [layout, now, level])
   const verdicts = useRef<Map<string, boolean> | null>(null)
   const [noticed, setNoticed] = useState<Lesson[]>([])
@@ -312,15 +313,19 @@ export function Game({ level, levels, collection, onResult, onExit }: Props) {
 
   const header = (
     <header className="pointer-events-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl border-2 border-ink bg-paper px-3 py-1 shadow-[3px_3px_0_var(--color-ink)]">
-      <div className="min-w-0">
-        <h1 tabIndex={-1} className="font-display text-lg font-semibold outline-none lg:text-xl">
+      <div className="min-w-0 flex-1">
+        <h1 tabIndex={-1} className="font-display text-base font-semibold outline-none sm:text-lg lg:text-xl">
           {level.name}
         </h1>
         <p className="text-sm">
           <strong>Goal:</strong> {goalSentence(level)}
         </p>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <Button aria-expanded={menu} aria-controls="game-menu" onClick={() => setMenu(!menu)} className="sm:hidden">
+        Menu
+      </Button>
+      {/* On phones the buttons fold behind Menu, so the street stays in view. */}
+      <div id="game-menu" className={`w-full flex-wrap items-center gap-2 pb-1 sm:flex sm:w-auto sm:pb-0 ${menu ? 'flex' : 'hidden'}`}>
         <Button onClick={onExit}>Streets</Button>
         <a href="/about" target="_blank" className="inline-flex min-h-11 items-center rounded-xl border-2 border-ink bg-paper px-3 font-medium hover:bg-grid focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary">
           About

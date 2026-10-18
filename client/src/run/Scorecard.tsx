@@ -296,7 +296,7 @@ export function Scorecard({ fresh = [], story = null, postcard, open, onClose, l
               Share image
             </Button>
             {postcard && (
-              <a href={postcard} download="road-diet-postcard.png" className="inline-flex min-h-11 items-center rounded-xl border-2 border-ink px-3 font-medium hover:bg-grid focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary">
+              <a href={postcard} download="road-diet-postcard" className="inline-flex min-h-11 items-center rounded-xl border-2 border-ink px-3 font-medium hover:bg-grid focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary">
                 Download postcard
               </a>
             )}

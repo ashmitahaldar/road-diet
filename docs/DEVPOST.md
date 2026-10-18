@@ -119,6 +119,15 @@ Each resident reacts in their own words, and the reaction stays on their card wh
 - Everything in the repo was built during the event, from the first commit on 2026-10-16 at 22:32 (UTC−4). Pre-event preparation: **UNVERIFIED** (say what, if anything, was set up before the event).
 - Built with an AI coding assistant (Claude Code). (UNVERIFIED: check how the organizers want AI assistance and pre-event preparation declared.)
 
+## Generative AI question
+*Did you implement a generative AI model or API in your hack this weekend? If so, how and why?*
+
+Yes, two ways: the Google Gemini API inside the game, and Claude Code as a coding assistant while building it.
+
+**Gemini, in the game.** After each "Run a day", our server makes one Gemini `generateContent` call in JSON mode. It returns a first-person reaction (25 words or fewer) from each of four fictional residents and a 2–3 sentence debrief of the design's trade-offs. Gemini never decides the results: our own tested TypeScript model computes emissions, safety, travel times and happiness, and Gemini gets only those numbers. Replies are schema-checked. Lines that are too long or mention politics are swapped for pre-written text, and the debrief must name a model limitation. If Gemini fails, the game uses built-in reactions. The key stays on the server, and a "Powered by Gemini" label shows only when the text really came from Gemini. *Why:* numbers alone feel abstract; hearing "my walk feels safer" from a resident makes a result personal, and generated lines respond to the player's actual design.
+
+**Claude Code, to build it.** I built Road Diet solo with Claude Code (Anthropic's AI coding assistant) as a pair programmer. I set the product direction, data rules and neutrality rules, and reviewed every change through a branch and pull request. Claude Code wrote and refactored much of the React, Three.js, Express and TypeScript code, wrote unit tests, and ran browser checks with Playwright (screenshots at phone and desktop sizes, keyboard and accessibility checks). It also helped draft docs, including this submission. *Why:* as a solo builder with one weekend, it let me ship a 3D editor, a tested model, a database-backed scorecard and accessibility work that I couldn't have finished alone, while I spent my time on design decisions and checking the data.
+
 ## How we built it
 - **Client:** React 19, Vite, Tailwind CSS v4, Motion, and Three.js for the editable 3D street (procedural models, no asset files), and Web Audio for short synthesized sounds.
 - **Server:** Express 5 and zod, plus `pg` for Tiger Data / TimescaleDB.

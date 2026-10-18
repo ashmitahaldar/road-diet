@@ -1,4 +1,4 @@
-import { PERSONAS, earnedBadges, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { earnedBadges, residentsOf, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
@@ -41,6 +41,7 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
   const badges = earnedBadges(metrics, score.goalMet)
   const ideas = hints(layout, metrics, level)
   const learned = lessons(layout, metrics, level)
+  const who = residentsOf(level)
   const [status, setStatus] = useState('')
   useEffect(() => setStatus(''), [open, metrics])
   const emissionsDeltaKg = metrics.emissionsKgPerHour - base.emissionsKgPerHour
@@ -136,10 +137,10 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
             <ul className="mt-2 grid gap-2 sm:grid-cols-2">
               {react.reactions.map((r) => (
                 <li key={r.personaId} className="flex gap-3 rounded-xl border-2 border-ink px-3 py-2">
-                  <Face id={r.personaId} happiness={metrics.happiness[r.personaId]} />
+                  <Face id={r.personaId} look={who[r.personaId].look} happiness={metrics.happiness[r.personaId]} />
                   <span>
                     <span className="font-semibold">
-                      {PERSONAS[r.personaId].name} · <span className="tabular-nums">{metrics.happiness[r.personaId].toFixed(0)}/100</span>
+                      {who[r.personaId].name} · <span className="tabular-nums">{metrics.happiness[r.personaId].toFixed(0)}/100</span>
                     </span>
                     <q className="mt-0.5 block font-medium">{r.line}</q>
                   </span>

@@ -21,7 +21,7 @@ const ink = {
   strokeLinejoin: 'round',
 } as const
 
-const LOOKS: Record<PersonaId, { skin: string; shirt: string; back?: ReactNode; front: ReactNode }> = {
+const LOOKS: Record<string, { skin: string; shirt: string; back?: ReactNode; front: ReactNode }> = {
   driver_delivery: {
     skin: 'var(--color-skin-2)',
     shirt: 'var(--color-primary)',
@@ -64,10 +64,57 @@ const LOOKS: Record<PersonaId, { skin: string; shirt: string; back?: ReactNode; 
       </>
     ),
   },
+  dev: {
+    skin: 'var(--color-skin-3)',
+    shirt: 'var(--color-planter)',
+    front: (
+      <>
+        <path d="M15 18 Q15 10.5 24 10.5 Q33 10.5 33 18 Q31 15 28.5 15.5 Q26 13.5 24 15 Q21.5 13.5 19.5 15.5 Q17 15 15 18 Z" fill="var(--color-ink)" />
+        <path d="M16.5 25 Q17 32.5 24 32.8 Q31 32.5 31.5 25 Q28 29.5 24 29.4 Q20 29.5 16.5 25 Z" fill="var(--color-ink)" opacity={0.85} />
+      </>
+    ),
+  },
+  maya: {
+    skin: 'var(--color-skin-3)',
+    shirt: 'var(--color-meter-fairness)',
+    back: (
+      <>
+        <circle cx={15} cy={12.5} r={4.2} fill="var(--color-ink)" />
+        <circle cx={33} cy={12.5} r={4.2} fill="var(--color-ink)" />
+      </>
+    ),
+    front: <path d="M15 20 Q15.5 11.5 24 11.5 Q32.5 11.5 33 20 Q30 16.5 24 16.8 Q18 16.5 15 20 Z" fill="var(--color-ink)" />,
+  },
+  rossi: {
+    skin: 'var(--color-skin-1)',
+    shirt: 'var(--color-meter-fairness)',
+    front: (
+      <>
+        {[[15.5, 18], [18.5, 13], [24, 11.2], [29.5, 13], [32.5, 18]].map(([x, y]) => (
+          <circle key={x} cx={x} cy={y} r={4.2} fill="var(--color-paper)" {...ink} />
+        ))}
+        <circle cx={20.4} cy={22} r={3} fill="none" {...ink} />
+        <circle cx={27.6} cy={22} r={3} fill="none" {...ink} />
+        <path d="M23.4 22 H24.6" {...ink} />
+      </>
+    ),
+  },
+  omar: {
+    skin: 'var(--color-skin-2)',
+    shirt: 'var(--color-paper)',
+    front: (
+      <>
+        <path d="M15.5 17 Q13.5 7.5 19 8.2 Q21 3.5 24.5 6 Q28.5 3.5 30.5 8.2 Q35 8 32.5 17 Z" fill="var(--color-paper)" {...ink} />
+        <path d="M15.5 14.5 H32.6 V17 H15.5 Z" fill="var(--color-paper)" {...ink} />
+        <path d="M20 26.6 Q22 25 24 26.3 Q26 25 28 26.6 Q26 28 24 27.2 Q22 28 20 26.6 Z" fill="var(--color-ink)" />
+      </>
+    ),
+  },
 }
 
-export function Face({ id, happiness, className = 'size-12' }: { id: PersonaId; happiness: number; className?: string }) {
-  const look = LOOKS[id]
+/** `id` picks the role's accent colour; `look` picks the person, and defaults to the role's usual resident. */
+export function Face({ id, look: lookId = id, happiness, className = 'size-12' }: { id: PersonaId; look?: string; happiness: number; className?: string }) {
+  const look = LOOKS[lookId] ?? LOOKS[id]
   const { mouth, brow } = mood(happiness)
   const clip = useId()
   return (

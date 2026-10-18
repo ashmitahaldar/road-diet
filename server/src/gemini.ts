@@ -1,6 +1,6 @@
 import {
   MODE_SHIFT_LIMITATION,
-  PERSONAS,
+  residentsOf,
   fallbackResult,
   moodFor,
   type Layout,
@@ -38,7 +38,7 @@ export function buildPrompt({ level, layout, metrics, base, score }: RunFacts) {
     safetyScore0to100: { today: r1(base.safetyScore), new: r1(metrics.safetyScore) },
     lowestHappiness0to100: { today: r1(base.fairness), new: r1(metrics.fairness) },
     goal: { met: score.goalMet, stars: score.stars, checks: score.goals.map((g) => ({ kind: g.kind, target: g.target, value: r1(g.value), met: g.met })) },
-    residents: Object.values(PERSONAS).map((p) => ({
+    residents: Object.values(residentsOf(level)).map((p) => ({
       personaId: p.id,
       name: p.name,
       about: p.blurb,

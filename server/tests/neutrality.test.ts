@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from 'vitest'
-import { ELEMENTS, FALLBACK_LINES, PERSONAS } from '@road-diet/shared'
+import { ELEMENTS, FALLBACK_LINES, LEVELS, residentsOf } from '@road-diet/shared'
 import { OFF_LIMITS } from '../src/gemini'
 
 const repo = fileURLToPath(new URL('../..', import.meta.url))
@@ -24,8 +24,8 @@ test('the neutrality footer is on every page and on the scorecard', () => {
   expect(readFileSync(join(repo, 'client/src/run/Scorecard.tsx'), 'utf8')).toContain(footer)
 })
 
-test('every resident is labelled fictional', () => {
-  for (const p of Object.values(PERSONAS)) expect(p.blurb).toMatch(/\(fictional resident\)/)
+test('every resident on every street is labelled fictional', () => {
+  for (const level of Object.values(LEVELS)) for (const p of Object.values(residentsOf(level))) expect(p.blurb).toMatch(/\(fictional resident\)/)
 })
 
 test('canned reactions talk about trips, not lane types', () => {

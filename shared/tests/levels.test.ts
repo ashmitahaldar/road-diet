@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { BLOOR_LEVEL, LEVELS, MOUNT_PLEASANT_LEVEL, computeMetrics, scoreRun, validateLayout, type ElementId, type Layout, type Level } from '../src'
+import { BLOOR_LEVEL, LEVELS, MOUNT_PLEASANT_LEVEL, residentsOf, computeMetrics, scoreRun, validateLayout, type ElementId, type Layout, type Level } from '../src'
 
 const S = (...xs: [ElementId, number][]): Layout => ({ elements: xs.map(([id, widthM]) => ({ id, widthM })) })
 const stars = (l: Layout, level: Level) => scoreRun(computeMetrics(l, level), level).stars
@@ -38,4 +38,11 @@ test('Bloor: three stars are reachable, and a two-lane design can clear the goal
   const two = S(['sidewalk', 3.7], ['planter', 1.5], ['bike_protected', 2], ['car_lane', 3.3], ['car_lane', 3.3], ['bike_protected', 2], ['parking', 2.4], ['sidewalk', 1.8])
   expect(validateLayout(two, level).valid).toBe(true)
   expect(stars(two, level)).toBeGreaterThanOrEqual(1)
+})
+
+test('each street has its own residents in the same four roles', () => {
+  const names = (level: Level) => Object.values(residentsOf(level)).map((p) => p.name)
+  expect(names(BLOOR_LEVEL)).toEqual(['Marco', 'Priya', 'Mr. Okafor', 'Lin'])
+  expect(names(MOUNT_PLEASANT_LEVEL)).toEqual(['Dev', 'Maya', 'Mrs. Rossi', 'Omar'])
+  expect(residentsOf(MOUNT_PLEASANT_LEVEL).student_cyclist.trip).toEqual(residentsOf(BLOOR_LEVEL).student_cyclist.trip)
 })

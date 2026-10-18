@@ -62,6 +62,8 @@ export type Persona = {
   /** Their request in the story, in their own words. Talks about trips, never lane types (spec 2.7). */
   ask: string
   wants: string
+  /** Which portrait to draw (client/src/story/characters.tsx). */
+  look: string
   trip: { mode: Mode; distanceKm: number }
   /** Relative weights over normalized 0-1 metrics (spec 3.7). */
   weights: { travelTime: number; safety: number; comfort: number; access: number }
@@ -90,11 +92,16 @@ export type Corridor = {
   source: string
 }
 
+/** Who plays a role on one street. The role (trip, weights) stays the same; the person changes. */
+export type CastMember = Pick<Persona, 'name' | 'blurb' | 'ask' | 'wants' | 'look'>
+
 export type Level = {
   id: string
   name: string
   /** One line for the level select. */
   blurb: string
+  /** This street's residents; roles left out use the defaults in PERSONAS. */
+  cast?: Partial<Record<PersonaId, CastMember>>
   corridor: Corridor
   allowedElements: ElementId[]
   goal: { minEmissionsReductionPct?: number; minHappiness?: number; minSafety?: number }

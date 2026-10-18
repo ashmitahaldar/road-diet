@@ -1,4 +1,4 @@
-import { PERSONAS, has, hints, scoreRun, widthOf, type ElementId, type GoalCheck, type Layout, type Level, type Metrics } from '@road-diet/shared'
+import { has, hints, residentsOf, scoreRun, widthOf, type Persona, type PersonaId, type ElementId, type GoalCheck, type Layout, type Level, type Metrics } from '@road-diet/shared'
 import { useState } from 'react'
 import { Button } from '../ui'
 
@@ -9,7 +9,7 @@ const beside = (layout: Layout, id: ElementId, others: ElementId[]) =>
  * Each tip restates a rule of the game's model (shared/src/model), so it never claims more than the model does.
  * Tips that apply to the current street come first. Spec 2.7: they describe trade-offs, not which lanes to keep.
  */
-const TIPS: { text: (m: Metrics) => string; applies?: (layout: Layout, m: Metrics) => boolean }[] = [
+const TIPS: { text: (m: Metrics, who: Record<PersonaId, Persona>) => string; applies?: (layout: Layout, m: Metrics) => boolean }[] = [
   { applies: (_, m) => m.unusedWidthM > 0, text: (m) => `${m.unusedWidthM.toFixed(1)} m is unused. Empty space costs every resident some happiness.` },
   {
     applies: (l) => beside(l, 'bike_painted', ['parking']) && !has(l, 'bike_protected'),
@@ -21,9 +21,9 @@ const TIPS: { text: (m: Metrics) => string; applies?: (layout: Layout, m: Metric
   },
   { applies: (l) => widthOf(l, 'parking') + widthOf(l, 'loading') === 0, text: () => 'No curb space: deliveries, shops and older residents need somewhere to stop.' },
   {
-    text: (m) => {
-      const low = Object.entries(m.happiness).sort((a, b) => a[1] - b[1])[0][0] as keyof typeof PERSONAS
-      return `Fairness is your least happy resident, now ${PERSONAS[low].name}. Their card shows what they need.`
+    text: (m, who) => {
+      const low = Object.entries(m.happiness).sort((a, b) => a[1] - b[1])[0][0] as PersonaId
+      return `Fairness is your least happy resident, now ${who[low].name}. Their card shows what they need.`
     },
   },
   { text: () => 'Each car lane moves more drivers, but adds speed risk for people walking and biking.' },
@@ -44,7 +44,7 @@ export function Guide({ level, layout, metrics }: { level: Level; layout: Layout
   const score = scoreRun(metrics, level)
   const ideas = hints(layout, metrics, level).map((h) => h.text)
   const said = (t: string) => ideas.some((h) => h.slice(0, 24) === t.slice(0, 24))
-  const tips = [...TIPS.filter((t) => t.applies?.(layout, metrics)), ...TIPS.filter((t) => !t.applies)].map((t) => t.text(metrics)).filter((t) => !said(t))
+  const tips = [...TIPS.filter((t) => t.applies?.(layout, metrics)), ...TIPS.filter((t) => !t.applies)].map((t) => t.text(metrics, residentsOf(level))).filter((t) => !said(t))
   const all = [...ideas, ...tips]
   const i = n % all.length
   const more = !score.goalMet || score.stars < 3

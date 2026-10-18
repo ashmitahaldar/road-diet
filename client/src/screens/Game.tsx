@@ -243,7 +243,7 @@ export function Game({ level, onStars, onExit }: { level: Level; onStars: (stars
       ),
       body: <Guide level={level} layout={layout} metrics={now} />,
     },
-    residents: { title: 'Residents', body: <Residents base={base} shown={shown} running={running} runId={runId} /> },
+    residents: { title: 'Residents', body: <Residents level={level} base={base} shown={shown} running={running} runId={runId} /> },
   }
   const panel = (id: PanelId, className = '') => (
     <Panel id={id} title={panels[id].title} open={isOpen(id)} onToggle={() => toggle(id)} className={className}>

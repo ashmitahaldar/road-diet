@@ -13,6 +13,7 @@ export default function App() {
   const level = BLOOR_LEVEL
   const [screen, setScreen] = useState<Screen>('start')
   const view = useRef<HTMLDivElement>(null)
+  const [footerHidden, setFooterHidden] = useState(false)
   const go = (next: Screen) => {
     setScreen(next)
     window.scrollTo(0, 0)
@@ -49,15 +50,31 @@ export default function App() {
             </motion.div>
           </AnimatePresence>
         )}
-        <footer className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-sm">
-          <span>A learning tool, not a forecast. Residents are fictional.</span>
-          <span className="flex flex-wrap items-center gap-x-4">
-            <span>Hosted on Vultr</span>
-            <a href="/data" target={dataPage ? undefined : '_blank'} className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
-              Data & Limitations
-            </a>
-          </span>
-        </footer>
+        {/* Hideable on the game screen only: the scorecard repeats this disclaimer and the Data & Limitations link. */}
+        {!(screen === 'play' && footerHidden && !dataPage) && (
+          <footer className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-sm">
+            <span>A learning tool, not a forecast. Residents are fictional.</span>
+            <span className="flex flex-wrap items-center gap-x-4">
+              <span>Hosted on Vultr</span>
+              <a href="/data" target={dataPage ? undefined : '_blank'} className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
+                Data & Limitations
+              </a>
+              {screen === 'play' && !dataPage && (
+                <button
+                  type="button"
+                  aria-label="Hide this bar"
+                  onClick={() => {
+                    view.current?.querySelector('h1')?.focus({ preventScroll: true })
+                    setFooterHidden(true)
+                  }}
+                  className="grid size-11 place-items-center rounded-full text-lg hover:bg-grid focus-visible:outline-4 focus-visible:outline-primary"
+                >
+                  <span aria-hidden>✕</span>
+                </button>
+              )}
+            </span>
+          </footer>
+        )}
       </div>
     </MotionConfig>
   )

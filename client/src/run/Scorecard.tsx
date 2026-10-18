@@ -1,4 +1,4 @@
-import { PERSONAS, earnedBadges, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { PERSONAS, earnedBadges, hints, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
@@ -37,6 +37,7 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
   const reduce = useReducedMotion()
   const score = scoreRun(metrics, level)
   const badges = earnedBadges(metrics, score.goalMet)
+  const ideas = hints(layout, metrics, level)
   const [status, setStatus] = useState('')
   useEffect(() => setStatus(''), [open, metrics])
   const emissionsDeltaKg = metrics.emissionsKgPerHour - base.emissionsKgPerHour
@@ -139,6 +140,19 @@ export function Scorecard({ open, onClose, level, layout, metrics, base, react, 
             ★ goal · ★★ + safety {level.stars.safety} · ★★★ + everyone {level.stars.fairness} happy
           </p>
         </section>
+
+        {ideas.length > 0 && (
+          <section aria-labelledby="ideas-title" className="rounded-2xl border-2 border-ink bg-loading/20 p-4">
+            <h3 id="ideas-title" className="font-display text-lg font-semibold">
+              {score.goalMet ? 'Ideas for more stars' : 'Ideas to try'}
+            </h3>
+            <ul className="mt-2 flex list-disc flex-col gap-1.5 pl-5">
+              {ideas.map((h) => (
+                <li key={h.text}>{h.text}</li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section aria-labelledby="said-title" aria-busy={!react}>
           <h3 id="said-title" className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">

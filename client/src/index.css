@@ -56,10 +56,19 @@ body {
   from { transform: translateX(-10vw) scaleX(var(--flip, 1)); }
   to { transform: translateX(110vw) scaleX(var(--flip, 1)); }
 }
+.bg-bob {
+  animation: bg-bob 0.45s ease-in-out infinite alternate;
+}
+@keyframes bg-bob {
+  to { transform: translateY(-1.5px); }
+}
 @media (prefers-reduced-motion: reduce) {
   .bg-move {
     animation: none !important;
     transform: translateX(calc(var(--at) * 100vw)) scaleX(var(--flip, 1));
+  }
+  .bg-bob {
+    animation: none;
   }
 }
 

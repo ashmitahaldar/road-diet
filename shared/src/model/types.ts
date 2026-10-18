@@ -83,6 +83,8 @@ export type Corridor = {
   mapAlt?: string
   /** Inputs not taken from a verified dataset (spec 4.5); shown on the limitations panel and /data. */
   estimates?: { field: string; note: string }[]
+  /** The raw count behind baselineDemand (prep.py corridor), shown on the About page. */
+  observed?: { count: { location_name: string; latest_count_date: string; count_duration: string; total_vehicle: number; total_bike: number; total_pedestrian: number } }
   source: string
 }
 

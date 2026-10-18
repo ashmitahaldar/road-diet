@@ -20,7 +20,7 @@ export function RunButton({ running, kind, onRun }: { running: boolean; kind: Sh
       onClick={running ? undefined : onRun}
       // aria-disabled, not disabled: a disabled button drops keyboard focus, and the scorecard would hand it back to <body>.
       aria-disabled={running}
-      className="fixed inset-x-4 bottom-3 z-10 min-h-14 bg-primary text-xl text-paper shadow-[4px_4px_0_var(--color-ink)] hover:bg-primary hover:brightness-110 aria-disabled:cursor-wait aria-disabled:opacity-70 fit:static"
+      className="min-h-14 w-full bg-primary text-xl text-paper shadow-[4px_4px_0_var(--color-ink)] hover:bg-primary hover:brightness-110 aria-disabled:cursor-wait aria-disabled:opacity-70"
     >
       {running ? 'Running…' : kind === 'today' ? 'Run a day' : 'Run another day'}
     </Button>
@@ -35,10 +35,7 @@ export function MetersCard({ level, base, shown, running, onShowScore }: { level
   const caption = { today: "Today's street.", run: 'After one day.', stale: 'Street changed. Run again to update.' }[shown.kind]
 
   return (
-    <section aria-labelledby="run-title" className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
-      <h2 id="run-title" className="font-display text-xl font-semibold">
-        Meters
-      </h2>
+    <div>
       <p className={`mb-2 text-sm ${shown.kind === 'stale' ? 'font-semibold' : ''}`}>
         {caption}{' '}
         {shown.kind === 'run' && !running && (
@@ -79,18 +76,15 @@ export function MetersCard({ level, base, shown, running, onShowScore }: { level
           ? `Day complete. Emissions cut ${m.emissionsReductionPct.toFixed(1)} percent, safety ${m.safetyScore.toFixed(0)}, lowest happiness ${m.fairness.toFixed(0)}.`
           : ''}
       </p>
-    </section>
+    </div>
   )
 }
 
 export function Residents({ base, shown, running, runId }: { base: Metrics; shown: Shown; running: boolean; runId: number }) {
   return (
-    <section aria-labelledby="residents-title">
-      <h2 id="residents-title" className="mb-2 flex flex-wrap items-center gap-2 font-display text-xl font-semibold">
-        Residents
-        {shown.react?.reactions.every((r) => r.source === 'gemini') && !running && <GeminiLabel />}
-      </h2>
-      <ul tabIndex={0} aria-labelledby="residents-title" className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 fit:mx-0 fit:flex-col fit:overflow-visible fit:px-0 focus-visible:outline-4 focus-visible:outline-primary">
+    <div>
+      {shown.react?.reactions.every((r) => r.source === 'gemini') && !running && <GeminiLabel />}
+      <ul aria-labelledby="residents-title" className="mt-1 flex flex-col gap-3">
         {Object.values(PERSONAS).map((p) => (
           <PersonaCard
             key={p.id}
@@ -108,7 +102,7 @@ export function Residents({ base, shown, running, runId }: { base: Metrics; show
           ? shown.react.reactions.map((r) => `${PERSONAS[r.personaId].name} says: ${r.line}`).join(' ')
           : ''}
       </p>
-    </section>
+    </div>
   )
 }
 
@@ -147,7 +141,7 @@ function PersonaCard({ p, m, base, running, runId, reaction }: CardProps) {
   const { word } = mood(h)
   const tripMs = (RUN_MS - 400) * Math.min(1, t / Math.max(...Object.values(m.travelTimeMin)))
   return (
-    <li className="relative w-64 shrink-0 snap-start rounded-2xl border-2 border-ink bg-paper p-3 fit:w-auto">
+    <li className="relative rounded-2xl border-2 border-ink bg-paper p-3">
       <div className="flex items-center gap-3">
         <motion.div
           key={`${runId}-${word}`}

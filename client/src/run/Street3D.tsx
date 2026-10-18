@@ -1,5 +1,5 @@
-import { MODES, addElement, moveElement, moveElementTo, previewTraffic, removeElement, resizeElement, snap, type ElementId, type Layout, type Level, type Mode } from '@road-diet/shared'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { MODES, moveElementTo, previewTraffic, resizeElement, snap, type Layout, type Level, type Mode } from '@road-diet/shared'
+import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import {
   BoxGeometry,
   Clock,
@@ -22,7 +22,7 @@ import {
   type Material,
 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { BudgetBar, CANVAS_SIZE, Palette, SelectionBar } from '../editor/controls'
+import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js'
 import { VISUALS } from '../editor/elementVisuals'
 import { inkMaterial, instances, part, toon, tokenColor, type Part } from './street3d/materials'
 import * as props from './street3d/props'
@@ -44,6 +44,10 @@ const HANDLE_M = 0.7
 /** One moving object. Targets change when the layout does; the frame loop eases x, y and scale towards them. */
 type Slot = { x: number; tx: number; y: number; ty: number; z: number; v: number; s: number; ts: number; phase: number }
 type Pool = { meshes: InstancedMesh[]; slots: Slot[] }
+/** Camera moves for the on-screen buttons; each eases there over a few frames. */
+export type CameraApi = { view: (name: View) => void; orbit: (radians: number) => void; zoom: (factor: number) => void }
+export type View = 'overview' | 'street' | 'above'
+
 type Drag = { kind: 'resize'; index: number; edge: -1 | 1; startX: number; start: Layout } | { kind: 'move'; index: number; slot: number | null }
 
 function lanesOf(layout: Layout, widthM: number): Lane[] {
@@ -84,21 +88,31 @@ function disposeAll(root: Object3D) {
 
 /**
  * The street in 3D with traffic that keeps moving while you edit. Tap an element to select it, drag its handles to
- * resize it or drag it sideways to move it; the bars below use the same edit ops as the 2D editor. Traffic here is a
+ * resize it or drag it sideways to move it; the build tray uses the same edit ops as the 2D editor. Traffic here is a
  * preview only: Run a day still makes the scorecard.
  */
-export default function Street3D({ level, layout, onChange }: { level: Level; layout: Layout; onChange: (layout: Layout) => void }) {
+type Props = {
+  level: Level
+  layout: Layout
+  onChange: (layout: Layout) => void
+  selected: number | null
+  onSelect: (i: number | null) => void
+  onDragging: (dragging: boolean) => void
+  /** The player moved the camera themselves (the guided tour waits for this). */
+  onLook?: () => void
+  camera: RefObject<CameraApi | null>
+}
+
+export default function Street3D({ level, layout, onChange, selected, onSelect, onDragging, onLook, camera: cameraApi }: Props) {
   const host = useRef<HTMLDivElement>(null)
-  const [selected, setSelected] = useState<number | null>(null)
-  const [dragging, setDragging] = useState(false)
   const lanes = useMemo(() => lanesOf(layout, level.corridor.widthM), [layout, level])
   const preview = useMemo(() => previewTraffic(layout, level.corridor), [layout, level])
   const counts = Object.fromEntries(MODES.map((m) => [m, preview[m].count])) as Record<Mode, number>
 
   // The scene lives as long as the component; event handlers read the latest props through this ref.
-  const live = useRef({ layout, lanes, selected, onChange, level, select: setSelected, setDragging })
-  live.current = { layout, lanes, selected, onChange, level, select: setSelected, setDragging }
-  const world = useRef<{ street: Group; pools: Record<Mode, Pool>; mark: (lanes: Lane[], selected: number | null) => void; canvas: HTMLCanvasElement } | null>(null)
+  const live = useRef({ layout, lanes, selected, onChange, level, select: onSelect, setDragging: onDragging, onLook })
+  live.current = { layout, lanes, selected, onChange, level, select: onSelect, setDragging: onDragging, onLook }
+  const world = useRef<{ street: Group; labels: Group; pools: Record<Mode, Pool>; mark: (lanes: Lane[], selected: number | null) => void } | null>(null)
 
   useEffect(() => {
     const el = host.current!
@@ -107,7 +121,13 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
     renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 640 ? 1.5 : 2))
     const canvas = renderer.domElement
     canvas.setAttribute('aria-hidden', 'true')
+    // The game screen has no page scroll, so every touch on the street is an orbit, a tap or a drag.
+    canvas.style.touchAction = 'none'
     el.appendChild(canvas)
+    const labelRenderer = new CSS2DRenderer()
+    Object.assign(labelRenderer.domElement.style, { position: 'absolute', inset: '0', pointerEvents: 'none' })
+    labelRenderer.domElement.setAttribute('aria-hidden', 'true')
+    el.appendChild(labelRenderer.domElement)
 
     const scene = new Scene()
     const paper = tokenColor('--color-paper')
@@ -122,7 +142,8 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
     ground.position.y = -0.21
     scene.add(ground)
     const street = new Group()
-    scene.add(street)
+    const labels = new Group()
+    scene.add(street, labels)
 
     const rand = rng(7)
     const pools = Object.fromEntries(
@@ -151,6 +172,7 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
     drop.visible = false
     const mark = (lanes: Lane[], sel: number | null) => {
       const lane = sel === null ? undefined : lanes[sel]
+      labels.children.forEach((l, i) => ((l as CSS2DObject).element.dataset.on = String(i === sel)))
       for (const o of [band, ...rails, ...handles]) o.visible = !!lane
       if (!lane) return
       band.position.set(lane.x, lane.top + 0.04, 0)
@@ -162,10 +184,29 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
 
     const camera = new PerspectiveCamera(45, 1, 0.5, 400)
     const s = Math.max(1, level.corridor.widthM / 20)
-    // Close enough to grab a handle straight away; zoom out to see the whole block.
-    camera.position.set(13 * s, 22 * s, 27 * s)
+    // Overview is close enough to grab a handle straight away; zoom out to see the whole block.
+    const VIEWS: Record<View, Vector3> = {
+      overview: new Vector3(13 * s, 22 * s, 27 * s),
+      street: new Vector3(4 * s, 3.6, 17 * s),
+      above: new Vector3(0, 46 * s, 14 * s),
+    }
+    // A tall, narrow window sees less of the street's width, so every view steps back.
+    let back = 0
+    const viewOf = (name: View) => VIEWS[name].clone().multiplyScalar(back)
+    camera.position.copy(VIEWS.overview)
     const controls = new OrbitControls(camera, canvas)
     Object.assign(controls, { enablePan: false, enableDamping: true, autoRotate: true, autoRotateSpeed: 0.6, minDistance: 15, maxDistance: 110, minPolarAngle: 0.3, maxPolarAngle: 1.35 })
+    controls.addEventListener('start', () => live.current.onLook?.())
+    let goal: Vector3 | null = null
+    const go = (to: Vector3) => {
+      controls.autoRotate = false
+      goal = to.clampLength(controls.minDistance, controls.maxDistance)
+    }
+    cameraApi.current = {
+      view: (name) => go(viewOf(name)),
+      orbit: (a) => go((goal ?? camera.position).clone().applyAxisAngle(new Vector3(0, 1, 0), a)),
+      zoom: (f) => go((goal ?? camera.position).clone().multiplyScalar(f)),
+    }
 
     // Pointer → point on the ground → element under it.
     const ray = new Raycaster()
@@ -227,7 +268,7 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
         if (drag?.kind === 'resize') change(drag.start)
         const p = groundAt(e)
         const i = p ? laneAt(p.x) : -1
-        // Tapping the selected element again lets go of it, which also gives page scrolling back on phones.
+        // Tapping the selected element again lets go of it.
         select(i >= 0 && i !== current ? i : null)
       } else if (drag?.kind === 'move' && drag.slot !== null) {
         const to = drag.slot > drag.index ? drag.slot - 1 : drag.slot
@@ -251,8 +292,12 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
     const resize = () => {
       const { width, height } = el.getBoundingClientRect()
       renderer.setSize(width, height)
+      labelRenderer.setSize(width, height)
       camera.aspect = width / Math.max(1, height)
       camera.updateProjectionMatrix()
+      const first = back === 0
+      back = Math.min(1.8, 1 / Math.sqrt(Math.min(1, camera.aspect)))
+      if (first) camera.position.copy(viewOf('overview'))
     }
     const observer = new ResizeObserver(resize)
     observer.observe(el)
@@ -286,13 +331,20 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
           mesh.instanceMatrix.needsUpdate = true
         }
       }
+      if (goal) {
+        camera.position.lerp(goal, 1 - Math.exp(-dt * 5))
+        if (camera.position.distanceTo(goal) < 0.05) goal = null
+      }
       controls.update()
       renderer.render(scene, camera)
+      labelRenderer.render(scene, camera)
     })
 
-    world.current = { street, pools, mark, canvas }
+    world.current = { street, labels, pools, mark }
     return () => {
       world.current = null
+      cameraApi.current = null
+      labelRenderer.domElement.remove()
       renderer.setAnimationLoop(null)
       observer.disconnect()
       controls.dispose()
@@ -309,52 +361,30 @@ export default function Street3D({ level, layout, onChange }: { level: Level; la
     disposeAll(w.street)
     w.street.clear()
     w.street.add(buildStreet(lanes, level.corridor.widthM))
+    w.labels.clear()
+    // A name tag on each piece, on the near side of the orbit centre.
+    for (const lane of lanes) {
+      const tag = document.createElement('span')
+      tag.textContent = VISUALS[lane.id].short
+      tag.className = 'rounded-full border-2 border-ink bg-paper px-1.5 text-xs font-semibold text-ink data-[on=true]:bg-primary data-[on=true]:text-paper'
+      const label = new CSS2DObject(tag)
+      label.position.set(lane.x, lane.top + 0.3, 8)
+      w.labels.add(label)
+    }
     for (const mode of MODES) retarget(w.pools[mode], mode, preview, lanes)
   }, [lanes, preview, level])
 
   const sel = selected !== null && selected < layout.elements.length ? selected : null
-  useEffect(() => {
-    const w = world.current
-    if (!w) return
-    w.mark(lanes, sel)
-    // Swipes scroll the page until something is selected; then a drag on the street edits it.
-    w.canvas.style.touchAction = sel === null ? 'pan-y' : 'none'
-  }, [lanes, sel])
+  useEffect(() => world.current?.mark(lanes, sel), [lanes, sel])
 
-  const apply = (next: Layout, nextSelected: number | null) => {
-    if (next === layout) return
-    onChange(next)
-    setSelected(nextSelected)
-  }
   const label = `${counts.car} cars, ${counts.bus} buses, ${counts.bike} bikes and ${counts.walk} people walking, roughly in proportion to who uses the street.`
   return (
-    <div className="flex flex-col gap-3 fit:min-h-0 fit:flex-1">
-      <BudgetBar layout={layout} level={level} announce={!dragging} />
-      <div
-        ref={host}
-        role="img"
-        aria-label={`3D view of your street: ${label}`}
-        data-objects={MODES.map((m) => `${m}:${counts[m]}`).join(' ')}
-        className={`${CANVAS_SIZE} overflow-hidden rounded-2xl border-2 border-ink bg-paper ${sel === null ? 'cursor-pointer' : 'cursor-grab'}`}
-      />
-      <SelectionBar
-        level={level}
-        layout={layout}
-        selected={sel}
-        resize={(i, d) => apply(resizeElement(layout, level, i, d), i)}
-        move={(i, dir) => apply(moveElement(layout, i, dir), i + dir)}
-        remove={(i) => apply(removeElement(layout, i), layout.elements.length > 1 ? Math.max(0, i - 1) : null)}
-        empty="Tap a piece, then drag its blue handles. Keyboard: switch to 2D."
-      />
-      <Palette
-        level={level}
-        layout={layout}
-        selected={sel}
-        onAdd={(id: ElementId) => {
-          const at = sel === null ? layout.elements.length : sel + 1
-          apply(addElement(layout, level, id, at), at)
-        }}
-      />
-    </div>
+    <div
+      ref={host}
+      role="img"
+      aria-label={`3D view of your street: ${label}`}
+      data-objects={MODES.map((m) => `${m}:${counts[m]}`).join(' ')}
+      className={`absolute inset-0 isolate overflow-hidden bg-paper ${sel === null ? 'cursor-pointer' : 'cursor-grab'}`}
+    />
   )
 }

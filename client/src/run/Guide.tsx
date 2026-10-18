@@ -1,6 +1,5 @@
 import { PERSONAS, has, hints, scoreRun, widthOf, type ElementId, type GoalCheck, type Layout, type Level, type Metrics } from '@road-diet/shared'
 import { useState } from 'react'
-import { Pip } from '../story/characters'
 import { Button } from '../ui'
 
 const beside = (layout: Layout, id: ElementId, others: ElementId[]) =>
@@ -58,17 +57,9 @@ export function Guide({ level, layout, metrics }: { level: Level; layout: Layout
       ? 'This design meets the goal and earns every star. Run a day to see how everyone gets on!'
       : 'This meets the goal! Run a day, or try for more stars:'
   return (
-    <section aria-labelledby="guide-title" className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
-      <div className="flex items-center gap-3">
-        <Pip className="size-12" />
-        <div>
-          <h2 id="guide-title" className="font-display text-xl font-semibold">
-            Pip says
-          </h2>
-          <p className="text-sm">Live, as you edit</p>
-        </div>
-      </div>
-      <ul className="mt-2 flex flex-col gap-1 text-sm tabular-nums">
+    <div>
+      <p className="text-sm">Live, as you edit:</p>
+      <ul className="mt-1 flex flex-col gap-1 text-sm tabular-nums">
         {score.goals.map((g) => (
           <li key={g.kind} className="flex items-center gap-2">
             <span aria-hidden className={`grid size-5 shrink-0 place-items-center rounded-full border-2 border-ink text-xs font-bold ${g.met ? 'bg-ink text-paper' : 'border-dashed'}`}>
@@ -91,6 +82,6 @@ export function Guide({ level, layout, metrics }: { level: Level; layout: Layout
           </span>
         </div>
       )}
-    </section>
+    </div>
   )
 }

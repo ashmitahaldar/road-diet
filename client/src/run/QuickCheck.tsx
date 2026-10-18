@@ -7,10 +7,13 @@ import { GeminiLabel } from '../ui'
 export function QuickCheck({ quiz }: { quiz: Quiz | null }) {
   const [picked, setPicked] = useState<number | null>(null)
   return (
-    <section aria-labelledby="check-title" aria-busy={!quiz} className="rounded-2xl border-2 border-ink p-4">
-      <h3 id="check-title" className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
-        Quick check {quiz?.source === 'gemini' && <GeminiLabel />}
-      </h3>
+    <details aria-busy={!quiz} className="group rounded-2xl border-2 border-ink p-4">
+      <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center gap-2 font-display text-lg font-semibold focus-visible:outline-4 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
+        <span aria-hidden className="transition-transform group-open:rotate-90 motion-reduce:transition-none">
+          ▸
+        </span>
+        Quick check: test what you learned {quiz?.source === 'gemini' && <GeminiLabel />}
+      </summary>
       {quiz ? (
         <>
           <p id="check-question" className="mt-1 font-medium">
@@ -53,6 +56,6 @@ export function QuickCheck({ quiz }: { quiz: Quiz | null }) {
       ) : (
         <div aria-label="Writing a question" className="mt-2 h-24 animate-pulse rounded-xl bg-grid motion-reduce:animate-none" />
       )}
-    </section>
+    </details>
   )
 }

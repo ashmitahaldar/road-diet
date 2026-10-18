@@ -68,15 +68,71 @@ export function AboutPage({ levels }: { levels: Level[] }) {
       </Section>
 
       <Section title="What you’ll learn">
+        <p>After a few runs, you should be able to:</p>
+        <ul className="mt-2 list-disc space-y-2 pl-5">
+          <li>
+            <strong>Explain the street budget.</strong> A street has a fixed width, its right-of-way, so every metre you give one use comes from another.
+          </li>
+          <li>
+            <strong>Predict mode shift.</strong> Say which changes make some people switch from driving to the bus, a bike or walking, and why a new
+            layout only cuts emissions by changing how people choose to travel.
+          </li>
+          <li>
+            <strong>Spot safer layouts.</strong> Recognise buffers between people and traffic, keep bikes out of the door zone, and notice how many lanes of
+            traffic people have to cross.
+          </li>
+          <li>
+            <strong>Judge fairness.</strong> Look at a design through its least happy resident, and find a change that helps them without failing someone
+            else.
+          </li>
+          <li>
+            <strong>Read data critically.</strong> Tell measured numbers from estimates, find where each number comes from, and see what open data can’t
+            tell you.
+          </li>
+          <li>
+            <strong>Use the words planners use.</strong> Right-of-way, road diet, mode shift, door zone, buffer and curb access.
+          </li>
+        </ul>
+      </Section>
+
+      <Section title="How the game teaches">
         <ul className="list-disc space-y-2 pl-5">
-          <li>A street has a fixed width, its right-of-way. Every metre you give one use comes from another.</li>
-          <li>Emissions fall only when some car trips switch to the bus, a bike or walking. A new layout cuts emissions only by changing how people choose to travel.</li>
-          <li>Safety comes from the layout: buffers between people and traffic, keeping bikes out of the door zone, and how many lanes of traffic people have to cross.</li>
-          <li>Every design helps some people and costs others. A fair street is one that works for its least happy resident.</li>
-          <li>Open data can tell you a lot about a street, and also leaves gaps. The game shows where its numbers come from and what it had to estimate.</li>
+          <li>
+            <strong>Learn by doing.</strong> You redesign the street yourself, run a day, and see what happens. Trying an idea that fails teaches as much as
+            one that works.
+          </li>
+          <li>
+            <strong>Feedback in the moment.</strong> When a change helps or hurts, the idea behind it appears with a short explanation. Ask Pip “Why?” on any
+            meter or resident to hear the cause.
+          </li>
+          <li>
+            <strong>People, not just numbers.</strong> Residents react in their own words and tell the story of their day, so trade-offs feel real.
+          </li>
+          <li>
+            <strong>Check yourself.</strong> Each scorecard ends with a quick question about your own design.
+          </li>
+        </ul>
+      </Section>
+
+      <Section title="Who it’s for">
+        <ul className="list-disc space-y-2 pl-5">
+          <li>
+            <strong>Students</strong> in geography, civics, environmental science or urban planning, who can test ideas from class on a real street instead
+            of reading about them.
+          </li>
+          <li>
+            <strong>Teachers</strong> looking for a short, hands-on activity. It runs in a browser on laptops and phones, with no account or install.
+          </li>
+          <li>
+            <strong>Neighbours</strong> who hear about changes to their street and want to understand the trade-offs for themselves. The game doesn’t take
+            sides; it shows who gains and who gives something up.
+          </li>
+          <li>
+            <strong>Anyone curious about cities.</strong> No planning background is needed. Every term is explained when it comes up.
+          </li>
         </ul>
         <p className="mt-3">
-          Each idea appears in the game as feedback on your design, with a short explanation you can open, so you learn it at the moment it matters.
+          The 2D editor works with a keyboard and a screen reader, so people who can’t use the 3D view can still play every level.
         </p>
       </Section>
 

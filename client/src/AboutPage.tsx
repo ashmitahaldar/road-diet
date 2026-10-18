@@ -54,7 +54,6 @@ export function AboutPage({ level }: { level: Level }) {
       <Section title="Ideas you’ll meet">
         <dl className="grid gap-3 sm:grid-cols-2">
           {(Object.keys(CONCEPTS) as ConceptId[]).map((id) => (
-            // Anchored, so the game's lessons can link straight to a concept.
             <div key={id} id={id} className="scroll-mt-4 rounded-xl border-2 border-ink p-3 target:bg-loading/30">
               <dt className="font-display text-lg font-semibold">{CONCEPTS[id].name}</dt>
               <dd className="mt-1">{CONCEPTS[id].definition}</dd>

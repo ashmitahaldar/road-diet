@@ -3,7 +3,6 @@ import { bikeFacility, simulateTraffic, widthOf } from './model/traffic'
 import type { Layout, Level, Metrics, PersonaId } from './model/types'
 import { PERSONAS } from './personas'
 
-/** The planning ideas the game teaches. The About page defines them; lessons() applies them to a design. */
 export const CONCEPTS = {
   'right-of-way': {
     name: 'Right-of-way',
@@ -34,7 +33,6 @@ export const CONCEPTS = {
 } as const
 export type ConceptId = keyof typeof CONCEPTS
 
-/** One concept applied to one design: did it go well, or is it something to work on? */
 export type Lesson = { concept: ConceptId; good: boolean; text: string }
 
 /**

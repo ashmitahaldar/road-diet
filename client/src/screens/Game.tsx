@@ -124,10 +124,8 @@ export function Game({ level }: { level: Level }) {
   const reduce = useReducedMotion()
   const in3d = want3d && webgl && !reduce
   const base = useMemo(() => computeMetrics(level.corridor.baselineLayout, level), [level])
-  // Pip's guide follows the street as it is now, not the last run.
   const now = useMemo(() => computeMetrics(layout, level), [layout, level])
   const [muted, setMutedState] = useState(isMuted)
-  // When an edit flips a concept (a buffer appears, riders enter the door zone), Pip points it out for a few seconds.
   const learned = useMemo(() => lessons(layout, now, level), [layout, now, level])
   const verdicts = useRef<Map<string, boolean> | null>(null)
   const [noticed, setNoticed] = useState<Lesson[]>([])
@@ -135,17 +133,18 @@ export function Game({ level }: { level: Level }) {
     const before = verdicts.current
     verdicts.current = new Map(learned.map((l) => [l.concept, l.good]))
     const flipped = before ? learned.filter((l) => before.get(l.concept) !== l.good).slice(0, 3) : []
-    if (!flipped.length) return
-    setNoticed(flipped)
+    if (flipped.length) setNoticed(flipped)
+  }, [learned])
+  // Keyed on what's shown, so later edits that flip nothing don't cancel the hide.
+  useEffect(() => {
+    if (!noticed.length) return
     const t = window.setTimeout(() => setNoticed([]), 8000)
     return () => window.clearTimeout(t)
-  }, [learned])
+  }, [noticed])
   const [selected, setSelected] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   const camera = useRef<CameraApi | null>(null)
   const wide = useWide()
-  // Wide screens float every panel at once; phones show one at a time above a tab bar.
-  // Meters start folded: Pip already shows live goal progress, and the meters matter most after a run.
   const [open, setOpen] = useState<Record<PanelId, boolean>>({ build: true, meters: false, pip: true, residents: true })
   const [sheet, setSheet] = useState<PanelId | null>(null)
   const isOpen = (id: PanelId) => (wide ? open[id] : sheet === id)
@@ -159,7 +158,6 @@ export function Game({ level }: { level: Level }) {
       // the tour just shows again next visit
     }
   }
-  /** Doing a step (or a later one) moves the tour past it. */
   const reach = (id: TourStep) => {
     const k = TOUR.findIndex((t) => t.id === id)
     if (tour === null || k < tour) return
@@ -291,10 +289,8 @@ export function Game({ level }: { level: Level }) {
     </header>
   )
 
-  // Top of the street: camera buttons and the tour over the 3D view, and Pip pointing out a concept in either view.
   const guides = (
     <div className="flex flex-col items-center gap-2">
-      {/* On a phone an open panel needs the room more than the camera buttons do. */}
       {in3d && (wide || !sheet) && <CameraBar camera={camera} onUse={() => reach('look')} />}
       {in3d && tour !== null && <Tour step={tour} onNext={() => (tour + 1 < TOUR.length ? setTour(tour + 1) : endTour())} onSkip={endTour} />}
       <div aria-live="polite" className="flex w-full justify-center">
@@ -305,7 +301,7 @@ export function Game({ level }: { level: Level }) {
               <p className="font-display font-semibold">Pip noticed</p>
               <ul className="flex flex-col gap-1.5">
                 {noticed.map((l) => (
-                  <li key={l.concept} className="flex gap-2">
+                  <li key={l.concept} className="relative flex gap-2">
                     <LessonLine lesson={l} />
                   </li>
                 ))}
@@ -334,7 +330,6 @@ export function Game({ level }: { level: Level }) {
         </Fallback>
         </section>
       )}
-      {/* The panels float over the street; empty space lets drags through to it. */}
       {wide ? (
         <div className="pointer-events-none absolute inset-0 grid grid-cols-[15rem_minmax(0,1fr)_16rem] grid-rows-[auto_minmax(0,1fr)] gap-2 p-2">
           <div className="col-span-3">{header}</div>
@@ -361,7 +356,7 @@ export function Game({ level }: { level: Level }) {
             {guides}
             {editor2d}
             {in3d && <div className="flex-1" />}
-            {sheet && panel(sheet, 'max-h-[50dvh]')}
+            {sheet && (in3d || sheet !== 'build') && panel(sheet, 'max-h-[50dvh]')}
           </main>
           <div className="pointer-events-auto flex flex-col gap-2">
             <RunButton running={running} kind={shown.kind} onRun={runDay} />

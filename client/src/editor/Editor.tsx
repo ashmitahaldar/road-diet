@@ -175,7 +175,7 @@ export function Editor({ level, layout, onChange }: Props) {
                   tabIndex={0}
                   role="button"
                   aria-pressed={i === selected}
-                  aria-label={`${ELEMENTS[el.id].label}, ${el.widthM.toFixed(1)} metres`}
+                  aria-label={`${VISUALS[el.id].short} ${el.widthM.toFixed(1)} m${VISUALS[el.id].short === ELEMENTS[el.id].label ? '' : `, ${ELEMENTS[el.id].label}`}`}
                   aria-describedby="editor-keys"
                   onClick={() => setSelected(i)}
                   onFocus={() => setSelected(i)}
@@ -281,7 +281,8 @@ function Block({ id, w, widthM, prev, next, lifted, movers }: { id: ElementId; w
       <circle cx={w / 2} cy={mid} r={r} fill="var(--color-paper)" stroke="var(--color-ink)" strokeWidth={2} />
       <ElementIcon id={id} size={r * 1.4} x={w / 2 - r * 0.7} y={mid - r * 0.7} />
       <text x={w / 2} y={BASE + 22} textAnchor="middle" fontSize={13} fontWeight={600} fill="var(--color-ink)">
-        {v.short}
+        {/* Trailing space: invisible, but keeps the text "Sidewalk 3.7 m" so it matches the aria-label. */}
+        {`${v.short} `}
       </text>
       <text x={w / 2} y={BASE + 40} textAnchor="middle" fontSize={13} fill="var(--color-ink)" className="tabular-nums">
         {widthM.toFixed(1)} m

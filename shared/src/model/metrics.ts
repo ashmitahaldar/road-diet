@@ -13,11 +13,9 @@ export function emissionsKgPerHour(traffic: Traffic, corridor: Corridor): number
   return MODES.reduce((kg, m) => kg + traffic.demand[m] * corridor.lengthKm * ef[m], 0)
 }
 
-/** The bike facility is a painted lane, and one runs beside parked cars. */
 export const inDoorZone = (layout: Layout) =>
   bikeFacility(layout) === 'painted' && layout.elements.some((e, i) => e.id === 'bike_painted' && neighbours(layout, i).includes('parking'))
 
-/** Some sidewalk has trees or parking beside it. */
 export const hasBuffer = (layout: Layout) =>
   layout.elements.some((e, i) => e.id === 'sidewalk' && neighbours(layout, i).some((n) => n === 'planter' || n === 'parking'))
 

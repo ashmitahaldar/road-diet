@@ -39,7 +39,7 @@ await pause(4)
 // 3D is the default view; the 2D blocks have names the script can select.
 const to2d = page.getByRole('button', { name: 'Edit in 2D' })
 if (await to2d.isVisible()) await to2d.click()
-await page.getByRole('button', { name: /^Car lane, 3\.3 metres/ }).nth(1).click()
+await page.getByRole('button', { name: /^Car 3\.3 m/ }).nth(1).click()
 await pause(2)
 await page.getByRole('button', { name: 'Remove' }).click()
 await pause(2)

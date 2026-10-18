@@ -25,7 +25,7 @@
   --color-meter-travel: #2b8fd6;
   --color-meter-fairness: #a24cb8;
 
-  /* Resident portraits only (characters.tsx): skin tones, added with the detailed faces. */
+  /* Skin tones for the resident portraits only. */
   --color-skin-1: #f3cfae;
   --color-skin-2: #d9a06a;
   --color-skin-3: #a86f42;

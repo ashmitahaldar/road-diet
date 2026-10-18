@@ -21,12 +21,10 @@ const ink = {
   strokeLinejoin: 'round',
 } as const
 
-/** What makes each resident look like themselves: skin, shirt, and hair or headwear drawn behind and over the head. */
 const LOOKS: Record<PersonaId, { skin: string; shirt: string; back?: ReactNode; front: ReactNode }> = {
   driver_delivery: {
     skin: 'var(--color-skin-2)',
     shirt: 'var(--color-primary)',
-    // A cap with its brim to the side.
     front: (
       <>
         <path d="M14.6 19.5 Q14.5 10 24 10 Q33.5 10 33.4 19.5 Z" fill="var(--color-car)" {...ink} />
@@ -38,14 +36,12 @@ const LOOKS: Record<PersonaId, { skin: string; shirt: string; back?: ReactNode; 
   student_cyclist: {
     skin: 'var(--color-skin-3)',
     shirt: 'var(--color-meter-safety)',
-    // Long hair with a side fringe.
     back: <path d="M13.5 25 Q12.5 10.5 24 10.5 Q35.5 10.5 34.5 25 L35 35 Q24 38 13 35 Z" fill="var(--color-ink)" />,
     front: <path d="M14.8 21 Q15.5 11.5 24 11.5 Q32.5 11.5 33.2 20 Q28 15.5 21 17.5 Q17.5 18.6 14.8 21 Z" fill="var(--color-ink)" />,
   },
   senior_walker: {
     skin: 'var(--color-skin-4)',
     shirt: 'var(--color-planter)',
-    // Short grey hair, a grey beard and round glasses.
     front: (
       <>
         <path d="M15 19 Q15.5 10.8 24 10.8 Q32.5 10.8 33 19 Q29.5 14.5 24 14.8 Q18.5 14.5 15 19 Z" fill="var(--color-sidewalk)" {...ink} />
@@ -59,7 +55,6 @@ const LOOKS: Record<PersonaId, { skin: string; shirt: string; back?: ReactNode; 
   shop_owner: {
     skin: 'var(--color-skin-1)',
     shirt: 'var(--color-meter-travel)',
-    // A straight bob with a fringe, and small earrings.
     back: <path d="M13.6 27 Q12.5 10.5 24 10.5 Q35.5 10.5 34.4 27 L30.5 27 L30.5 19 L17.5 19 L17.5 27 Z" fill="var(--color-ink)" />,
     front: (
       <>
@@ -71,7 +66,6 @@ const LOOKS: Record<PersonaId, { skin: string; shirt: string; back?: ReactNode; 
   },
 }
 
-/** A resident's portrait on their accent colour. Brows and mouth follow their happiness. */
 export function Face({ id, happiness, className = 'size-12' }: { id: PersonaId; happiness: number; className?: string }) {
   const look = LOOKS[id]
   const { mouth, brow } = mood(happiness)
@@ -111,7 +105,6 @@ export function Face({ id, happiness, className = 'size-12' }: { id: PersonaId; 
   )
 }
 
-/** Pip, the pigeon who guides the player. Bobs while talking. */
 export function Pip({ className = 'size-16', talking = false }: { className?: string; talking?: boolean }) {
   const reduce = useReducedMotion()
   return (

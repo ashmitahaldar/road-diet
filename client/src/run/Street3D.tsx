@@ -44,7 +44,6 @@ const HANDLE_M = 0.7
 /** One moving object. Targets change when the layout does; the frame loop eases x, y and scale towards them. */
 type Slot = { x: number; tx: number; y: number; ty: number; z: number; v: number; s: number; ts: number; phase: number }
 type Pool = { meshes: InstancedMesh[]; slots: Slot[] }
-/** Camera moves for the on-screen buttons; each eases there over a few frames. */
 export type CameraApi = { view: (name: View) => void; orbit: (radians: number) => void; zoom: (factor: number) => void }
 export type View = 'overview' | 'street' | 'above'
 
@@ -98,7 +97,6 @@ type Props = {
   selected: number | null
   onSelect: (i: number | null) => void
   onDragging: (dragging: boolean) => void
-  /** The player moved the camera themselves (the guided tour waits for this). */
   onLook?: () => void
   camera: RefObject<CameraApi | null>
 }
@@ -184,11 +182,10 @@ export default function Street3D({ level, layout, onChange, selected, onSelect, 
 
     const camera = new PerspectiveCamera(45, 1, 0.5, 400)
     const s = Math.max(1, level.corridor.widthM / 20)
-    // Overview is close enough to grab a handle straight away; zoom out to see the whole block.
     const VIEWS: Record<View, Vector3> = {
       overview: new Vector3(13 * s, 22 * s, 27 * s),
       street: new Vector3(4 * s, 3.6, 17 * s),
-      above: new Vector3(0, 46 * s, 14 * s),
+      above: new Vector3(0, 46 * s, 15 * s),
     }
     // A tall, narrow window sees less of the street's width, so every view steps back.
     let back = 0
@@ -196,8 +193,12 @@ export default function Street3D({ level, layout, onChange, selected, onSelect, 
     camera.position.copy(VIEWS.overview)
     const controls = new OrbitControls(camera, canvas)
     Object.assign(controls, { enablePan: false, enableDamping: true, autoRotate: true, autoRotateSpeed: 0.6, minDistance: 15, maxDistance: 110, minPolarAngle: 0.3, maxPolarAngle: 1.35 })
-    controls.addEventListener('start', () => live.current.onLook?.())
     let goal: Vector3 | null = null
+    // A drag takes over from a button move; otherwise the move keeps pulling the camera back.
+    controls.addEventListener('start', () => {
+      goal = null
+      live.current.onLook?.()
+    })
     const go = (to: Vector3) => {
       controls.autoRotate = false
       goal = to.clampLength(controls.minDistance, controls.maxDistance)
@@ -268,7 +269,6 @@ export default function Street3D({ level, layout, onChange, selected, onSelect, 
         if (drag?.kind === 'resize') change(drag.start)
         const p = groundAt(e)
         const i = p ? laneAt(p.x) : -1
-        // Tapping the selected element again lets go of it.
         select(i >= 0 && i !== current ? i : null)
       } else if (drag?.kind === 'move' && drag.slot !== null) {
         const to = drag.slot > drag.index ? drag.slot - 1 : drag.slot
@@ -333,7 +333,8 @@ export default function Street3D({ level, layout, onChange, selected, onSelect, 
       }
       if (goal) {
         camera.position.lerp(goal, 1 - Math.exp(-dt * 5))
-        if (camera.position.distanceTo(goal) < 0.05) goal = null
+        // OrbitControls' angle limits can stop the camera short of a goal, so settle when close.
+        if (camera.position.distanceTo(goal) < 0.3) goal = null
       }
       controls.update()
       renderer.render(scene, camera)
@@ -362,7 +363,6 @@ export default function Street3D({ level, layout, onChange, selected, onSelect, 
     w.street.clear()
     w.street.add(buildStreet(lanes, level.corridor.widthM))
     w.labels.clear()
-    // A name tag on each piece, on the near side of the orbit centre.
     for (const lane of lanes) {
       const tag = document.createElement('span')
       tag.textContent = VISUALS[lane.id].short

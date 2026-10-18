@@ -8,7 +8,6 @@ const VIEWS: [View, string][] = [
   ['above', 'Above'],
 ]
 
-/** Buttons for the 3D camera, for anyone who'd rather not drag, and on phones where pinching is fiddly. */
 export function CameraBar({ camera, onUse }: { camera: RefObject<CameraApi | null>; onUse: () => void }) {
   const act = (f: (c: CameraApi) => void) => () => {
     if (camera.current) f(camera.current)
@@ -23,7 +22,7 @@ export function CameraBar({ camera, onUse }: { camera: RefObject<CameraApi | nul
         </Button>
       ))}
       <span aria-hidden className="mx-0.5 h-6 w-0.5 bg-grid" />
-      {/* Phones turn the view with a drag; the buttons would wrap the bar onto two rows. */}
+      {/* Hidden on phones, where they would wrap the bar onto two rows. */}
       <Button className={`${small} text-lg max-sm:hidden`} aria-label="Turn left" onClick={act((c) => c.orbit(-Math.PI / 6))}>
         ↺
       </Button>

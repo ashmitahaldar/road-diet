@@ -41,7 +41,7 @@ if (total > MAX_SECONDS) throw new Error(`video is ${total.toFixed(1)} s, over $
 // Each sentence gets a share of its scene's time by word count.
 const stamp = (t) => new Date(t * 1000).toISOString().slice(11, 23).replace('.', ',')
 const cues = scenes.flatMap((s, i) => {
-  const lines = NARRATION[s.name]?.split(/(?<=[.?!:])\s+/) ?? []
+  const lines = NARRATION[s.name]?.split(/(?<=[.?!])\s+/) ?? []
   const from = starts[i] + (i ? XF : 0.2)
   const span = starts[i] + s.dur - from - 0.1
   const words = lines.reduce((n, l) => n + l.split(/\s+/).length, 0)

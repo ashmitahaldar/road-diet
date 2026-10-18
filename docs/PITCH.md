@@ -1,60 +1,90 @@
 # Road Diet: 4-minute pitch and Q&A
 
-A 4-minute pitch with a live demo, then 1 minute of questions. The spoken script below is about 500 words, which is about 3:50 at 130 words a minute. Read it aloud once with a timer and cut the lines marked *(cut if long)* if you run over.
+A 4-minute pitch to the slide deck, then questions. The deck is at https://claude.ai/artifact/URvZo6kgL5SvXb6ZtrMK3x (share it from its Share menu before anyone else opens it). Each slide's speaker notes hold the same lines as the script below.
+
+The script is about 460 spoken words, about 3:40 at 130 words a minute, which leaves time for slide changes. Read it aloud once with a timer.
 
 ## Before you go on
-- Open https://roaddiet.design in a fresh browser window (or a private one), so the story and tour play from the start. Zoom the browser to 110–125% if the room screen is far away.
-- Open a second tab on https://roaddiet.design/data.
-- Run one game earlier that day to check that the "Powered by Gemini" labels show. The free tier allows 20 Gemini requests a day, and each run uses three or four. If the labels are missing, the game still works on its built-in text. Say so in one line (see the backup below).
-- Turn the sound off unless the room has speakers.
+- Open the deck and start Present from the cover. The four demo slides play silent clips from the demo video on a loop, so you talk over them and need no sound.
+- Fill in the two placeholders in the speaker notes: your name on the cover, and one line of inspiration on the judging-criteria slide.
+- Keep https://roaddiet.design open in a second tab in case a judge wants to see it live, or for questions.
+- The hidden last slide holds the whole silent demo video (1:40). Unhide it, or open it from All slides, if the clips fail.
 
 ## Script
 
-| Time | Beat |
+| Time | Slide |
 |---|---|
-| 0:00–0:30 | Hook |
-| 0:30–1:00 | Who and why |
-| 1:00–2:45 | Live demo |
-| 2:45–3:30 | Trust |
-| 3:30–4:00 | Impact and close |
+| 0:00–0:08 | Cover |
+| 0:08–0:22 | The challenges we answer |
+| 0:22–0:42 | Every street has a budget |
+| 0:42–0:52 | Who it’s for |
+| 0:52–0:58 | How it works |
+| 0:58–1:12 | Demo 1: Design (clip) |
+| 1:12–1:26 | Demo 2: Run a day (clip) |
+| 1:26–1:38 | Demo 3: Fix it (clip) |
+| 1:38–1:52 | Demo 4: Learn why (clip) |
+| 1:52–2:10 | Technicality and design |
+| 2:10–2:32 | Climate Action & Sustainability |
+| 2:32–2:50 | School of Cities: the brief, line by line |
+| 2:50–2:55 | School of Cities: the four questions |
+| 2:55–3:05 | Data sources |
+| 3:05–3:27 | MLH prizes |
+| 3:27–3:40 | Judging criteria |
+| 3:40–3:55 | Close |
 
-### 0:00–0:30 · Hook
-> Every street has a budget. Mount Pleasant Road, north of Eglinton, is 20 metres wide. Today four of those lanes go to cars. In the City's own count, about 1,900 vehicles and 5 bikes went by in the evening peak hour.
->
-> Every fight about a bike lane, a bus lane or parking is a fight over those metres. The School of Cities challenge asks what changing how we use road space would actually do. Road Diet lets you find out.
+### 0:00–0:08 · Cover
+> Hi, I’m [name]. This is Road Diet: an educational game about how a real Toronto street gets shared.
 
-### 0:30–1:00 · Who and why
-> Road Diet is an educational game for students, teachers and neighbours. You can't feel a trade-off from a news story or a spreadsheet, so here you redesign a real Toronto street yourself and hear from the people who use it. There's no one right answer. You see why every choice helps someone and costs someone else.
+### 0:08–0:22 · The challenges we answer
+> It’s built for Climate Action and Sustainability first: every design is tracked in kilograms of CO₂. It also answers the School of Cities question, what would changing road space actually do? And it uses Gemini, Tiger Data and Vultr.
 
-### 1:00–2:45 · Live demo
-Do each action as you say its line. The run-of-show below lists the exact clicks.
+### 0:22–0:42 · Every street has a budget
+> Every street has a budget. Mount Pleasant Road is 20 metres wide, and four lanes go to cars. The City counted about 1,900 vehicles and 5 bikes in the evening peak hour. Every fight about bike lanes, bus lanes or parking is a fight over these metres.
 
-> This is Pip. Pip lives on a lamppost and introduces the residents: Dev, a courier; Maya, a student who'd bike if it felt safer; Mrs. Rossi, who walks to the pharmacy; and Omar, who runs a bakery. Each wants something different from the same 20 metres.
->
-> I'll take out two car lanes and add a painted bike lane and parking. Traffic follows the lanes I build. And Pip notices a problem: the bike lane runs right beside parked cars, in the door zone.
->
-> I run a day anyway. The goal's met, but only one star. Each resident reacts, and I can open the story of their day.
->
-> So I swap the painted lane for a protected one and run another day. Three stars, still with two car lanes.
->
-> Why did emissions fall? I ask Pip. About 245 fewer people drive, because the other ways of getting around got better. That's mode shift.
->
-> A quick check at the end tests what stuck.
+### 0:42–0:52 · Who it’s for
+> But you can’t feel that trade-off from a news story. So students, teachers and neighbours redesign the street themselves.
 
-### 2:45–3:30 · Trust
-> Three things make it trustworthy. First, the data. Both streets start from City of Toronto Open Data: traffic counts, serious collisions, the Cycling Network, TTC schedules and the Official Plan. Every source and estimate is on this page. *(Switch to the `/data` tab.)*
->
-> Second, it's neutral. No star or badge rewards adding or removing any kind of lane. You just saw three stars with two car lanes.
->
-> Third, Gemini gives the residents and Pip their voice, but it never decides a result. Our tested model computes every number. Gemini only sees those facts, any number it writes has to match them, and the quiz answers come from the model. *(cut if long)* Runs are stored in Tiger Data, so you can see how other players solved the same street.
+### 0:52–0:58 · How it works
+> Design, run a day, learn why.
 
-### 3:30–4:00 · Impact and close
-> After a few runs, a player can explain the street budget, predict mode shift, spot a safer layout, and judge a design by its least happy resident. A teacher can run it in a browser with no accounts. It's live at roaddiet.design.
->
-> I built it solo for Hack The Valley. Next come more Toronto streets from the same data pipeline, and a teacher's guide. Thank you.
+### 0:58–1:12 · Demo 1: Design (clip)
+> I swap two car lanes for a painted bike lane and parking. Traffic follows my lanes, and Pip, our guide, spots a problem: the door zone.
 
-## Demo run-of-show
-Mount Pleasant Rd, level 1. Numbers checked against the model for this exact design.
+### 1:12–1:26 · Demo 2: Run a day (clip)
+> I run a day anyway. Emissions fall 8 percent, but safety is 45, so one star. Each resident tells me how their day went.
+
+### 1:26–1:38 · Demo 3: Fix it (clip)
+> So I switch to a protected lane. Three stars: 36 kilograms of CO₂ saved per peak hour, still with two car lanes.
+
+### 1:38–1:52 · Demo 4: Learn why (clip)
+> Why did emissions fall? Pip says about 245 fewer people drive. That’s mode shift, the only way the model cuts emissions.
+
+### 1:52–2:10 · Technicality and design
+> Under that is a real product: a TypeScript model with 93 automated tests, a Python pipeline from City data, and a 3D editor plus a 2D one that works by keyboard and screen reader, on a phone too.
+
+### 2:10–2:32 · Climate Action & Sustainability
+> For Climate: the brief asks for carbon tracking, and every scorecard tracks CO₂ against today. It asks to reduce impact, and players learn the lever that works, mode shift. And a cut only counts if every resident stays on board.
+
+### 2:32–2:50 · School of Cities: the brief, line by line
+> For School of Cities: it takes on bikes versus cars versus pedestrians directly, it’s the street-design scenario explorer the brief describes, and it’s free, accessible and neutral. No star rewards any lane type.
+
+### 2:50–2:55 · School of Cities: the four questions
+> And here are the brief’s four questions, answered.
+
+### 2:55–3:05 · Data sources
+> It’s all built on City of Toronto Open Data and TTC schedules, and every source is linked in the app.
+
+### 3:05–3:27 · MLH prizes
+> For MLH: Gemini voices the residents and Pip, but never decides a result. It only sees our model’s facts, and its numbers must match. Tiger Data stores every run in a hypertable, with a continuous aggregate for how others solved the street. And it’s live on Vultr.
+
+### 3:27–3:40 · Judging criteria
+> So: it’s live and tested, built for anyone, teaches the carbon cost of street design, and explains every number. [Inspiration: one line on what got you thinking about Toronto streets.] And I built it solo, here.
+
+### 3:40–3:55 · Close
+> After a few runs, a player can explain the street budget, predict mode shift and spot a safer layout. Play it free at roaddiet.design. Thank you.
+
+## Live demo instead of the clips
+If you have time for a live demo, or a judge asks to see the game, follow this on Mount Pleasant Rd, level 1. It is the same design the clips show. Numbers checked against the model for this exact design.
 
 | Step | Click | What appears |
 |---|---|---|
@@ -74,7 +104,9 @@ After step 4 the street reads, left to right: sidewalk 3.4 m, painted bike lane 
 
 **If the 3D view is slow or blank.** Stay in 2D. Everything in the demo works there, and it's the keyboard and screen-reader path anyway.
 
-**If the network fails.** Play the demo video (#26) instead.
+**If roaddiet.design is down.** Stay on the deck. The clips and the hidden backup slide don't use the live site.
+
+**If the venue network fails.** The deck itself is online. Download it as PPTX beforehand (downloads show still frames, not clips) and keep the demo video file on your laptop.
 
 ## Anticipated questions
 Each answer takes about 20 seconds.

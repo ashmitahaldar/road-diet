@@ -138,10 +138,12 @@ def build_corridor(cfg):
 
     (count,) = datastore(TMC[1], latest_count_id=cfg["count"]["latest_count_id"])
     p = cfg["count"]["peak"]
-    bloor_vehicle_share = (count["e_appr_vehicle"] + count["w_appr_vehicle"]) / count["total_vehicle"]
-    bloor_bike_share = (count["e_appr_bike"] + count["w_appr_bike"]) / count["total_bike"]
-    peak_vehicles = count[f"{p}_peak_vehicle"] * bloor_vehicle_share
-    peak_bikes = count[f"{p}_peak_bike"] * bloor_bike_share
+    # Only the approaches along the corridor count: e/w for an east-west street, n/s for a north-south one.
+    appr = cfg["count"].get("approaches", ["e", "w"])
+    vehicle_share = sum(count[f"{a}_appr_vehicle"] for a in appr) / count["total_vehicle"]
+    bike_share = sum(count[f"{a}_appr_bike"] for a in appr) / count["total_bike"]
+    peak_vehicles = count[f"{p}_peak_vehicle"] * vehicle_share
+    peak_bikes = count[f"{p}_peak_bike"] * bike_share
     # No peak-hour pedestrian field: scale the 14 h crossing total by the vehicle peak-hour share.
     peak_pedestrians = count["total_pedestrian"] * count[f"{p}_peak_vehicle"] / count["total_vehicle"]
 
@@ -181,10 +183,11 @@ def build_corridor(cfg):
         "freeFlowSpeedKph": cfg["speed"]["kph"],
         "sources": [
             src("Toronto Centreline (TCL) v2", CENTRELINE[0], f"{len(segs)} segments of {cfg['name']}: {length_km} km."),
-            src("Traffic Volumes at Intersections for All Modes", TMC[0], f"{count['location_name']}, {count['latest_count_date']}, {count['count_duration']} h count; {p.upper()} peak hour, Bloor approaches only."),
+            src("Traffic Volumes at Intersections for All Modes", TMC[0], f"{count['location_name']}, {count['latest_count_date']}, {count['count_duration']} h count; {p.upper()} peak hour, {street} approaches only."),
             src("Motor Vehicle Collisions involving Killed or Seriously Injured Persons", KSI[0], f"Within {cfg['safety']['buffer_m']} m of the segment since {since}; deduplicated by collision; aggregate counts only."),
-            src("Cycling Network", CYCLING[0], "; ".join(f"{street}, {r['FROM_STREET']} to {r['TO_STREET']}: {r['INFRA_HIGHORDER']} ({r['INSTALLED']})" for r in bike_rows) + "."),
+            src("Cycling Network", CYCLING[0], "; ".join(f"{street}, {r['FROM_STREET']} to {r['TO_STREET']}: {r['INFRA_HIGHORDER']} ({r['INSTALLED']})" for r in bike_rows) + "." if bike_rows else f"No bike facility listed on {street} along this stretch."),
             {"label": "Official Plan Map 3: Right-of-Way Widths Associated with Existing Major Streets (June 2026)", "url": MAP3, "retrieved": retrieved, "note": cfg["width"]["source"]},
+            *({"retrieved": retrieved, **x} for x in cfg.get("extra_sources", [])),
         ],
         "estimates": [
             {"field": "baselineLayout", "note": cfg["layout"]["note"]},
@@ -194,7 +197,7 @@ def build_corridor(cfg):
             {"field": "baselineDemand.bus", "note": d["bus_note"]},
         ],
         "observed": {
-            "count": {k: count[k] for k in ("location_name", "latest_count_date", "count_duration", "total_vehicle", "total_bike", "total_pedestrian", f"{p}_peak_start", f"{p}_peak_vehicle", f"{p}_peak_bike", "e_appr_vehicle", "w_appr_vehicle", "e_appr_bike", "w_appr_bike")},
+            "count": {k: count[k] for k in ("location_name", "latest_count_date", "count_duration", "total_vehicle", "total_bike", "total_pedestrian", f"{p}_peak_start", f"{p}_peak_vehicle", f"{p}_peak_bike", *(f"{a}_appr_{m}" for a in appr for m in ("vehicle", "bike")))},
             "peakHour": {"vehicles": round(peak_vehicles), "bikes": round(peak_bikes), "pedestrians": round(peak_pedestrians)},
             "bikeFacility": infra,
         },
@@ -208,6 +211,7 @@ OSM_COPYRIGHT = "https://www.openstreetmap.org/copyright"
 INK, PAPER, PRIMARY, STREET = "#1f2a37", "#faf6ee", "#2b59c3", "#cbd2d9"
 BIKE = {"protected": ("#2fa84f", ""), "painted": ("#7cc576", "10 6"), "other": ("#3e8e5a", "2 6")}
 MAP_PAD_M = 150
+MAP_MIN_ASPECT = 1.6
 
 
 def bike_kind(infra):
@@ -231,15 +235,19 @@ def map_frame(corridor):
     from shapely.geometry import box
 
     x0, y0, x1, y1 = corridor.bounds
-    return box(x0 - MAP_PAD_M, y0 - MAP_PAD_M, x1 + MAP_PAD_M, y1 + MAP_PAD_M)
+    x0, y0, x1, y1 = x0 - MAP_PAD_M, y0 - MAP_PAD_M, x1 + MAP_PAD_M, y1 + MAP_PAD_M
+    # Always landscape, so a north-south street doesn't make a tall, narrow map with crowded labels.
+    grow = max(0, MAP_MIN_ASPECT * (y1 - y0) - (x1 - x0)) / 2
+    return box(x0 - grow, y0, x1 + grow, y1)
 
 
 def render_map(corridor, street, streets, bikes, stations, ksi_label):
     """SVG in metres (EPSG:32617), north up. corridor/streets: shapely lines; bikes: [(kind, line)]; stations: [(name, point)]."""
     frame = map_frame(corridor)
-    x0, y0, x1, _ = corridor.bounds
     fx, fy, fx1, fy1 = frame.bounds
     w, h = round(fx1 - fx), round(fy1 - fy)
+    # Sizes below are tuned for a ~900 m wide frame; wider frames scale them up so labels stay readable.
+    k = max(1, w / 900)
     pt = lambda x, y: f"{x - fx:.0f},{fy1 - y:.0f}"
 
     def path(geom, attrs):
@@ -249,27 +257,27 @@ def render_map(corridor, street, streets, bikes, stations, ksi_label):
         return f'<path d="{d}" fill="none" stroke-linecap="round" stroke-linejoin="round" {attrs}/>' if d else ""
 
     out = [f'<rect width="{w}" height="{h}" fill="{PAPER}"/>']
-    out += [path(g, f'stroke="{STREET}" stroke-width="7"') for g in streets]
-    out.append(path(corridor, f'stroke="{INK}" stroke-width="26"'))
-    out.append(path(corridor, f'stroke="{PRIMARY}" stroke-width="18"'))
+    out += [path(g, f'stroke="{STREET}" stroke-width="{7 * k:.0f}"') for g in streets]
+    out.append(path(corridor, f'stroke="{INK}" stroke-width="{26 * k:.0f}"'))
+    out.append(path(corridor, f'stroke="{PRIMARY}" stroke-width="{18 * k:.0f}"'))
     for kind, g in bikes:
         colour, dash = BIKE[kind]
-        out.append(path(g, f'stroke="{colour}" stroke-width="{6 if kind == "protected" else 5}"' + (f' stroke-dasharray="{dash}"' if dash else "")))
+        dash = " ".join(f"{float(d) * k:.0f}" for d in dash.split())
+        out.append(path(g, f'stroke="{colour}" stroke-width="{(6 if kind == "protected" else 5) * k:.0f}"' + (f' stroke-dasharray="{dash}"' if dash else "")))
     # Keep centred labels inside the frame (approximate glyph width 0.6 em).
     inside = lambda x, s, size: min(max(x, 0.3 * size * len(s) + 8), w - 0.3 * size * len(s) - 8)
     text = lambda x, y, s, anchor="middle", size=22, weight=600: (
-        f'<text x="{inside(x, s, size) if anchor == "middle" else x:.0f}" y="{y:.0f}" text-anchor="{anchor}" font-size="{size}" font-weight="{weight}" fill="{INK}" '
-        f'stroke="{PAPER}" stroke-width="5" paint-order="stroke">{escape(s)}</text>')
+        f'<text x="{inside(x, s, size * k) if anchor == "middle" else x:.0f}" y="{y:.0f}" text-anchor="{anchor}" font-size="{size * k:.0f}" font-weight="{weight}" fill="{INK}" '
+        f'stroke="{PAPER}" stroke-width="{5 * k:.0f}" paint-order="stroke">{escape(s)}</text>')
     for name, p in stations:
         x, y = (float(v) for v in pt(p.x, p.y).split(","))
-        out.append(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="13" fill="{PAPER}" stroke="{INK}" stroke-width="5"/>')
-        out.append(text(x, y - 28, f"{name} station", size=28))
-    mx = (x0 + x1) / 2 - fx
-    below = fy1 - y0 + 50  # under the corridor's lowest point, so a tilted street never crosses the labels
-    out.append(text(mx, below, street, size=32, weight=700))
-    out.append(text(mx, below + 38, ksi_label, size=26, weight=500))
-    out.append(f'<path d="M20,{h - 40} h100" stroke="{INK}" stroke-width="5"/>' + text(70, h - 54, "100 m", size=24, weight=500))
-    out.append(text(w - 16, h - 16, "© OpenStreetMap contributors · City of Toronto", anchor="end", size=20, weight=500))
+        out.append(f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{13 * k:.0f}" fill="{PAPER}" stroke="{INK}" stroke-width="{5 * k:.0f}"/>')
+        out.append(text(x, y - 28 * k, f"{name} station", size=28))
+    # Top-left, clear of the street and of the scale bar and credit along the bottom.
+    out.append(text(16 * k, 40 * k, street, anchor="start", size=32, weight=700))
+    out.append(text(16 * k, 76 * k, ksi_label, anchor="start", size=26, weight=500))
+    out.append(f'<path d="M{20 * k:.0f},{h - 40 * k:.0f} h100" stroke="{INK}" stroke-width="{5 * k:.0f}"/>' + text(20 * k + 50, h - 54 * k, "100 m", size=24, weight=500))
+    out.append(text(w - 16 * k, h - 16 * k, "© OpenStreetMap contributors · City of Toronto", anchor="end", size=20, weight=500))
     return out, w, h
 
 
@@ -284,7 +292,9 @@ def build_map(cfg):
     street = cfg["segment"]["street"]
     segs = [r for r in datastore(CENTRELINE[1], LINEAR_NAME_FULL=street) if r["CENTRELINE_ID"] in cfg["segment"]["centreline_ids"]]
     line = gpd.GeoDataFrame(geometry=[shape(json.loads(r["geometry"])) for r in segs], crs=4326)
-    w, s, e, n = line.total_bounds + [-0.003, -0.003, 0.003, 0.003]  # 240-330 m; render_map clips to MAP_PAD_M
+    # Fetch everything inside the drawn frame (render_map clips to it), plus a small margin.
+    frame = gpd.GeoSeries([map_frame(linemerge(unary_union(list(to_metric(line).geometry))))], crs=METRIC_CRS).to_crs(4326)
+    w, s, e, n = frame.total_bounds + [-0.001, -0.001, 0.001, 0.001]
     osm_path = RAW / "osm" / f"{cfg['id']}.json"  # cached: Overpass is a shared, rate-limited service
     if not osm_path.exists():
         osm_path.parent.mkdir(parents=True, exist_ok=True)
@@ -320,7 +330,7 @@ def build_map(cfg):
 
     osm_source = {"label": "OpenStreetMap contributors", "url": OSM_COPYRIGHT, "retrieved": date.fromtimestamp(osm_path.stat().st_mtime).isoformat(),
                   "note": f"Streets and subway stations on the corridor map, from the Overpass API. {osm.get('osm3s', {}).get('copyright', '')}".strip()}
-    corridor["sources"] = [src for src in corridor["sources"] if src["url"] != OSM_COPYRIGHT] + [osm_source]
+    corridor["sources"] = [src for src in corridor["sources"] if src["label"] != osm_source["label"]] + [osm_source]
     corridor |= {"mapSvg": f"data/corridors/{svg_path.name}", "mapAlt": alt}
     write_corridor(corridor)
     return svg_path

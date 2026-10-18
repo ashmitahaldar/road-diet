@@ -3,11 +3,44 @@ import { Section, link } from './DataPage'
 
 const n = (x: number) => x.toLocaleString('en-CA')
 
-export function AboutPage({ level }: { level: Level }) {
+function StreetFacts({ level }: { level: Level }) {
   const { corridor } = level
   const count = corridor.observed?.count
-  const cycling = corridor.sources.find((s) => s.label === 'Cycling Network')
+  const cycling = corridor.sources.find((s) => s.label === 'Cycling Network')?.note
+  const bus = corridor.sources.find((s) => s.label.startsWith('TTC'))?.note ?? corridor.estimates?.find((e) => e.field === 'baselineDemand.bus')?.note
   const ksi = corridor.baselineSafety
+  return (
+    <Section title={`The real street: ${corridor.name}`}>
+      <ul className="list-disc space-y-2 pl-5">
+        <li>
+          It is {corridor.lengthKm} km long, and the City’s Official Plan gives it a {corridor.widthM} m planned right-of-way. That is the budget you build
+          with.
+        </li>
+        {count && (
+          <li>
+            On {count.latest_count_date}, a {count.count_duration}-hour City count at {count.location_name} recorded {n(count.total_vehicle)} vehicles,{' '}
+            {n(count.total_bike)} bikes and {n(count.total_pedestrian)} pedestrians.
+          </li>
+        )}
+        {cycling && <li>City Cycling Network data: {cycling}</li>}
+        <li>
+          {ksi.ksiCollisions5y} collisions where someone was killed or seriously injured happened within 30 m of this stretch in the last five years.{' '}
+          {ksi.pedestrianInvolved} involved a pedestrian and {ksi.cyclistInvolved} a cyclist (a collision can involve both).
+        </li>
+        {bus && <li>Buses: {bus}</li>}
+      </ul>
+      <p className="mt-3 text-sm">
+        Lane widths are not in any open dataset, so today’s layout in the game is an estimate. See{' '}
+        <a href="/data" className={link}>
+          Data & Limitations
+        </a>{' '}
+        for every source and every estimate.
+      </p>
+    </Section>
+  )
+}
+
+export function AboutPage({ levels }: { levels: Level[] }) {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-5">
       <a href="/" className={`${link} inline-flex min-h-11 items-center`}>
@@ -62,33 +95,9 @@ export function AboutPage({ level }: { level: Level }) {
         </dl>
       </Section>
 
-      <Section title={`The real street: ${corridor.name}`}>
-        <ul className="list-disc space-y-2 pl-5">
-          <li>
-            It is {corridor.lengthKm} km long, and the City’s Official Plan gives it a {corridor.widthM} m planned right-of-way. That is the budget you build
-            with.
-          </li>
-          {count && (
-            <li>
-              On {count.latest_count_date}, a {count.count_duration}-hour City count at {count.location_name} recorded {n(count.total_vehicle)} vehicles,{' '}
-              {n(count.total_bike)} bikes and {n(count.total_pedestrian)} pedestrians.
-            </li>
-          )}
-          {cycling?.note && <li>The City’s Cycling Network data lists cycle tracks here. {cycling.note}</li>}
-          <li>
-            {ksi.ksiCollisions5y} collisions where someone was killed or seriously injured happened within 30 m of this stretch in the last five years.{' '}
-            {ksi.pedestrianInvolved} involved a pedestrian and {ksi.cyclistInvolved} a cyclist (a collision can involve both).
-          </li>
-          <li>Subway Line 2 runs underneath, so no daytime surface bus uses this block today.</li>
-        </ul>
-        <p className="mt-3 text-sm">
-          Lane widths are not in any open dataset, so today’s layout in the game is an estimate. See{' '}
-          <a href="/data" className={link}>
-            Data & Limitations
-          </a>{' '}
-          for every source and every estimate.
-        </p>
-      </Section>
+      {levels.map((level) => (
+        <StreetFacts key={level.id} level={level} />
+      ))}
 
       <Section title="How the game decides">
         <div className="flex flex-col gap-3">

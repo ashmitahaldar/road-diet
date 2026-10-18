@@ -1,7 +1,7 @@
 import { hasBuffer, inDoorZone } from './model/metrics'
 import { bikeFacility, simulateTraffic, widthOf } from './model/traffic'
 import type { Layout, Level, Metrics, PersonaId } from './model/types'
-import { PERSONAS } from './personas'
+import { residentsOf } from './personas'
 
 export const CONCEPTS = {
   'right-of-way': {
@@ -41,6 +41,7 @@ export type Lesson = { concept: ConceptId; good: boolean; text: string }
  */
 export function lessons(layout: Layout, m: Metrics, level: Level): Lesson[] {
   const { corridor, goal } = level
+  const who = residentsOf(level)
   const out: Lesson[] = []
   const add = (concept: ConceptId, good: boolean, text: string) => out.push({ concept, good, text })
 
@@ -91,8 +92,8 @@ export function lessons(layout: Layout, m: Metrics, level: Level): Lesson[] {
     'curb-access',
     curb > 0,
     curb > 0
-      ? `There are ${curb.toFixed(1)} m of curb space to stop and unload, which Marco, Lin and Mr. Okafor all count on.`
-      : 'There is no curb space, so deliveries can’t stop and Mr. Okafor can’t be dropped off. Marco and Lin feel it most.',
+      ? `There are ${curb.toFixed(1)} m of curb space to stop and unload, which ${who.driver_delivery.name}, ${who.shop_owner.name} and ${who.senior_walker.name} all count on.`
+      : `There is no curb space, so deliveries can’t stop and ${who.senior_walker.name} can’t be dropped off. ${who.driver_delivery.name} and ${who.shop_owner.name} feel it most.`,
   )
 
   const [low, value] = (Object.entries(m.happiness) as [PersonaId, number][]).sort((a, b) => a[1] - b[1])[0]
@@ -101,8 +102,8 @@ export function lessons(layout: Layout, m: Metrics, level: Level): Lesson[] {
     'fairness',
     value >= floor,
     value >= floor
-      ? `Everyone stays at least ${floor} happy. The least happy is ${PERSONAS[low].name}, at ${value.toFixed(0)}.`
-      : `${PERSONAS[low].name} is at ${value.toFixed(0)}, below ${floor}. A street is only as fair as its least happy resident.`,
+      ? `Everyone stays at least ${floor} happy. The least happy is ${who[low].name}, at ${value.toFixed(0)}.`
+      : `${who[low].name} is at ${value.toFixed(0)}, below ${floor}. A street is only as fair as its least happy resident.`,
   )
 
   return out.sort((a, b) => Number(a.good) - Number(b.good))

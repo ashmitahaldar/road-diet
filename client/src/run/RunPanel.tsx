@@ -1,4 +1,4 @@
-import { PERSONAS, type ElementId, type Level, type Metrics, type Mode, type Persona, type PersonaId, type ReactResult, type Reaction } from '@road-diet/shared'
+import { residentsOf, type ElementId, type Level, type Metrics, type Mode, type Persona, type PersonaId, type ReactResult, type Reaction } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { ElementIcon } from '../editor/elementVisuals'
 import { Face, mood } from '../story/characters'
@@ -80,12 +80,13 @@ export function MetersCard({ level, base, shown, running, onShowScore }: { level
   )
 }
 
-export function Residents({ base, shown, running, runId }: { base: Metrics; shown: Shown; running: boolean; runId: number }) {
+export function Residents({ level, base, shown, running, runId }: { level: Level; base: Metrics; shown: Shown; running: boolean; runId: number }) {
+  const who = residentsOf(level)
   return (
     <div>
       {shown.react?.reactions.every((r) => r.source === 'gemini') && !running && <GeminiLabel />}
       <ul aria-labelledby="residents-title" className="mt-1 flex flex-col gap-2">
-        {Object.values(PERSONAS).map((p) => (
+        {Object.values(who).map((p) => (
           <PersonaCard
             key={p.id}
             p={p}
@@ -99,7 +100,7 @@ export function Residents({ base, shown, running, runId }: { base: Metrics; show
       </ul>
       <p aria-live="polite" className="sr-only">
         {shown.kind === 'run' && !running && shown.react
-          ? shown.react.reactions.map((r) => `${PERSONAS[r.personaId].name} says: ${r.line}`).join(' ')
+          ? shown.react.reactions.map((r) => `${who[r.personaId].name} says: ${r.line}`).join(' ')
           : ''}
       </p>
     </div>
@@ -149,7 +150,7 @@ function PersonaCard({ p, m, base, running, runId, reaction }: CardProps) {
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 500, damping: 12, delay: reduce ? 0 : RUN_MS / 1000 - 0.3 }}
         >
-          <Face id={p.id} happiness={h} className="size-10" />
+          <Face id={p.id} look={p.look} happiness={h} className="size-10" />
         </motion.div>
         <div className="min-w-0">
           <p className="text-sm font-semibold">{p.name}</p>

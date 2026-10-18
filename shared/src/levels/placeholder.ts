@@ -4,6 +4,7 @@ import type { Level } from '../model/types'
 // Placeholder until a real corridor is built from Toronto data (#11).
 export const PLACEHOLDER_LEVEL: Level = {
   id: 'placeholder',
+  blurb: 'Placeholder level for tests.',
   name: 'Placeholder St',
   corridor: {
     id: 'placeholder',

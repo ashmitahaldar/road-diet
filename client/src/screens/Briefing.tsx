@@ -5,7 +5,7 @@ import { ElementIcon, VISUALS } from '../editor/elementVisuals'
 import { Button, StepNav } from '../ui'
 
 const MAPS = import.meta.glob<string>('../../../data/corridors/*.map.svg', { query: '?url', import: 'default', eager: true })
-const MAP_SOURCES = /Centreline|Cycling|Killed|OpenStreetMap/
+const MAP_SOURCES = /Centreline|Cycling|Killed|^OpenStreetMap contributors$/
 
 /** Legend swatches drawn with the same strokes as prep.py render_map, so the key matches the map. */
 const LEGEND: [string, { stroke: string; width: number; dash?: string; casing?: boolean }?][] = [
@@ -22,7 +22,7 @@ function CorridorMap({ corridor }: { corridor: Level['corridor'] }) {
   if (!src) return null
   return (
     <>
-      <img src={src} alt={corridor.mapAlt ?? ''} decoding="async" className="w-full rounded-xl border-2 border-ink" />
+      <img src={src} alt={corridor.mapAlt ?? ''} decoding="async" className="max-h-[45dvh] w-full rounded-xl border-2 border-ink object-contain" />
       <ul aria-label="Map legend" className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
         {LEGEND.map(([label, line]) => (
           <li key={label} className="flex items-center gap-2">
@@ -45,7 +45,7 @@ function CorridorMap({ corridor }: { corridor: Level['corridor'] }) {
         {corridor.sources
           .filter((s) => MAP_SOURCES.test(s.label))
           .map((s, i, all) => (
-            <span key={s.url}>
+            <span key={s.label}>
               <a href={s.url} className="font-semibold text-primary underline underline-offset-2">
                 {s.label === 'OpenStreetMap contributors' ? '© OpenStreetMap contributors' : s.label}
               </a>
@@ -68,7 +68,7 @@ export function goalSentence(level: Level) {
   return `${s[0].toUpperCase()}${s.slice(1)}.`
 }
 
-export function Briefing({ level, onStart, onBack }: { level: Level; onStart: () => void; onBack: () => void }) {
+export function Briefing({ level, number, onStart, onBack }: { level: Level; number: number; onStart: () => void; onBack: () => void }) {
   const { corridor } = level
   const [step, setStep] = useState(0)
   const play: [string, string][] = [
@@ -130,7 +130,7 @@ export function Briefing({ level, onStart, onBack }: { level: Level; onStart: ()
     <main className="mx-auto flex min-h-[70dvh] max-w-3xl flex-col justify-center gap-5">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 basis-72">
-          <p className="font-display text-lg font-semibold text-primary">Level 1</p>
+          <p className="font-display text-lg font-semibold text-primary">Level {number}</p>
           <h1 tabIndex={-1} className="font-display text-3xl font-semibold outline-none sm:text-4xl">
             {level.name}
           </h1>

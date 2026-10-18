@@ -2,7 +2,7 @@ import { MODEL } from './model/constants'
 import { scoreRun } from './model/score'
 import { bikeFacility, has, widthOf } from './model/traffic'
 import type { Layout, Level, Metrics, PersonaId } from './model/types'
-import { PERSONAS } from './personas'
+import { PERSONAS, residentsOf } from './personas'
 
 /** Which goal or star a hint helps with. */
 export type HintFor = 'emissions' | 'happiness' | 'safety'
@@ -43,7 +43,7 @@ export function hints(layout: Layout, m: Metrics, level: Level): Hint[] {
 
   const low = (Object.entries(m.happiness) as [PersonaId, number][]).sort((a, b) => a[1] - b[1])[0][0]
   const top = (Object.entries(PERSONAS[low].weights) as [keyof typeof NEEDS, number][]).filter(([, w]) => w > 0).sort((a, b) => b[1] - a[1])
-  add('happiness', true, `${PERSONAS[low].name} is least happy (${m.happiness[low].toFixed(0)}/100) and cares most about ${NEEDS[top[0][0]](low)} and ${NEEDS[top[1][0]](low)}.`)
+  add('happiness', true, `${residentsOf(level)[low].name} is least happy (${m.happiness[low].toFixed(0)}/100) and cares most about ${NEEDS[top[0][0]](low)} and ${NEEDS[top[1][0]](low)}.`)
   add('happiness', m.unusedWidthM > 0, `${m.unusedWidthM.toFixed(1)} m is unused. Empty space costs every resident some happiness.`)
 
   add('safety', facility === 'painted' && beside(layout, 'bike_painted', ['parking']), 'A painted bike lane beside parking puts riders in the door zone.')

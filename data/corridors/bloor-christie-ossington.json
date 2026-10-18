@@ -58,7 +58,7 @@
       "label": "Traffic Volumes at Intersections for All Modes",
       "url": "https://open.toronto.ca/dataset/traffic-volumes-at-intersections-for-all-modes/",
       "retrieved": "2026-10-17",
-      "note": "Bloor St W / Shaw St, 2025-06-25, 14 h count; PM peak hour, Bloor approaches only."
+      "note": "Bloor St W / Shaw St, 2025-06-25, 14 h count; PM peak hour, Bloor St W approaches only."
     },
     {
       "label": "Motor Vehicle Collisions involving Killed or Seriously Injured Persons",
@@ -119,8 +119,8 @@
       "pm_peak_vehicle": 1108,
       "pm_peak_bike": 968,
       "e_appr_vehicle": 5181,
-      "w_appr_vehicle": 6346,
       "e_appr_bike": 2428,
+      "w_appr_vehicle": 6346,
       "w_appr_bike": 2766
     },
     "peakHour": {
@@ -134,9 +134,5 @@
   },
   "source": "Toronto Open Data and City of Toronto Official Plan; see sources and estimates.",
   "mapSvg": "data/corridors/bloor-christie-ossington.map.svg",
-  "mapAlt": "Map of Bloor St W (Christie St to Ossington Ave), 0.61 km, highlighted in blue. Subway stations: Christie and Ossington. Protected bike lanes (cycle tracks) on Bloor St W. Painted bike lanes on Grace St, Montrose Ave and Shaw St. Other cycling routes on Christie Pits Park Trl and Crawford St. 4 collisions where someone was killed or seriously injured happened within 30 m of this stretch in the last 5 years (a total, not individual incidents).",
-  "mapSize": [
-    880,
-    488
-  ]
+  "mapAlt": "Map of Bloor St W (Christie St to Ossington Ave), 0.61 km, highlighted in blue. Subway stations: Christie and Ossington. Protected bike lanes (cycle tracks) on Bloor St W. Painted bike lanes on Grace St, Montrose Ave and Shaw St. Other cycling routes on Christie Pits Park Trl and Crawford St. 4 collisions where someone was killed or seriously injured happened within 30 m of this stretch in the last 5 years (a total, not individual incidents)."
 }

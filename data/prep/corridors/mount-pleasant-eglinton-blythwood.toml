@@ -1,0 +1,62 @@
+# Inputs for `python prep.py corridor corridors/mount-pleasant-eglinton-blythwood.toml`.
+# Values marked `estimate = true` are not in a verified dataset; they are listed in the corridor JSON
+# under "estimates" and shown on the limitations panel and /data (spec 4.5).
+
+id = "mount-pleasant-eglinton-blythwood"
+name = "Mount Pleasant Rd (Eglinton Ave E to Blythwood Rd)"
+retrieved = "2026-10-17"
+
+[segment]
+street = "Mount Pleasant Rd"
+# Toronto Centreline v2 "Major Arterial" segments named "Mount Pleasant Rd" between the Eglinton Ave E
+# (13456819) and Blythwood Rd (13455270) intersections.
+centreline_ids = [1137998, 1138051, 1138080, 1138109, 1138148, 1138163, 1138214, 2364382, 11574915]
+
+[width]
+metres = 20
+source = "Official Plan Map 3 (June 2026): Mount Pleasant Rd from Eglinton Ave E to Lawrence Ave E is drawn in the 20 m colour. Planned right-of-way, read from the PDF."
+
+[count]
+# tmc_most_recent_summary_data: Mount Pleasant Rd / Keewatin Ave, 2025-11-11, 14 h. Mid-segment: 95% of vehicles on the north/south approaches.
+latest_count_id = 114864
+peak = "pm"
+approaches = ["n", "s"]
+
+[demand]
+# Persons per vehicle. Not yet sourced (#13 replaces it); 1.0 counts each vehicle as one person.
+car_occupancy = 1.0
+# TTC GTFS (2026-09-23 feed): 6 weekday trips of route 103 Mount Pleasant North pass Erskine/Sherwood stops 16:15-17:15, 3 each way.
+# Riders per bus is not in any open dataset: 40 is an assumption.
+bus_persons_per_hour = 240
+bus_note = "6 buses an hour in the PM peak (TTC route 103, from the TTC schedule) x 40 riders per bus. The 40 is assumed, not sourced. Confirm."
+
+[safety]
+buffer_m = 30
+years = 5
+
+[speed]
+kph = 50
+estimate = true
+note = "50 km/h from OpenStreetMap maxspeed tags on most of this stretch, not from a City dataset. Confirm."
+
+[layout]
+estimate = true
+note = "No open dataset gives lane widths. OpenStreetMap tags 4 lanes (5 at turn lanes) and the Cycling Network lists no bike facility; lane and sidewalk widths are an estimate within 20 m. Confirm."
+elements = [
+  { id = "sidewalk", widthM = 3.4 },
+  { id = "car_lane", widthM = 3.3 },
+  { id = "car_lane", widthM = 3.3 },
+  { id = "car_lane", widthM = 3.3 },
+  { id = "car_lane", widthM = 3.3 },
+  { id = "sidewalk", widthM = 3.4 },
+]
+
+[[extra_sources]]
+label = "TTC Routes and Schedules (GTFS)"
+url = "https://open.toronto.ca/dataset/ttc-routes-and-schedules/"
+note = "Route 103 Mount Pleasant North: 6 weekday trips past Erskine Ave and Sherwood Ave stops, 16:15-17:15 (feed dated 2026-09-23)."
+
+[[extra_sources]]
+label = "OpenStreetMap contributors (lane tags)"
+url = "https://www.openstreetmap.org/copyright"
+note = "Mount Pleasant Road ways tagged lanes=4 (5 at turn lanes) and maxspeed=50 (one way 40), via the Overpass API. ODbL."

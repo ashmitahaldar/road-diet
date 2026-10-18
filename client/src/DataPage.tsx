@@ -26,8 +26,7 @@ export function Section({ title, children }: { title: string; children: ReactNod
   )
 }
 
-export function DataPage({ level }: { level: Level }) {
-  const { corridor } = level
+export function DataPage({ levels }: { levels: Level[] }) {
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-5">
       <a href="/" className={`${link} inline-flex min-h-11 items-center`}>
@@ -43,19 +42,21 @@ export function DataPage({ level }: { level: Level }) {
         </p>
       </div>
 
-      <Section title={`${corridor.name}: where the numbers come from`}>
-        <ul className="flex flex-col gap-3">
-          {corridor.sources.map((s) => (
-            <li key={s.url}>
-              <a href={s.url} className={link}>
-                {s.label}
-              </a>
-              <span className="text-sm"> · retrieved {s.retrieved}</span>
-              {s.note && <p className="mt-0.5">{s.note}</p>}
-            </li>
-          ))}
-        </ul>
-      </Section>
+      {levels.map(({ corridor }) => (
+        <Section key={corridor.id} title={`${corridor.name}: where the numbers come from`}>
+          <ul className="flex flex-col gap-3">
+            {corridor.sources.map((s) => (
+              <li key={s.label}>
+                <a href={s.url} className={link}>
+                  {s.label}
+                </a>
+                <span className="text-sm"> · retrieved {s.retrieved}</span>
+                {s.note && <p className="mt-0.5">{s.note}</p>}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      ))}
 
       <Section title="Model constants with a source">
         <dl className="flex flex-col gap-3">
@@ -69,7 +70,17 @@ export function DataPage({ level }: { level: Level }) {
       </Section>
 
       <Section title="Limitations">
-        <LimitationsList level={level} />
+        <LimitationsList level={levels[0]} />
+        {levels.slice(1).map(({ corridor }) => (
+          <div key={corridor.id}>
+            <p className="mt-3 font-semibold">Estimates in {corridor.name}:</p>
+            <ul className="mt-1 list-disc space-y-1 pl-5">
+              {corridor.estimates?.map((e) => (
+                <li key={e.field}>{e.note}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </Section>
 
       <Section title="Credits">

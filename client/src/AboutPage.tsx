@@ -67,6 +67,23 @@ export function AboutPage({ levels }: { levels: Level[] }) {
         </div>
       </Section>
 
+      <Section title="What is a road diet?">
+        <blockquote className="border-l-4 border-primary pl-3 italic">
+          “A technique in transportation planning whereby the number and/or the width of travel lanes of the road is reduced.”
+        </blockquote>
+        <p className="mt-1 text-sm">
+          From{' '}
+          <a href="https://en.wikipedia.org/wiki/Road_diet" className={link}>
+            Wikipedia, “Road diet”
+          </a>
+          .
+        </p>
+        <p className="mt-3">
+          The space that frees up can become wider sidewalks, bike lanes, a bus lane, trees or patios. Whether that is worth it depends on the street and
+          the people on it. The game lets you test that on one block, including designs that add lanes back.
+        </p>
+      </Section>
+
       <Section title="What you’ll learn">
         <p>After a few runs, you should be able to:</p>
         <ul className="mt-2 list-disc space-y-2 pl-5">
@@ -96,61 +113,31 @@ export function AboutPage({ levels }: { levels: Level[] }) {
       </Section>
 
       <Section title="How the game teaches">
-        <ul className="list-disc space-y-2 pl-5">
-          <li>
-            <strong>Learn by doing.</strong> You redesign the street yourself, run a day, and see what happens. Trying an idea that fails teaches as much as
-            one that works.
-          </li>
-          <li>
-            <strong>Feedback in the moment.</strong> When a change helps or hurts, the idea behind it appears with a short explanation. Ask Pip “Why?” on any
-            meter or resident to hear the cause.
-          </li>
-          <li>
-            <strong>People, not just numbers.</strong> Residents react in their own words and tell the story of their day, so trade-offs feel real.
-          </li>
-          <li>
-            <strong>Check yourself.</strong> Each scorecard ends with a quick question about your own design.
-          </li>
-        </ul>
+        <div className="flex flex-col gap-3">
+          <p>
+            Road Diet teaches by letting you try things. You redesign the street yourself, run a day and see what happens, and an idea that fails teaches
+            as much as one that works. When a change helps or hurts someone, the planning idea behind it appears right then, with a short explanation you
+            can open. If a number surprises you, ask Pip “Why?” on any meter or resident and hear the cause in plain words.
+          </p>
+          <p>
+            The residents keep it human. They react in their own words and tell the story of their day on your street, so a trade-off stops being a
+            percentage and becomes a person. Each scorecard ends with a quick question about your own design, so you can check what stuck.
+          </p>
+        </div>
       </Section>
 
       <Section title="Who it’s for">
-        <ul className="list-disc space-y-2 pl-5">
-          <li>
-            <strong>Students</strong> in geography, civics, environmental science or urban planning, who can test ideas from class on a real street instead
-            of reading about them.
-          </li>
-          <li>
-            <strong>Teachers</strong> looking for a short, hands-on activity. It runs in a browser on laptops and phones, with no account or install.
-          </li>
-          <li>
-            <strong>Neighbours</strong> who hear about changes to their street and want to understand the trade-offs for themselves. The game doesn’t take
-            sides; it shows who gains and who gives something up.
-          </li>
-          <li>
-            <strong>Anyone curious about cities.</strong> No planning background is needed. Every term is explained when it comes up.
-          </li>
-        </ul>
-        <p className="mt-3">
-          The 2D editor works with a keyboard and a screen reader, so people who can’t use the 3D view can still play every level.
-        </p>
-      </Section>
-
-      <Section title="What is a road diet?">
-        <blockquote className="border-l-4 border-primary pl-3 italic">
-          “A technique in transportation planning whereby the number and/or the width of travel lanes of the road is reduced.”
-        </blockquote>
-        <p className="mt-1 text-sm">
-          From{' '}
-          <a href="https://en.wikipedia.org/wiki/Road_diet" className={link}>
-            Wikipedia, “Road diet”
-          </a>
-          .
-        </p>
-        <p className="mt-3">
-          The space that frees up can become wider sidewalks, bike lanes, a bus lane, trees or patios. Whether that is worth it depends on the street and
-          the people on it. The game lets you test that on one block, including designs that add lanes back.
-        </p>
+        <div className="flex flex-col gap-3">
+          <p>
+            Road Diet is for students in geography, civics, environmental science or urban planning who want to test ideas from class on a real street,
+            and for teachers looking for a short, hands-on activity. It runs in a browser on laptops and phones, with no account or install.
+          </p>
+          <p>
+            It is also for neighbours who hear about changes to their street and want to understand the trade-offs for themselves. The game doesn’t take
+            sides; it shows who gains and who gives something up. No planning background is needed, and every term is explained when it comes up.
+          </p>
+          <p>The 2D editor works with a keyboard and a screen reader, so people who can’t use the 3D view can still play every level.</p>
+        </div>
       </Section>
 
       <Section title="Ideas you’ll meet">

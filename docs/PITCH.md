@@ -31,13 +31,13 @@ Do each action as you say its line. The run-of-show below lists the exact clicks
 
 > This is Pip. Pip lives on a lamppost and introduces the residents: Dev, a courier; Maya, a student who'd bike if it felt safer; Mrs. Rossi, who walks to the pharmacy; and Omar, who runs a bakery. Each wants something different from the same 20 metres.
 >
-> I'll take out two car lanes and add a protected bike lane and parking. Traffic follows the lanes I build, and Pip points out the planning idea behind each change.
+> I'll take out two car lanes and add a painted bike lane and parking. Traffic follows the lanes I build. And Pip notices a problem: the bike lane runs right beside parked cars, in the door zone.
 >
-> Run a day. The goal's met: emissions are down almost 10 percent, and nobody fell below 50 happy. But only one star. Each resident reacts, and I can open the story of their day.
+> I run a day anyway. The goal's met, but only one star. Each resident reacts, and I can open the story of their day.
+>
+> So I swap the painted lane for a protected one and run another day. Three stars, still with two car lanes.
 >
 > Why did emissions fall? I ask Pip. About 245 fewer people drive, because the other ways of getting around got better. That's mode shift.
->
-> Pip's tip says parking between the sidewalk and traffic acts as a buffer. So I move the parking next to the sidewalk and run another day. Three stars, still with two car lanes.
 >
 > A quick check at the end tests what stuck.
 
@@ -61,13 +61,14 @@ Mount Pleasant Rd, level 1. Numbers checked against the model for this exact des
 | 1 | **Play**, then **Play** on Mount Pleasant Rd | The story with Pip and the four residents |
 | 2 | **Next** through two or three lines, then **Skip story**, **Skip to the street** and **Skip tour** | The 3D street: 3.4 m sidewalk, four 3.3 m car lanes, 3.4 m sidewalk |
 | 3 | **Edit in 2D**. Select a car lane, **Remove**. Do it again | Two car lanes left, 6.6 m free |
-| 4 | **Add Protected bike lane**, then **Add On-street parking** | "Pip noticed" with curb access and fairness |
-| 5 | **Edit in 3D** (optional, for the traffic) and **Run a day** | Goal met, 1 star. Emissions −9.6% (−36 kg CO₂e per peak hour). Fair Share badge |
-| 6 | Open one resident's day. Close the scorecard. **Why?** on Emissions cut | "About 245 fewer people drive in the peak hour" |
-| 7 | Select the parking, press **Move left** (◀) once. **Run another day** | 3 stars. Safety 57/100 |
-| 8 | Scroll the scorecard to **Quick check** and answer it | Pip says whether you're right and why |
+| 4 | **Add Painted bike lane**, then **Add On-street parking** | "Pip noticed": door zone (to work on), curb access, fairness |
+| 5 | **Edit in 3D** (optional, for the traffic) and **Run a day** | Goal met, 1 star. Emissions −8.0%. Safety 45/100 |
+| 6 | Open one resident's day. Close the scorecard | |
+| 7 | **Edit in 2D** if needed. Select the painted bike lane, **Remove**, then **Add Protected bike lane**. **Run another day** | 3 stars. Emissions −9.6% (−36 kg CO₂e per peak hour). Safety 55/100 |
+| 8 | Close the scorecard. **Why?** on Emissions cut | "About 245 fewer people drive in the peak hour" |
+| 9 | **See scorecard**, scroll to **Quick check** and answer it | Pip says whether you're right and why |
 
-After step 4 the street reads, left to right: sidewalk 3.4 m, protected bike lane 2.0 m, parking 2.4 m, car lane, car lane, sidewalk 3.4 m (2.2 m unused). Step 7 swaps the bike lane and the parking. Rehearsed on the live site on 2026-10-18: 1 star, then 3 stars. Step 5 reads "Safety 55/100" but earns only one star. That's because the score is 54.6 and the star needs 55. Don't dwell on it. Step 7 fixes it.
+After step 4 the street reads, left to right: sidewalk 3.4 m, painted bike lane 1.5 m, parking 2.4 m, car lane, car lane, sidewalk 3.4 m. Step 7 puts a 2.0 m protected lane in the painted lane's place. Rehearsed in the browser on 2026-10-18: 1 star, then 3 stars.
 
 **If Gemini is rate-limited.** The reactions, days, "Why?" and quiz all fall back to built-in text built from the same model facts, and the "Powered by Gemini" label disappears. Say: "Gemini's free tier is out for today, so you're seeing the built-in text. It's built from the same facts Gemini gets."
 

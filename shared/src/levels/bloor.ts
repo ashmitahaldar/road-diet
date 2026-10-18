@@ -6,6 +6,7 @@ export const BLOOR_LEVEL: Level = {
   id: corridor.id,
   name: corridor.name,
   blurb: 'Already has cycle tracks (2016 and 2020). Harder: make it safer without leaving anyone behind.',
+  learn: 'How buffers and keeping bikes out of the door zone make a street safer, and why a fair street works for its least happy resident.',
   corridor: { ...corridor, baselineLayout: { elements: corridor.baselineLayout.elements.map((e) => ({ ...e, id: e.id as ElementId })) } } as Corridor,
   allowedElements: ['sidewalk', 'car_lane', 'bus_lane', 'bike_painted', 'bike_protected', 'parking', 'planter'],
   // Bloor already has cycle tracks and wide sidewalks, so only fewer car lanes move emissions here; an emissions

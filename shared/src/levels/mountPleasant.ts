@@ -6,6 +6,7 @@ export const MOUNT_PLEASANT_LEVEL: Level = {
   id: corridor.id,
   name: corridor.name,
   blurb: 'Four car lanes and no bike lanes yet. Lots of ways to share it.',
+  learn: 'How a road diet frees up space, and why emissions only fall when some trips switch to the bus, a bike or walking (mode shift).',
   corridor: { ...corridor, baselineLayout: { elements: corridor.baselineLayout.elements.map((e) => ({ ...e, id: e.id as ElementId })) } } as Corridor,
   // Fictional residents, never real people.
   cast: {

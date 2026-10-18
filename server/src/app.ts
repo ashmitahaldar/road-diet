@@ -1,11 +1,11 @@
-import { ELEMENTS, LEVELS, computeMetrics, fallbackResult, scoreRun, validateLayout, type ElementId } from '@road-diet/shared'
+import { ELEMENTS, LEVELS, computeMetrics, fallbackResult, fallbackStory, scoreRun, validateLayout, type ElementId } from '@road-diet/shared'
 import express from 'express'
 import { existsSync } from 'node:fs'
 import { extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
 import { connect, type Db } from './db'
-import { react, type GeminiConfig } from './gemini'
+import { postcard, react, story, type GeminiConfig } from './gemini'
 import { fairnessBeatsPct, getStats, insertRun } from './runs'
 
 const CLIENT_DIST = fileURLToPath(new URL('../../client/dist', import.meta.url))
@@ -47,11 +47,11 @@ function rateLimiter(perMinute: number) {
   }
 }
 
-type Options = { clientDist?: string; gemini?: GeminiConfig; db?: Db | null; reactPerMinute?: number; runsPerMinute?: number; statsPerMinute?: number }
+type Options = { clientDist?: string; gemini?: GeminiConfig & { imageModel?: string }; db?: Db | null; reactPerMinute?: number; runsPerMinute?: number; statsPerMinute?: number }
 
 export function createApp({
   clientDist = CLIENT_DIST,
-  gemini = { apiKey: process.env.GEMINI_API_KEY, model: process.env.GEMINI_MODEL },
+  gemini = { apiKey: process.env.GEMINI_API_KEY, model: process.env.GEMINI_MODEL, imageModel: process.env.GEMINI_IMAGE_MODEL },
   db = connect(),
   reactPerMinute = 20,
   runsPerMinute = 20,
@@ -61,6 +61,8 @@ export function createApp({
   const reactLimited = rateLimiter(reactPerMinute)
   const runsLimited = rateLimiter(runsPerMinute)
   const statsLimited = rateLimiter(statsPerMinute)
+  const storyLimited = rateLimiter(reactPerMinute)
+  const postcardLimited = rateLimiter(5)
   app.set('trust proxy', 'loopback')
   app.use(express.json({ limit: '16kb' }))
 
@@ -84,6 +86,25 @@ export function createApp({
 
     const base = computeMetrics(level.corridor.baselineLayout, level)
     res.json(await react({ level, layout, metrics, base, score: scoreRun(metrics, level) }, gemini))
+  })
+
+  // A second, optional call per run: a design name and each resident's day. Falls back to text built from the numbers.
+  app.post('/api/story', async (req, res) => {
+    const run = parseRun(req.body)
+    if (!run.ok) return void res.status(run.status).json(run.body)
+    const { level, layout, metrics } = run
+    const base = computeMetrics(level.corridor.baselineLayout, level)
+    const facts = { level, layout, metrics, base, score: scoreRun(metrics, level) }
+    res.json(storyLimited(req.ip) ? fallbackStory(level, metrics, base) : await story(facts, gemini))
+  })
+
+  app.post('/api/postcard', async (req, res) => {
+    const run = parseRun(req.body)
+    if (!run.ok) return void res.status(run.status).json(run.body)
+    if (postcardLimited(req.ip)) return void res.status(429).json({ error: 'rate-limited' })
+    const image = await postcard(run.layout, gemini)
+    if (image) res.json({ image })
+    else res.status(503).json({ error: 'no-image' })
   })
 
   // Run history for "how others solved this street" (#18). A missing or failing database never breaks play.

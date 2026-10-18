@@ -27,6 +27,9 @@ export function Levels({ levels, best, collection, onPick, onBack }: Props) {
               </h2>
               <p>{level.blurb}</p>
               <p className="mt-1 text-sm">
+                <strong>You’ll learn:</strong> {level.learn}
+              </p>
+              <p className="mt-1 text-sm">
                 <strong>Goal:</strong> {goalSentence(level)}
               </p>
             </div>

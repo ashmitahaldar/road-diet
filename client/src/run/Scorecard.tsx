@@ -1,4 +1,4 @@
-import { earnedBadges, residentsOf, type BadgeId, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { PANELS, earnedBadges, residentsOf, type BadgeId, type DayStory, hints, lessons, resultText, scoreRun, type GoalCheck, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { LimitationsList } from '../Limitations'
@@ -8,7 +8,7 @@ import { LessonLine } from './Lesson'
 import { Button, GeminiLabel, signed } from '../ui'
 import { Others } from './Others'
 
-type Props = { fresh?: BadgeId[]; open: boolean; onClose: () => void; level: Level; layout: Layout; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; fairnessBeatsPct?: number | null; closeLabel?: string }
+type Props = { fresh?: BadgeId[]; story?: DayStory | null; postcard?: string | null; open: boolean; onClose: () => void; level: Level; layout: Layout; metrics: Metrics; base: Metrics; react: ReactResult | null; stats?: LevelStats | null; fairnessBeatsPct?: number | null; closeLabel?: string }
 
 const GOAL_TEXT: Record<GoalCheck['kind'], (g: GoalCheck) => [string, string]> = {
   emissions: (g) => [`Cut emissions by at least ${g.target}%`, `${g.value.toFixed(1)}%`],
@@ -34,7 +34,7 @@ async function copy(text: string) {
   }
 }
 
-export function Scorecard({ fresh = [], open, onClose, level, layout, metrics, base, react, stats, fairnessBeatsPct = null, closeLabel = 'Keep editing' }: Props) {
+export function Scorecard({ fresh = [], story = null, postcard, open, onClose, level, layout, metrics, base, react, stats, fairnessBeatsPct = null, closeLabel = 'Keep editing' }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const reduce = useReducedMotion()
@@ -67,6 +67,17 @@ export function Scorecard({ fresh = [], open, onClose, level, layout, metrics, b
     card.current = import('./shareCard').then(async (m) => ({ png: await m.drawCard(data), share: m.shareCard }))
     card.current.catch(() => {})
   }, [open, metrics, base, layout, level])
+
+  // Without a generated postcard, show the drawn card of the design instead.
+  const [drawn, setDrawn] = useState<string | null>(null)
+  useEffect(() => {
+    if (!open || postcard !== null) return
+    let url: string | null = null
+    card.current?.then(({ png }) => setDrawn((url = URL.createObjectURL(png)))).catch(() => {})
+    return () => {
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [open, postcard, metrics])
 
   useEffect(() => {
     const d = ref.current
@@ -105,6 +116,9 @@ export function Scorecard({ fresh = [], open, onClose, level, layout, metrics, b
                 ? 'Your street went on a diet and kept its residents on board.'
                 : 'Tweak the street and run another day.'}
             </p>
+            <p className="mt-1 tabular-nums">
+              Emissions <strong>{signed(emissionsDeltaKg, 0)} kg CO₂e</strong> per peak hour ({signed(-metrics.emissionsReductionPct)}% vs today)
+            </p>
           </div>
           <div role="img" aria-label={`${score.stars} of 3 stars`} className="flex shrink-0 gap-1">
             {[1, 2, 3].map((n) => (
@@ -132,25 +146,68 @@ export function Scorecard({ fresh = [], open, onClose, level, layout, metrics, b
 
         <section aria-labelledby="said-title" aria-busy={!react}>
           <h3 id="said-title" className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
-            What residents said {react?.reactions.every((r) => r.source === 'gemini') && <GeminiLabel />}
+            Your residents {react?.reactions.every((r) => r.source === 'gemini') && <GeminiLabel />}
           </h3>
+          {story && (
+            <p className="mt-1">
+              Your design: <span className="font-display text-xl font-semibold">“{story.name}”</span>
+              {story.nameSource === 'gemini' && <span className="sr-only"> (name by Gemini)</span>}
+            </p>
+          )}
           {react ? (
-            <ul className="mt-2 grid gap-2 sm:grid-cols-2">
-              {react.reactions.map((r) => (
-                <li key={r.personaId} className="flex gap-3 rounded-xl border-2 border-ink px-3 py-2">
-                  <Face id={r.personaId} look={who[r.personaId].look} happiness={metrics.happiness[r.personaId]} />
-                  <span>
-                    <span className="font-semibold">
-                      {who[r.personaId].name} · <span className="tabular-nums">{metrics.happiness[r.personaId].toFixed(0)}/100</span>
-                    </span>
-                    <q className="mt-0.5 block font-medium">{r.line}</q>
-                  </span>
-                </li>
-              ))}
+            <ul className="mt-2 grid items-start gap-2 sm:grid-cols-2">
+              {react.reactions.map((r) => {
+                const day = story?.days.find((d) => d.personaId === r.personaId)
+                return (
+                  <li key={r.personaId} className="rounded-xl border-2 border-ink px-3 py-2">
+                    <div className="flex gap-3">
+                      <Face id={r.personaId} look={who[r.personaId].look} happiness={metrics.happiness[r.personaId]} />
+                      <span>
+                        <span className="font-semibold">
+                          {who[r.personaId].name} · <span className="tabular-nums">{metrics.happiness[r.personaId].toFixed(0)}/100</span>
+                        </span>
+                        <q className="mt-0.5 block font-medium">{r.line}</q>
+                      </span>
+                    </div>
+                    {day && (
+                      <details className="group">
+                        <summary className="inline-flex min-h-11 cursor-pointer items-center gap-1 text-sm font-semibold focus-visible:outline-4 focus-visible:outline-primary">
+                          <span aria-hidden className="transition-transform group-open:rotate-90 motion-reduce:transition-none">
+                            ▸
+                          </span>
+                          {who[r.personaId].name}’s day
+                        </summary>
+                        <ol className="flex flex-col gap-1.5 pb-1 text-sm">
+                          {day.panels.map((text, i) => (
+                            <li key={i}>
+                              <span className="font-semibold">{PANELS[i]}: </span>
+                              {text}
+                            </li>
+                          ))}
+                        </ol>
+                      </details>
+                    )}
+                  </li>
+                )
+              })}
             </ul>
           ) : (
             <div aria-label="Waiting for reactions" className="mt-2 h-16 animate-pulse rounded-xl bg-grid motion-reduce:animate-none" />
           )}
+          {story && <p className="mt-2 text-xs">Each day is a story, not a prediction: the moments are made up; trip times and moods come from the model.</p>}
+        </section>
+
+        <section aria-labelledby="learned-title">
+          <h3 id="learned-title" className="font-display text-lg font-semibold">
+            What this street teaches
+          </h3>
+          <ul className="mt-2 flex flex-col gap-2">
+            {learned.map((l) => (
+              <li key={l.concept} className={`relative flex gap-3 rounded-xl border-2 border-ink px-3 py-2 ${l.good ? '' : 'border-dashed'}`}>
+                <LessonLine lesson={l} />
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section aria-labelledby="goals-title">
@@ -177,19 +234,6 @@ export function Scorecard({ fresh = [], open, onClose, level, layout, metrics, b
           <p className="mt-2 text-sm">
             ★ goal · ★★ + safety {level.stars.safety} · ★★★ + everyone {level.stars.fairness} happy
           </p>
-        </section>
-
-        <section aria-labelledby="learned-title">
-          <h3 id="learned-title" className="font-display text-lg font-semibold">
-            What this street teaches
-          </h3>
-          <ul className="mt-2 flex flex-col gap-2">
-            {learned.map((l) => (
-              <li key={l.concept} className={`relative flex gap-3 rounded-xl border-2 border-ink px-3 py-2 ${l.good ? '' : 'border-dashed'}`}>
-                <LessonLine lesson={l} />
-              </li>
-            ))}
-          </ul>
         </section>
 
         {ideas.length > 0 && (
@@ -226,16 +270,41 @@ export function Scorecard({ fresh = [], open, onClose, level, layout, metrics, b
           </section>
         )}
 
-        <section aria-labelledby="co2-title" className="rounded-2xl border-2 border-ink p-4">
-          <h3 id="co2-title" className="font-display text-lg font-semibold">
-            Emissions
+        <section aria-labelledby="postcard-title" aria-busy={postcard === undefined}>
+          <h3 id="postcard-title" className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+            Postcard {postcard && <GeminiLabel />}
           </h3>
-          <p className="mt-1 tabular-nums">
-            <strong className="font-display text-2xl">
-              {signed(emissionsDeltaKg, 0)} kg CO₂e
-            </strong>{' '}
-            per peak hour ({signed(-metrics.emissionsReductionPct)}% vs today).
-          </p>
+          {postcard || drawn ? (
+            <figure className="mt-2">
+              <img
+                src={postcard ?? drawn!}
+                alt={postcard ? 'Illustration of your street design, generated by Gemini.' : 'Your street design drawn as a cross-section, with your stars and emissions change.'}
+                className="w-full rounded-xl border-2 border-ink"
+              />
+              <figcaption className="mt-1 text-xs">{postcard ? 'Generated illustration: not to scale and not a real place.' : 'Drawn from your design.'}</figcaption>
+            </figure>
+          ) : (
+            <div aria-label="Making the postcard" className="mt-2 aspect-video animate-pulse rounded-xl bg-grid motion-reduce:animate-none" />
+          )}
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <Button
+              onClick={async () => {
+                const done = await card.current!.then(({ png, share }) => share(png, text)).catch(() => 'failed' as const)
+                setStatus({ shared: 'Shared!', saved: 'Image saved', cancelled: '', failed: 'Image failed' }[done])
+              }}
+            >
+              Share image
+            </Button>
+            {postcard && (
+              <a href={postcard} download="road-diet-postcard" className="inline-flex min-h-11 items-center rounded-xl border-2 border-ink px-3 font-medium hover:bg-grid focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                Download postcard
+              </a>
+            )}
+            <Button onClick={async () => setStatus((await copy(text)) ? 'Copied!' : 'Copy failed')}>Copy my result</Button>
+            <span role="status" className="text-sm">
+              {status}
+            </span>
+          </div>
         </section>
 
         <section aria-labelledby="debrief-title" aria-busy={!react}>
@@ -278,23 +347,9 @@ export function Scorecard({ fresh = [], open, onClose, level, layout, metrics, b
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm">A learning tool, not a forecast. Residents are fictional.</p>
-          <div className="flex flex-wrap items-center gap-3">
-            <span role="status" className="text-sm">
-              {status}
-            </span>
-            <Button onClick={async () => setStatus((await copy(text)) ? 'Copied!' : 'Copy failed')}>Copy my result</Button>
-            <Button
-              onClick={async () => {
-                const done = await card.current!.then(({ png, share }) => share(png, text)).catch(() => 'failed' as const)
-                setStatus({ shared: 'Shared!', saved: 'Image saved', cancelled: '', failed: 'Image failed' }[done])
-              }}
-            >
-              Share image
-            </Button>
-            <Button onClick={onClose} className="bg-primary px-5 text-paper hover:bg-primary hover:brightness-110">
-              {closeLabel}
-            </Button>
-          </div>
+          <Button onClick={onClose} className="bg-primary px-5 text-paper hover:bg-primary hover:brightness-110">
+            {closeLabel}
+          </Button>
         </div>
       </div>
     </dialog>

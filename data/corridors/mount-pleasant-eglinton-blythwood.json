@@ -1,0 +1,144 @@
+{
+  "id": "mount-pleasant-eglinton-blythwood",
+  "name": "Mount Pleasant Rd (Eglinton Ave E to Blythwood Rd)",
+  "widthM": 20,
+  "lengthKm": 1.1,
+  "baselineLayout": {
+    "elements": [
+      {
+        "id": "sidewalk",
+        "widthM": 3.4
+      },
+      {
+        "id": "car_lane",
+        "widthM": 3.3
+      },
+      {
+        "id": "car_lane",
+        "widthM": 3.3
+      },
+      {
+        "id": "car_lane",
+        "widthM": 3.3
+      },
+      {
+        "id": "car_lane",
+        "widthM": 3.3
+      },
+      {
+        "id": "sidewalk",
+        "widthM": 3.4
+      }
+    ]
+  },
+  "baselineDemand": {
+    "car": 1876,
+    "bus": 240,
+    "bike": 5,
+    "walk": 110
+  },
+  "baselineSafety": {
+    "ksiCollisions5y": 2,
+    "pedestrianInvolved": 1,
+    "cyclistInvolved": 0
+  },
+  "freeFlowSpeedKph": 50,
+  "sources": [
+    {
+      "label": "Toronto Centreline (TCL) v2",
+      "url": "https://open.toronto.ca/dataset/toronto-centreline-tcl/",
+      "retrieved": "2026-10-17",
+      "note": "9 segments of Mount Pleasant Rd (Eglinton Ave E to Blythwood Rd): 1.1 km."
+    },
+    {
+      "label": "Traffic Volumes at Intersections for All Modes",
+      "url": "https://open.toronto.ca/dataset/traffic-volumes-at-intersections-for-all-modes/",
+      "retrieved": "2026-10-17",
+      "note": "Mount Pleasant Rd / Keewatin Ave, 2025-11-11, 14 h count; PM peak hour, Mount Pleasant Rd approaches only."
+    },
+    {
+      "label": "Motor Vehicle Collisions involving Killed or Seriously Injured Persons",
+      "url": "https://open.toronto.ca/dataset/motor-vehicle-collisions-involving-killed-or-seriously-injured-persons/",
+      "retrieved": "2026-10-17",
+      "note": "Within 30 m of the segment since 2021-10-17; deduplicated by collision; aggregate counts only."
+    },
+    {
+      "label": "Cycling Network",
+      "url": "https://open.toronto.ca/dataset/cycling-network/",
+      "retrieved": "2026-10-17",
+      "note": "No bike facility listed on Mount Pleasant Rd along this stretch."
+    },
+    {
+      "label": "Official Plan Map 3: Right-of-Way Widths Associated with Existing Major Streets (June 2026)",
+      "url": "https://www.toronto.ca/wp-content/uploads/2026/06/98b4-CityPlanning-Map-3-ROW-Widths-Associated-with-Existing-Major-Streets.pdf",
+      "retrieved": "2026-10-17",
+      "note": "Official Plan Map 3 (June 2026): Mount Pleasant Rd from Eglinton Ave E to Lawrence Ave E is drawn in the 20 m colour. Planned right-of-way, read from the PDF."
+    },
+    {
+      "retrieved": "2026-10-17",
+      "label": "TTC Routes and Schedules (GTFS)",
+      "url": "https://open.toronto.ca/dataset/ttc-routes-and-schedules/",
+      "note": "Route 103 Mount Pleasant North: 6 weekday trips past Erskine Ave and Sherwood Ave stops, 16:15-17:15 (feed dated 2026-09-23)."
+    },
+    {
+      "retrieved": "2026-10-17",
+      "label": "OpenStreetMap contributors (lane tags)",
+      "url": "https://www.openstreetmap.org/copyright",
+      "note": "Mount Pleasant Road ways tagged lanes=4 (5 at turn lanes) and maxspeed=50 (one way 40), via the Overpass API. ODbL."
+    },
+    {
+      "label": "OpenStreetMap contributors",
+      "url": "https://www.openstreetmap.org/copyright",
+      "retrieved": "2026-10-17",
+      "note": "Streets and subway stations on the corridor map, from the Overpass API. The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+    }
+  ],
+  "estimates": [
+    {
+      "field": "baselineLayout",
+      "note": "No open dataset gives lane widths. OpenStreetMap tags 4 lanes (5 at turn lanes) and the Cycling Network lists no bike facility; lane and sidewalk widths are an estimate within 20 m. Confirm."
+    },
+    {
+      "field": "freeFlowSpeedKph",
+      "note": "50 km/h from OpenStreetMap maxspeed tags on most of this stretch, not from a City dataset. Confirm."
+    },
+    {
+      "field": "baselineDemand.walk",
+      "note": "Peak-hour pedestrians scaled from the 14 h crossing count by the vehicle peak-hour share."
+    },
+    {
+      "field": "baselineDemand.car",
+      "note": "Vehicles x 1.0 persons per vehicle (occupancy not yet sourced)."
+    },
+    {
+      "field": "baselineDemand.bus",
+      "note": "6 buses an hour in the PM peak (TTC route 103, from the TTC schedule) x 40 riders per bus. The 40 is assumed, not sourced. Confirm."
+    }
+  ],
+  "observed": {
+    "count": {
+      "location_name": "Mount Pleasant Rd / Keewatin Ave",
+      "latest_count_date": "2025-11-11",
+      "count_duration": "14",
+      "total_vehicle": 19667,
+      "total_bike": 47,
+      "total_pedestrian": 1100,
+      "pm_peak_start": "2025-11-11T16:15:00",
+      "pm_peak_vehicle": 1970,
+      "pm_peak_bike": 5,
+      "n_appr_vehicle": 8469,
+      "n_appr_bike": 24,
+      "s_appr_vehicle": 10259,
+      "s_appr_bike": 22
+    },
+    "peakHour": {
+      "vehicles": 1876,
+      "bikes": 5,
+      "pedestrians": 110
+    },
+    "bikeFacility": []
+  },
+  "source": "Toronto Open Data and City of Toronto Official Plan; see sources and estimates.",
+  "mapSvg": "data/corridors/mount-pleasant-eglinton-blythwood.map.svg",
+  "mapAlt": "Map of Mount Pleasant Rd (Eglinton Ave E to Blythwood Rd), 1.1 km, highlighted in blue. Subway stations: Eglinton. Other cycling routes on Broadway Ave, Duplex Ave, Edith Dr, Eglinton Park Trl, Glengrove Ave W, Montgomery Ave, Roselawn Ave, Rosewell Ave and Sherwood Park Trl. 2 collisions where someone was killed or seriously injured happened within 30 m of this stretch in the last 5 years (a total, not individual incidents)."
+}

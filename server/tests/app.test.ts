@@ -24,7 +24,10 @@ test('health', async () => {
 })
 
 test('levels list and detail', async () => {
-  expect(await (await get('/api/levels')).json()).toEqual([{ id: 'bloor-christie-ossington', name: 'Bloor St W (Christie St to Ossington Ave)', widthM: 20 }])
+  expect(await (await get('/api/levels')).json()).toEqual([
+    { id: 'mount-pleasant-eglinton-blythwood', name: 'Mount Pleasant Rd (Eglinton Ave E to Blythwood Rd)', widthM: 20 },
+    { id: 'bloor-christie-ossington', name: 'Bloor St W (Christie St to Ossington Ave)', widthM: 20 },
+  ])
   const level = await (await get('/api/levels/bloor-christie-ossington')).json()
   expect(level.corridor.baselineLayout.elements).toHaveLength(7)
 })

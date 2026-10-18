@@ -25,7 +25,7 @@ function script(level: Level): { who: Who; text: string }[] {
   ]
 }
 
-export function Story({ level, onDone, onBack }: { level: Level; onDone: () => void; onBack: () => void }) {
+export function Story({ level, number, onDone, onBack }: { level: Level; number: number; onDone: () => void; onBack: () => void }) {
   const lines = script(level)
   const [i, setI] = useState(0)
   const line = lines[i]
@@ -36,7 +36,7 @@ export function Story({ level, onDone, onBack }: { level: Level; onDone: () => v
     <main className="mx-auto flex min-h-[70dvh] max-w-3xl flex-col justify-center gap-6">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 basis-72">
-          <p className="font-display text-lg font-semibold text-primary">Level 1</p>
+          <p className="font-display text-lg font-semibold text-primary">Level {number}</p>
           <h1 tabIndex={-1} className="font-display text-4xl font-semibold outline-none sm:text-5xl">
             {level.name}
           </h1>

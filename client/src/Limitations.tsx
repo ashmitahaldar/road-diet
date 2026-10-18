@@ -21,7 +21,7 @@ export function LimitationsList({ level }: { level: Level }) {
       </ul>
       {!!level.corridor.estimates?.length && (
         <>
-          <p className="mt-3 font-semibold">Estimates in this street's data:</p>
+          <p className="mt-3 font-semibold">Estimates in {level.corridor.name}:</p>
           <ul className="mt-1 list-disc space-y-1 pl-5">
             {level.corridor.estimates.map((e) => (
               <li key={e.field}>{e.note}</li>

@@ -20,6 +20,7 @@ await pause(4)
 await show(page.getByText('A learning tool, not a forecast.').first(), 4)
 
 await page.getByRole('button', { name: 'Play' }).click()
+await page.getByRole('button', { name: 'Play' }).first().click()
 mark('2 Pip and the residents ask for help')
 for (let i = 0; i < 4; i++) {
   await pause(2.5)

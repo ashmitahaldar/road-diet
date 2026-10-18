@@ -93,6 +93,8 @@ export type Corridor = {
 export type Level = {
   id: string
   name: string
+  /** One line for the level select. */
+  blurb: string
   corridor: Corridor
   allowedElements: ElementId[]
   goal: { minEmissionsReductionPct?: number; minHappiness?: number; minSafety?: number }

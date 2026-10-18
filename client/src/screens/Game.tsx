@@ -111,7 +111,7 @@ async function saveAndFetchStats(level: Level, layout: Layout): Promise<Others> 
   }
 }
 
-export function Game({ level }: { level: Level }) {
+export function Game({ level, onStars, onExit }: { level: Level; onStars: (stars: number) => void; onExit: () => void }) {
   const [layout, setLayout] = useState(level.corridor.baselineLayout)
   const [run, setRun] = useState<{ layout: Layout; metrics: Metrics; react: ReactResult | null; others?: Others } | null>(null)
   const [runId, setRunId] = useState(0)
@@ -198,7 +198,9 @@ export function Game({ level }: { level: Level }) {
     if (!reduce) play('run')
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(() => {
-      play(scoreRun(metrics, level).goalMet ? 'win' : 'done')
+      const score = scoreRun(metrics, level)
+      onStars(score.stars)
+      play(score.goalMet ? 'win' : 'done')
       setRunning(false)
       setScoreOpen(true)
       setOpen((o) => ({ ...o, meters: true }))
@@ -270,6 +272,7 @@ export function Game({ level }: { level: Level }) {
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
+        <Button onClick={onExit}>Streets</Button>
         {webgl && !reduce && <Button onClick={() => setWant3d(!in3d)}>{in3d ? 'Edit in 2D' : 'Edit in 3D'}</Button>}
         {in3d && tour === null && <Button onClick={() => setTour(0)}>Tour</Button>}
         <Button

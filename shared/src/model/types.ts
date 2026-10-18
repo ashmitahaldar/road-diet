@@ -59,6 +59,10 @@ export type Persona = {
   id: PersonaId
   name: string
   blurb: string
+  /** Their request in the story, in their own words. Talks about trips, never lane types (spec 2.7). */
+  ask: string
+  /** What they care about, in a few words, for their card. */
+  wants: string
   trip: { mode: Mode; distanceKm: number }
   /** Relative weights over normalized 0-1 metrics (spec 3.7). */
   weights: { travelTime: number; safety: number; comfort: number; access: number }

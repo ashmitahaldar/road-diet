@@ -1,5 +1,6 @@
 import { ELEMENTS, PERSONAS, TODO_SOURCE, type Level } from '@road-diet/shared'
 import { ElementIcon, VISUALS } from '../editor/elementVisuals'
+import { Face } from '../story/characters'
 import { Button } from '../ui'
 
 const MAPS = import.meta.glob<string>('../../../data/corridors/*.map.svg', { query: '?url', import: 'default', eager: true })
@@ -148,8 +149,14 @@ export function Briefing({ level, onStart, onBack }: { level: Level; onStart: ()
         <h2 className="font-display text-2xl font-semibold">Who uses this street</h2>
         <ul className="mt-2 grid gap-2 sm:grid-cols-2">
           {Object.values(PERSONAS).map((p) => (
-            <li key={p.id} className="rounded-xl border-2 border-ink bg-paper px-3 py-2">
-              <strong>{p.name}</strong>. {p.blurb}
+            <li key={p.id} className="flex gap-3 rounded-xl border-2 border-ink bg-paper px-3 py-2">
+              <Face id={p.id} happiness={50} />
+              <span>
+                <strong>{p.name}</strong>. {p.blurb}
+                <span className="mt-0.5 block text-sm">
+                  <strong>Wants</strong> {p.wants}.
+                </span>
+              </span>
             </li>
           ))}
         </ul>

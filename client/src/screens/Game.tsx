@@ -5,7 +5,7 @@ import { CANVAS_SIZE } from '../editor/controls'
 import { Editor } from '../editor/Editor'
 import { MetersCard, RUN_MS, Residents, RunButton, type Shown } from '../run/RunPanel'
 import { Scorecard } from '../run/Scorecard'
-import { Tips } from '../run/Tips'
+import { Guide } from '../run/Guide'
 import { isMuted, play, setMuted } from '../sound'
 import { Button } from '../ui'
 import { goalSentence } from './Briefing'
@@ -93,7 +93,7 @@ export function Game({ level }: { level: Level }) {
   const reduce = useReducedMotion()
   const in3d = want3d && webgl && !reduce
   const base = useMemo(() => computeMetrics(level.corridor.baselineLayout, level), [level])
-  // Tips follow the street as it is now, not the last run.
+  // Pip's guide follows the street as it is now, not the last run.
   const now = useMemo(() => computeMetrics(layout, level), [layout, level])
   const [muted, setMutedState] = useState(isMuted)
 
@@ -171,7 +171,7 @@ export function Game({ level }: { level: Level }) {
         </section>
         <div className={`${SIDE} fit:col-start-1`}>
           <MetersCard level={level} base={base} shown={shown} running={running} onShowScore={() => setScoreOpen(true)} />
-          <Tips layout={layout} metrics={now} />
+          <Guide level={level} layout={layout} metrics={now} />
         </div>
         <div className={`${SIDE} fit:col-start-3`}>
           <RunButton running={running} kind={shown.kind} onRun={runDay} />

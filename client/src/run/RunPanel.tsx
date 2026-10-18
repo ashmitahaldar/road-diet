@@ -1,16 +1,11 @@
 import { PERSONAS, type ElementId, type Level, type Metrics, type Mode, type Persona, type PersonaId, type ReactResult, type Reaction } from '@road-diet/shared'
 import { motion, useReducedMotion } from 'motion/react'
 import { ElementIcon } from '../editor/elementVisuals'
+import { Face, mood } from '../story/characters'
 import { Button, GeminiLabel, signed } from '../ui'
 
 export const RUN_MS = 3200
 
-const ACCENT: Record<PersonaId, string> = {
-  driver_delivery: 'var(--color-loading)',
-  student_cyclist: 'var(--color-bike-painted)',
-  senior_walker: 'var(--color-sidewalk)',
-  shop_owner: 'var(--color-patio)',
-}
 const MODE_ICON: Record<Mode, ElementId> = { car: 'car_lane', bus: 'bus_lane', bike: 'bike_painted', walk: 'sidewalk' }
 const MODE_WORD: Record<Mode, string> = { car: 'drives', bus: 'rides the bus', bike: 'bikes', walk: 'walks' }
 
@@ -143,37 +138,25 @@ function Meter({ label, color, value, detail, fill, mark }: { label: string; col
   )
 }
 
-function mood(h: number) {
-  if (h >= 60) return { word: 'Happy', mouth: 'M10 19 Q16 24 22 19' }
-  if (h >= 40) return { word: 'Okay', mouth: 'M10 20 H22' }
-  return { word: 'Unhappy', mouth: 'M10 22 Q16 17 22 22' }
-}
-
 type CardProps = { p: Persona; m: Metrics; base: Metrics; running: boolean; runId: number; reaction?: Reaction | 'loading' }
 
 function PersonaCard({ p, m, base, running, runId, reaction }: CardProps) {
   const reduce = useReducedMotion()
   const h = m.happiness[p.id]
   const t = m.travelTimeMin[p.id]
-  const { word, mouth } = mood(h)
+  const { word } = mood(h)
   const tripMs = (RUN_MS - 400) * Math.min(1, t / Math.max(...Object.values(m.travelTimeMin)))
   return (
     <li className="relative w-64 shrink-0 snap-start rounded-2xl border-2 border-ink bg-paper p-3 fit:w-auto">
       <div className="flex items-center gap-3">
-        <motion.svg
+        <motion.div
           key={`${runId}-${word}`}
-          viewBox="0 0 32 32"
-          className="size-12 shrink-0"
-          aria-hidden
           initial={reduce || runId === 0 ? false : { scale: 0.6 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 500, damping: 12, delay: reduce ? 0 : RUN_MS / 1000 - 0.3 }}
         >
-          <circle cx={16} cy={16} r={14} fill={ACCENT[p.id]} stroke="var(--color-ink)" strokeWidth={2} />
-          <circle cx={11.5} cy={13} r={1.8} fill="var(--color-ink)" />
-          <circle cx={20.5} cy={13} r={1.8} fill="var(--color-ink)" />
-          <path d={mouth} fill="none" stroke="var(--color-ink)" strokeWidth={2} strokeLinecap="round" />
-        </motion.svg>
+          <Face id={p.id} happiness={h} />
+        </motion.div>
         <div className="min-w-0">
           <p className="font-semibold">{p.name}</p>
           <p className="text-sm tabular-nums">
@@ -182,8 +165,11 @@ function PersonaCard({ p, m, base, running, runId, reaction }: CardProps) {
           </p>
         </div>
       </div>
+      <p className="mt-2 text-sm">
+        <strong>Wants</strong> {p.wants}.
+      </p>
       {/* After a run the speech bubble takes the blurb's place, so the reaction is what the player reads. */}
-      {reaction && !running ? <SpeechBubble key={runId} reaction={reaction} /> : <p className="mt-2 text-sm">{p.blurb}</p>}
+      {reaction && !running ? <SpeechBubble key={runId} reaction={reaction} /> : <p className="mt-1 text-sm">{p.blurb}</p>}
       <p className="mt-1 text-sm tabular-nums">
         {MODE_WORD[p.trip.mode]} {p.trip.distanceKm} km · <strong>{t.toFixed(1)} min</strong>
         {Math.abs(t - base.travelTimeMin[p.id]) >= 0.05 && ` (${signed(t - base.travelTimeMin[p.id])})`}
@@ -209,7 +195,7 @@ function SpeechBubble({ reaction }: { reaction: Reaction | 'loading' }) {
     <motion.div
       initial={reduce ? false : { opacity: 0, y: 6, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      className="relative mt-3 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-sm before:absolute before:-top-2 before:left-5 before:size-3 before:rotate-45 before:border-t-2 before:border-l-2 before:border-ink before:bg-paper"
+      className="relative mt-3 rounded-xl border-2 border-ink bg-paper px-3 py-2 font-medium shadow-[3px_3px_0_var(--color-ink)] before:absolute before:-top-2 before:left-5 before:size-3 before:rotate-45 before:border-t-2 before:border-l-2 before:border-ink before:bg-paper"
     >
       {reaction === 'loading' ? (
         <span aria-label="Waiting for a reaction" className="inline-flex gap-1">

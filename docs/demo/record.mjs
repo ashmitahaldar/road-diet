@@ -20,7 +20,13 @@ await pause(4)
 await show(page.getByText('A learning tool, not a forecast.').first(), 4)
 
 await page.getByRole('button', { name: 'Play' }).click()
-mark('2 real corridor and sources')
+mark('2 Pip and the residents ask for help')
+for (let i = 0; i < 4; i++) {
+  await pause(2.5)
+  await page.getByRole('button', { name: 'Next' }).click()
+}
+await page.getByRole('button', { name: 'Skip story' }).click()
+mark('2b real corridor and sources')
 await pause(5)
 await page.mouse.wheel(0, 500)
 await pause(5)

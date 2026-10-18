@@ -1,19 +1,49 @@
-import { computeMetrics, fallbackResult, scoreRun, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { addElement, computeMetrics, fallbackResult, moveElement, removeElement, resizeElement, scoreRun, type ElementId, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { useReducedMotion } from 'motion/react'
-import { Component, Suspense, lazy, useMemo, useRef, useState, type ReactNode } from 'react'
-import { CANVAS_SIZE } from '../editor/controls'
+import { Component, Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { BudgetBar, Palette, SelectionBar } from '../editor/controls'
 import { Editor } from '../editor/Editor'
+import { CameraBar } from '../run/CameraBar'
+import { Guide } from '../run/Guide'
 import { MetersCard, RUN_MS, Residents, RunButton, type Shown } from '../run/RunPanel'
 import { Scorecard } from '../run/Scorecard'
-import { Guide } from '../run/Guide'
+import type { CameraApi } from '../run/Street3D'
+import { TOUR, TOUR_KEY, Tour, type TourStep } from '../run/Tour'
+import { Pip } from '../story/characters'
 import { isMuted, play, setMuted } from '../sound'
-import { Button } from '../ui'
+import { Button, Panel } from '../ui'
 import { goalSentence } from './Briefing'
 
 const Street3D = lazy(() => import('../run/Street3D'))
 const NO_3D = 'road-diet:no-3d'
-/** A side column: scrolls on its own when the game fits one screen. The padding keeps the card shadows inside the scroll box. */
-const SIDE = 'relative flex flex-col gap-3 fit:row-start-1 fit:min-h-0 fit:overflow-y-auto fit:pr-1 fit:pb-1'
+const WIDE = '(min-width: 64rem)'
+type PanelId = 'build' | 'meters' | 'pip' | 'residents'
+const TABS: [PanelId, string][] = [
+  ['build', 'Build'],
+  ['meters', 'Meters'],
+  ['pip', 'Pip'],
+  ['residents', 'Residents'],
+]
+const link = 'font-semibold text-primary underline underline-offset-2'
+
+function useWide() {
+  const [wide, setWide] = useState(() => matchMedia(WIDE).matches)
+  useEffect(() => {
+    const q = matchMedia(WIDE)
+    const on = () => setWide(q.matches)
+    q.addEventListener('change', on)
+    return () => q.removeEventListener('change', on)
+  }, [])
+  return wide
+}
+
+function stored(key: string) {
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
 
 /** WebGL present and the 3D view hasn't failed earlier this session. */
 function can3d() {
@@ -96,18 +126,55 @@ export function Game({ level }: { level: Level }) {
   // Pip's guide follows the street as it is now, not the last run.
   const now = useMemo(() => computeMetrics(layout, level), [layout, level])
   const [muted, setMutedState] = useState(isMuted)
+  const [selected, setSelected] = useState<number | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const camera = useRef<CameraApi | null>(null)
+  const wide = useWide()
+  // Wide screens float every panel at once; phones show one at a time above a tab bar.
+  const [open, setOpen] = useState<Record<PanelId, boolean>>({ build: true, meters: true, pip: true, residents: true })
+  const [sheet, setSheet] = useState<PanelId | null>(null)
+  const isOpen = (id: PanelId) => (wide ? open[id] : sheet === id)
+  const toggle = (id: PanelId) => (wide ? setOpen({ ...open, [id]: !open[id] }) : setSheet(sheet === id ? null : id))
+  const [tour, setTour] = useState<number | null>(() => (stored(TOUR_KEY) ? null : 0))
+  const endTour = () => {
+    setTour(null)
+    try {
+      localStorage.setItem(TOUR_KEY, '1')
+    } catch {
+      // the tour just shows again next visit
+    }
+  }
+  /** Doing a step (or a later one) moves the tour past it. */
+  const reach = (id: TourStep) => {
+    const k = TOUR.findIndex((t) => t.id === id)
+    if (tour === null || k < tour) return
+    if (k + 1 < TOUR.length) setTour(k + 1)
+    else endTour()
+  }
 
   // Every edit, 2D or 3D, comes through here. Resizes and moves keep the count and stay silent.
   const edit = (next: Layout) => {
     if (next.elements.length !== layout.elements.length) play(next.elements.length > layout.elements.length ? 'place' : 'remove')
+    reach(next.elements.length > layout.elements.length ? 'add' : 'edit')
     setLayout(next)
   }
+  const select = (i: number | null) => {
+    if (i !== null) reach('select')
+    setSelected(i)
+  }
+  const apply = (next: Layout, nextSelected: number | null) => {
+    if (next === layout) return
+    edit(next)
+    setSelected(nextSelected)
+  }
+  const sel = selected !== null && selected < layout.elements.length ? selected : null
 
   const shown: Shown = !run
     ? { metrics: base, kind: 'today' }
     : { metrics: run.metrics, react: run.react, kind: JSON.stringify(run.layout) === JSON.stringify(layout) ? 'run' : 'stale' }
 
   const runDay = () => {
+    reach('run')
     const metrics = computeMetrics(layout, level)
     setRun({ layout, metrics, react: null })
     // A slow reply for an older run must not overwrite a newer one.
@@ -124,60 +191,163 @@ export function Game({ level }: { level: Level }) {
     }, reduce ? 0 : RUN_MS)
   }
 
-  return (
-    <div className="flex flex-col gap-3 fit:h-full">
-      <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 rounded-2xl border-2 border-ink bg-paper px-4 py-2 shadow-[4px_4px_0_var(--color-ink)]">
-        <div>
-          <p className="font-display text-lg font-semibold text-primary">Road Diet</p>
-          <h1 tabIndex={-1} className="font-display text-2xl font-semibold outline-none sm:text-3xl">{level.name}</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <p className="max-w-md">
-            <strong>Goal:</strong> {goalSentence(level)}
-          </p>
-          <Button
-            aria-pressed={!muted}
-            onClick={() => {
-              setMuted(!muted)
-              setMutedState(!muted)
+  const panels: Record<PanelId, { title: ReactNode; body: ReactNode }> = {
+    build: {
+      title: 'Build',
+      body: (
+        <div className="flex flex-col gap-2">
+          <BudgetBar layout={layout} level={level} announce={!dragging} />
+          <SelectionBar
+            level={level}
+            layout={layout}
+            selected={sel}
+            resize={(i, d) => apply(resizeElement(layout, level, i, d), i)}
+            move={(i, dir) => apply(moveElement(layout, i, dir), i + dir)}
+            remove={(i) => apply(removeElement(layout, i), layout.elements.length > 1 ? Math.max(0, i - 1) : null)}
+            empty="Tap a piece of the street, then drag its blue handles. Keyboard: switch to 2D."
+          />
+          <Palette
+            level={level}
+            layout={layout}
+            selected={sel}
+            onAdd={(id: ElementId) => {
+              const at = sel === null ? layout.elements.length : sel + 1
+              apply(addElement(layout, level, id, at), at)
             }}
-          >
-            <svg aria-hidden viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
-              {muted ? <path d="M17 9l5 6M22 9l-5 6" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" />}
-            </svg>
-            Sound
-          </Button>
+          />
         </div>
-      </header>
-      {/* Stacked on small screens (street, meters, tips, residents); on one screen the info sits either side of the street. */}
-      <main className="grid grid-cols-[minmax(0,1fr)] gap-4 fit:min-h-0 fit:flex-1 fit:grid-cols-[16rem_minmax(0,1fr)_19rem] fit:grid-rows-[minmax(0,1fr)]">
-        <section aria-labelledby="street-title" className="relative flex flex-col gap-3 fit:col-start-2 fit:row-start-1 fit:min-h-0 fit:overflow-y-auto fit:pr-1 fit:pb-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 id="street-title" className="font-display text-2xl font-semibold">
-              {in3d ? 'Your street in 3D' : 'Your street from above'}
-            </h2>
-            {webgl && !reduce && <Button onClick={() => setWant3d(!in3d)}>{in3d ? 'Edit in 2D' : 'Edit in 3D'}</Button>}
-          </div>
-          {in3d ? (
-            <Fallback onError={() => setWebgl(false)}>
-              <Suspense fallback={<div className={`${CANVAS_SIZE} animate-pulse rounded-2xl border-2 border-ink bg-grid motion-reduce:animate-none`} />}>
-                <Street3D level={level} layout={layout} onChange={edit} />
-              </Suspense>
-            </Fallback>
-          ) : (
-            <Editor level={level} layout={layout} onChange={edit} />
-          )}
+      ),
+    },
+    meters: { title: 'Meters', body: <MetersCard level={level} base={base} shown={shown} running={running} onShowScore={() => setScoreOpen(true)} /> },
+    pip: {
+      title: (
+        <>
+          <Pip className="size-8" /> Pip says
+        </>
+      ),
+      body: <Guide level={level} layout={layout} metrics={now} />,
+    },
+    residents: { title: 'Residents', body: <Residents base={base} shown={shown} running={running} runId={runId} /> },
+  }
+  const panel = (id: PanelId, className = '') => (
+    <Panel id={id} title={panels[id].title} open={isOpen(id)} onToggle={() => toggle(id)} className={className}>
+      {panels[id].body}
+    </Panel>
+  )
+
+  const header = (
+    <header className="pointer-events-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl border-2 border-ink bg-paper px-3 py-1.5 shadow-[4px_4px_0_var(--color-ink)]">
+      <div className="min-w-0">
+        <h1 tabIndex={-1} className="font-display text-lg font-semibold outline-none lg:text-2xl">
+          {level.name}
+        </h1>
+        <p className="text-sm">
+          <strong>Goal:</strong> {goalSentence(level)}
+        </p>
+        <p className="text-xs">
+          A learning tool, not a forecast. Residents are fictional. Hosted on Vultr.{' '}
+          <a href="/about" target="_blank" className={link}>
+            About
+          </a>{' '}
+          ·{' '}
+          <a href="/data" target="_blank" className={link}>
+            Data & Limitations
+          </a>
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {webgl && !reduce && <Button onClick={() => setWant3d(!in3d)}>{in3d ? 'Edit in 2D' : 'Edit in 3D'}</Button>}
+        {in3d && tour === null && <Button onClick={() => setTour(0)}>Tour</Button>}
+        <Button
+          aria-pressed={!muted}
+          onClick={() => {
+            setMuted(!muted)
+            setMutedState(!muted)
+          }}
+        >
+          <svg aria-hidden viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
+            {muted ? <path d="M17 9l5 6M22 9l-5 6" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" />}
+          </svg>
+          <span className="sr-only lg:not-sr-only">Sound</span>
+        </Button>
+      </div>
+    </header>
+  )
+
+  // Top of the street: camera buttons and the tour. Both float over the 3D view only.
+  const guides = in3d && (
+    <div className="flex flex-col items-center gap-2">
+      {/* On a phone an open panel needs the room more than the camera buttons do. */}
+      {(wide || !sheet) && <CameraBar camera={camera} onUse={() => reach('look')} />}
+      {tour !== null && <Tour step={tour} onNext={() => (tour + 1 < TOUR.length ? setTour(tour + 1) : endTour())} onSkip={endTour} />}
+    </div>
+  )
+  const editor2d = !in3d && (
+    <div className="pointer-events-auto min-h-0 flex-1 overflow-y-auto rounded-2xl border-2 border-ink bg-paper/95 p-3 shadow-[4px_4px_0_var(--color-ink)]">
+      <h2 className="mb-2 font-display text-xl font-semibold">Your street from above</h2>
+      <Editor level={level} layout={layout} onChange={edit} />
+    </div>
+  )
+
+  return (
+    <div className="relative h-full overflow-hidden">
+      {in3d && (
+        <section aria-label="Your street in 3D" className="absolute inset-0">
+        <Fallback onError={() => setWebgl(false)}>
+          <Suspense fallback={<div className="absolute inset-0 animate-pulse bg-grid motion-reduce:animate-none" />}>
+            <Street3D level={level} layout={layout} onChange={edit} selected={sel} onSelect={select} onDragging={setDragging} onLook={() => reach('look')} camera={camera} />
+          </Suspense>
+        </Fallback>
         </section>
-        <div className={`${SIDE} fit:col-start-1`}>
-          <MetersCard level={level} base={base} shown={shown} running={running} onShowScore={() => setScoreOpen(true)} />
-          <Guide level={level} layout={layout} metrics={now} />
+      )}
+      {/* The panels float over the street; empty space lets drags through to it. */}
+      {wide ? (
+        <div className="pointer-events-none absolute inset-0 grid grid-cols-[17rem_minmax(0,1fr)_19rem] grid-rows-[auto_minmax(0,1fr)] gap-3 p-3">
+          <div className="col-span-3">{header}</div>
+          <div className="flex min-h-0 flex-col gap-3 overflow-y-auto pr-1 pb-1">
+            {panel('meters')}
+            {panel('pip')}
+          </div>
+          <main className="flex min-h-0 flex-col justify-between gap-3">
+            {guides}
+            {editor2d}
+            {in3d && panel('build', 'max-h-[50%] self-center w-full max-w-3xl')}
+          </main>
+          <div className="flex min-h-0 flex-col gap-3 pb-1">
+            <div className="pointer-events-auto">
+              <RunButton running={running} kind={shown.kind} onRun={runDay} />
+            </div>
+            {panel('residents', 'max-h-full')}
+          </div>
         </div>
-        <div className={`${SIDE} fit:col-start-3`}>
-          <RunButton running={running} kind={shown.kind} onRun={runDay} />
-          <Residents base={base} shown={shown} running={running} runId={runId} />
+      ) : (
+        <div className="pointer-events-none absolute inset-0 flex flex-col gap-2 p-2">
+          {header}
+          <main className="flex min-h-0 flex-1 flex-col gap-2">
+            {guides}
+            {editor2d}
+            {in3d && <div className="flex-1" />}
+            {sheet && panel(sheet, 'max-h-[50dvh]')}
+          </main>
+          <div className="pointer-events-auto flex flex-col gap-2">
+            <RunButton running={running} kind={shown.kind} onRun={runDay} />
+            <nav aria-label="Panels" className="grid auto-cols-fr grid-flow-col gap-1 rounded-2xl border-2 border-ink bg-paper p-1">
+              {TABS.filter(([id]) => in3d || id !== 'build').map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={sheet === id}
+                  onClick={() => setSheet(sheet === id ? null : id)}
+                  className="min-h-11 rounded-xl text-sm font-semibold aria-pressed:bg-ink aria-pressed:text-paper focus-visible:outline-4 focus-visible:outline-primary"
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
-      </main>
+      )}
       {run && (
         <Scorecard
           open={scoreOpen}

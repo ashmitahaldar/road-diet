@@ -15,7 +15,6 @@ export default function App() {
   const level = BLOOR_LEVEL
   const [screen, setScreen] = useState<Screen>('start')
   const view = useRef<HTMLDivElement>(null)
-  const [footerHidden, setFooterHidden] = useState(false)
   const go = (next: Screen) => {
     setScreen(next)
     window.scrollTo(0, 0)
@@ -28,9 +27,8 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <Background subtle={screen === 'play'} />
-      <div
-        className={`mx-auto flex min-h-dvh max-w-7xl flex-col px-4 ${screen === 'play' ? 'gap-3 pt-3 pb-24 fit:h-dvh fit:pb-3' : 'gap-6 pt-6 pb-6'}`}
-      >
+      {/* The game screen is the whole window: the street fills it and the panels float on top. */}
+      <div className={screen === 'play' && !infoPage ? 'flex h-dvh flex-col' : 'mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 py-6'}>
         {infoPage ? (
           <div className="flex-1">
             {page === 'data' ? <DataPage level={level} /> : <AboutPage level={level} />}
@@ -40,7 +38,7 @@ export default function App() {
             <motion.div
               key={screen}
               ref={view}
-              className="flex-1 fit:min-h-0"
+              className="min-h-0 flex-1"
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -24 }}
@@ -54,8 +52,8 @@ export default function App() {
             </motion.div>
           </AnimatePresence>
         )}
-        {/* Hideable on the game screen only: the scorecard repeats this disclaimer and the Data & Limitations link. */}
-        {!(screen === 'play' && footerHidden && !infoPage) && (
+        {/* The game screen carries this line in its header; the scorecard repeats it too. */}
+        {!(screen === 'play' && !infoPage) && (
           <footer className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-ink bg-paper px-3 py-2 text-sm">
             <span>A learning tool, not a forecast. Residents are fictional.</span>
             <span className="flex flex-wrap items-center gap-x-4">
@@ -66,19 +64,6 @@ export default function App() {
               <a href="/data" target={infoPage ? undefined : '_blank'} className="inline-flex min-h-11 items-center font-semibold text-primary underline underline-offset-2">
                 Data & Limitations
               </a>
-              {screen === 'play' && !infoPage && (
-                <button
-                  type="button"
-                  aria-label="Hide this bar"
-                  onClick={() => {
-                    view.current?.querySelector('h1')?.focus({ preventScroll: true })
-                    setFooterHidden(true)
-                  }}
-                  className="grid size-11 place-items-center rounded-full text-lg hover:bg-grid focus-visible:outline-4 focus-visible:outline-primary"
-                >
-                  <span aria-hidden>✕</span>
-                </button>
-              )}
             </span>
           </footer>
         )}

@@ -1,10 +1,11 @@
-import { computeMetrics, fallbackResult, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
+import { computeMetrics, fallbackResult, scoreRun, type Layout, type Level, type LevelStats, type Metrics, type ReactResult } from '@road-diet/shared'
 import { useReducedMotion } from 'motion/react'
 import { Component, Suspense, lazy, useMemo, useRef, useState, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { Editor } from '../editor/Editor'
 import { RUN_MS, RunPanel, type Shown } from '../run/RunPanel'
 import { Scorecard } from '../run/Scorecard'
+import { isMuted, play, setMuted } from '../sound'
 import { Button } from '../ui'
 import { goalSentence } from './Briefing'
 
@@ -87,6 +88,13 @@ export function Game({ level }: { level: Level }) {
   const timer = useRef<number>(undefined)
   const reduce = useReducedMotion()
   const base = useMemo(() => computeMetrics(level.corridor.baselineLayout, level), [level])
+  const [muted, setMutedState] = useState(isMuted)
+
+  // Every edit, 2D or 3D, comes through here. Resizes and moves keep the count and stay silent.
+  const edit = (next: Layout) => {
+    if (next.elements.length !== layout.elements.length) play(next.elements.length > layout.elements.length ? 'place' : 'remove')
+    setLayout(next)
+  }
 
   const shown: Shown = !run
     ? { metrics: base, kind: 'today' }
@@ -101,8 +109,10 @@ export function Game({ level }: { level: Level }) {
     setRunId((n) => n + 1)
     setStage(webgl && !reduce)
     setRunning(true)
+    if (!reduce) play('run')
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(() => {
+      play(scoreRun(metrics, level).goalMet ? 'win' : 'done')
       setRunning(false)
       setScoreOpen(true)
     }, reduce ? 0 : RUN_MS)
@@ -115,9 +125,24 @@ export function Game({ level }: { level: Level }) {
           <p className="font-display text-lg font-semibold text-primary">Road Diet</p>
           <h1 tabIndex={-1} className="font-display text-3xl font-semibold outline-none">{level.name}</h1>
         </div>
-        <p className="max-w-xl">
-          <strong>Goal:</strong> {goalSentence(level)}
-        </p>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <p className="max-w-md">
+            <strong>Goal:</strong> {goalSentence(level)}
+          </p>
+          <Button
+            aria-pressed={!muted}
+            onClick={() => {
+              setMuted(!muted)
+              setMutedState(!muted)
+            }}
+          >
+            <svg aria-hidden viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
+              {muted ? <path d="M17 9l5 6M22 9l-5 6" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" />}
+            </svg>
+            Sound
+          </Button>
+        </div>
       </header>
       <main className="grid flex-1 grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         {stage && webgl && !reduce ? (
@@ -142,7 +167,7 @@ export function Game({ level }: { level: Level }) {
               }}
             >
               <Suspense fallback={<div className="h-[min(60dvh,34rem)] min-h-72 animate-pulse rounded-2xl border-2 border-ink bg-grid motion-reduce:animate-none" />}>
-                <Street3D level={level} layout={layout} onChange={setLayout} />
+                <Street3D level={level} layout={layout} onChange={edit} />
               </Suspense>
             </Fallback>
           </section>
@@ -150,7 +175,7 @@ export function Game({ level }: { level: Level }) {
           <Editor
             level={level}
             layout={layout}
-            onChange={setLayout}
+            onChange={edit}
             onOpen3d={
               webgl && !reduce
                 ? () => {
